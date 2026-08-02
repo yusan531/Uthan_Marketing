@@ -1,318 +1,1377 @@
 "use client";
 
-import { cloneElement, FormEvent, isValidElement, ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+  type SetStateAction,
+  type Dispatch,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Box,
+  Building2,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircleDollarSign,
+  CircleHelp,
+  ClipboardList,
+  Database,
+  Download,
+  Edit3,
+  FileBarChart,
+  FileText,
+  FolderKanban,
+  Gauge,
+  Home,
+  Languages,
+  LayoutDashboard,
+  ListChecks,
+  LockKeyholeOpen,
+  LogIn,
+  Maximize2,
+  Menu,
+  Megaphone,
+  Monitor,
+  Moon,
+  Package,
+  PanelLeftClose,
+  Plus,
+  RefreshCcw,
+  RotateCcw,
+  Search,
+  Send,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Sun,
+  Target,
+  Trash2,
+  Upload,
+  UserCog,
+  UserRoundCheck,
+  Users,
+  WalletCards,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  menuGroups,
+  pageConfigs,
+  pageGroup,
+  roles,
+  type ActionKey,
+  type ColumnDef,
+  type FieldDef,
+  type PageConfig,
+  type PageKey,
+  type RoleKey,
+} from "./marketing-config";
 
-type MenuKey = "dashboard" | "targetDashboard" | "target" | "budget" | "kol" | "campaign" | "content" | "sample" | "post" | "payment" | "report" | "settings";
-type RoleKey = "country" | "brand" | "kolPic" | "ads" | "finance" | "analyst" | "admin";
-type ModalState = { type: string; id?: number } | null;
+type Row = Record<string, unknown> & { id: number | string };
+type RowStore = Partial<Record<PageKey, Row[]>>;
+type Language = "zh" | "en";
+type Theme = "dark" | "light";
 
-const menus: { key: MenuKey; label: string; labelEn: string; icon: string }[] = [
-  { key: "dashboard", label: "工作台", labelEn: "Dashboard", icon: "⌂" },
-  { key: "targetDashboard", label: "目标进度", labelEn: "Dashboard", icon: "◫" },
-  { key: "target", label: "目标管理", labelEn: "Target", icon: "◎" },
-  { key: "budget", label: "预算管理", labelEn: "Budget", icon: "◒" },
-  { key: "kol", label: "达人中心", labelEn: "KOL Center", icon: "◇" },
-  { key: "campaign", label: "活动管理", labelEn: "Campaign", icon: "▣" },
-  { key: "content", label: "内容任务", labelEn: "Content", icon: "▤" },
-  { key: "sample", label: "样品管理", labelEn: "Sample", icon: "▧" },
-  { key: "post", label: "视频 / 帖子", labelEn: "Video / Post", icon: "▷" },
-  { key: "payment", label: "付款中心", labelEn: "Payment", icon: "¥" },
-  { key: "report", label: "报表中心", labelEn: "Report", icon: "▥" },
-  { key: "settings", label: "基础配置", labelEn: "Settings", icon: "⚙" },
-];
-
-const roles: { key: RoleKey; zh: string; en: string; menus: MenuKey[]; dashboardZh: string; dashboardEn: string }[] = [
-  { key: "country", zh: "国家经理", en: "Country Manager", menus: ["dashboard","targetDashboard","target","budget","kol","campaign","post","payment","report"], dashboardZh: "国家经营总览", dashboardEn: "Country Performance" },
-  { key: "brand", zh: "品牌经理", en: "Brand Manager", menus: ["dashboard","targetDashboard","target","budget","kol","campaign","content","sample","post","payment","report","settings"], dashboardZh: "品牌经营工作台", dashboardEn: "Brand Workspace" },
-  { key: "kolPic", zh: "KOL PIC", en: "KOL PIC", menus: ["dashboard","targetDashboard","kol","content","sample","post","payment","report"], dashboardZh: "KOL 执行工作台", dashboardEn: "KOL Execution" },
-  { key: "ads", zh: "广告经理", en: "Ads Manager", menus: ["dashboard","targetDashboard","budget","campaign","content","post","report"], dashboardZh: "广告投放工作台", dashboardEn: "Ads Performance" },
-  { key: "finance", zh: "财务", en: "Finance", menus: ["dashboard","budget","payment","report","settings"], dashboardZh: "财务审批工作台", dashboardEn: "Finance Workspace" },
-  { key: "analyst", zh: "数据分析师", en: "Data Analyst", menus: ["dashboard","targetDashboard","target","budget","kol","campaign","post","report"], dashboardZh: "营销数据工作台", dashboardEn: "Marketing Analytics" },
-  { key: "admin", zh: "管理员", en: "Administrator", menus: ["dashboard","targetDashboard","target","budget","kol","campaign","content","sample","post","payment","report","settings"], dashboardZh: "系统管理工作台", dashboardEn: "Admin Workspace" },
-];
-
-const initialTargets = [
-  { id: 1, product: "Serum Spray", priority: "Hero", pic: "Nisa", posts: 52, postsMtd: 38, budget: 4300, budgetMtd: 1900, gmv: 39000, gmvMtd: 21300, views: 2600000, viewsMtd: 1390000 },
-  { id: 2, product: "Day Cream", priority: "Growth", pic: "Cilla", posts: 32, postsMtd: 7, budget: 2900, budgetMtd: 1000, gmv: 25000, gmvMtd: 12000, views: 1600000, viewsMtd: 800000 },
-  { id: 3, product: "Tone-Up Sunscreen SPF50", priority: "Hero", pic: "Nadia", posts: 84, postsMtd: 45, budget: 7200, budgetMtd: 4300, gmv: 64000, gmvMtd: 33300, views: 4200000, viewsMtd: 2190000 },
-  { id: 4, product: "Hydra Lip Serum", priority: "Test", pic: "Bima", posts: 58, postsMtd: 32, budget: 3600, budgetMtd: 1780, gmv: 27000, gmvMtd: 15100, views: 1900000, viewsMtd: 1080000 },
-];
-const initialBudgets = [
-  { id: 1, category: "Content 内容", allocated: 428600, spent: 326400, owner: "Mia" },
-  { id: 2, category: "KOL 合作", allocated: 356200, spent: 217300, owner: "Nadia" },
-  { id: 3, category: "Media 投放", allocated: 182800, spent: 78600, owner: "James" },
-  { id: 4, category: "Other 其他", allocated: 112400, spent: 31500, owner: "Zoe" },
-];
-const initialKols = [
-  { id: 1, name: "BeautyWithYuki", platform: "小红书", tier: "S", category: "美妆", followers: 1280000, rate: 28000, status: "合作中" },
-  { id: 2, name: "Nisa Glow", platform: "TikTok", tier: "A", category: "护肤", followers: 486000, rate: 12500, status: "合作中" },
-  { id: 3, name: "Cilla Review", platform: "TikTok", tier: "A", category: "美妆", followers: 342000, rate: 9800, status: "待确认" },
-  { id: 4, name: "DailyByMomo", platform: "Instagram", tier: "B", category: "生活方式", followers: 92000, rate: 4200, status: "候选" },
-];
-const initialCampaigns = [
-  { id: 1, name: "夏日防晒种草计划", owner: "Mia", status: "进行中", progress: 68, budget: 320000, end: "2026-06-30" },
-  { id: 2, name: "618 大促整合营销", owner: "James", status: "进行中", progress: 42, budget: 580000, end: "2026-06-18" },
-  { id: 3, name: "新品精华预热 Campaign", owner: "Zoe", status: "待启动", progress: 12, budget: 180000, end: "2026-07-15" },
-];
-const initialContent = [
-  { id: 1, title: "防晒实测图文 × 8", campaign: "夏日防晒种草计划", owner: "Nadia", channel: "小红书", due: "06-14", status: "制作中" },
-  { id: 2, title: "Serum Spray 开箱短视频", campaign: "新品精华预热 Campaign", owner: "Nisa", channel: "TikTok", due: "06-16", status: "待审核" },
-  { id: 3, title: "618 直播预热视频", campaign: "618 大促整合营销", owner: "Cilla", channel: "TikTok", due: "06-12", status: "已完成" },
-];
-const initialSamples = [
-  { id: 1, kol: "BeautyWithYuki", product: "Tone-Up Sunscreen", qty: 2, tracking: "SF1348209201", status: "已签收" },
-  { id: 2, kol: "Nisa Glow", product: "Serum Spray", qty: 3, tracking: "JNE90841255", status: "运输中" },
-  { id: 3, kol: "Cilla Review", product: "Day Cream", qty: 2, tracking: "待生成", status: "待发货" },
-];
-const initialPosts = [
-  { id: 1, creator: "Nisa Glow", product: "Serum Spray", tier: "A", status: "Posted", views: 428000, gmv: 7600, date: "06-11" },
-  { id: 2, creator: "Cilla Review", product: "Day Cream", tier: "A", status: "Planning", views: 0, gmv: 0, date: "06-16" },
-  { id: 3, creator: "BeautyWithYuki", product: "Tone-Up Sunscreen SPF50", tier: "S", status: "Posted", views: 962000, gmv: 18400, date: "06-10" },
-  { id: 4, creator: "DailyByMomo", product: "Hydra Lip Serum", tier: "B", status: "Delayed", views: 0, gmv: 0, date: "06-13" },
-];
-const initialPayments = [
-  { id: 1, payee: "BeautyWithYuki", item: "防晒图文合作首款", amount: 14000, owner: "Mia", status: "待审批" },
-  { id: 2, payee: "Nisa Glow", item: "Serum Spray 视频尾款", amount: 12500, owner: "Nadia", status: "已批准" },
-  { id: 3, payee: "Meta Ads", item: "618 Media 投放", amount: 85000, owner: "James", status: "付款中" },
-];
-
-function useStored<T>(key: string, seed: T) {
-  const [value, setValue] = useState<T>(seed);
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    try { const saved = localStorage.getItem(key); if (saved) setValue(JSON.parse(saved)); } catch {}
-    setReady(true);
-  }, [key]);
-  useEffect(() => { if (ready) localStorage.setItem(key, JSON.stringify(value)); }, [key, ready, value]);
-  return [value, setValue] as const;
-}
-
-const money = (n: number) => new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY", maximumFractionDigits: 0 }).format(n);
-const num = (n: number) => new Intl.NumberFormat("en", { notation: n > 999999 ? "compact" : "standard", maximumFractionDigits: 1 }).format(n);
-const pct = (a: number, b: number) => Math.min(100, Math.round((a / Math.max(b, 1)) * 100));
-
-const EN: Record<string, string> = {
-  "Marketing 工作台": "Marketing Workspace", "从目标到发布结果，集中查看本月关键进展。": "Track monthly goals, execution and publishing results in one place.",
-  "Target 目标管理": "Target Management", "GST、Brand 与 PIC 共用同一套月度目标和达成口径。": "GST, Brand and PIC share one monthly target and achievement framework.",
-  "Budget 预算管理": "Budget Management", "统一管理预算分配、实际消耗和审批节奏。": "Manage allocation, actual spend and approvals in one workflow.",
-  "KOL 达人中心": "KOL Center", "维护达人池、合作报价和当前合作阶段。": "Manage creators, rates and collaboration stages.",
-  "Campaign 活动管理": "Campaign Management", "创建活动、推进状态并跟踪预算和完成进度。": "Create campaigns, advance status and track budget and progress.",
-  "Content 内容任务": "Content Tasks", "从 Brief、制作、审核到完成的统一任务流。": "A single workflow from brief and production to review and completion.",
-  "Sample 样品管理": "Sample Management", "管理寄样申请、物流单号和签收进度。": "Manage sample requests, tracking numbers and delivery status.",
-  "Video / Post 发布管理": "Video / Post Publishing", "Marketing 3.0 的 Publishing Progress 与 Publishing Results 已原生融合。": "Marketing 3.0 Publishing Progress and Results are built into this workspace.",
-  "Payment 付款中心": "Payment Center", "提交、审批并跟踪达人和媒体付款。": "Submit, approve and track creator and media payments.",
-  "Report 报表中心": "Report Center", "生成管理摘要，导出目标达成数据。": "Generate management summaries and export performance data.",
-  "基础配置": "Settings", "配置审批规则、提醒和系统偏好。": "Configure approvals, reminders and workspace preferences.",
-  "新建 Campaign": "New Campaign", "添加 KOL": "Add KOL", "创建任务": "Create Task", "新建寄样": "New Shipment", "登记 Post": "Add Post", "申请付款": "Request Payment", "登记费用": "Add Expense",
-  "搜索当前模块...": "Search this module...", "品牌工作台": "Brand Dashboard", "本月目标与达成": "Monthly target and achievement", "保存": "Save", "取消": "Cancel", "清除筛选": "Clear filters", "编辑目标": "Edit target", "推进状态": "Advance", "更新状态": "Update", "删除": "Delete", "批准": "Approve", "拒绝": "Reject", "推进": "Advance", "导出 CSV": "Export CSV", "生成 AI 报告": "Generate AI report",
-  "总预算": "Total budget", "已使用": "Spent", "可用余额": "Available", "待审批": "Pending approval", "预算分配": "Budget allocation", "登记费用后会实时更新使用率": "Usage updates immediately after an expense is added",
-  "目标达成": "Target achievement", "查看全部 →": "View all →", "管理活动 →": "Manage campaigns →", "AI 管理摘要": "AI management summary", "基于目标、预算和发布结果": "Based on targets, budget and publishing results", "表现领先": "Leading performance", "需要跟进": "Needs attention", "今日动作": "Actions today", "重点 Campaign": "Priority campaigns", "点击状态即可推进工作流": "Click a status to advance the workflow",
-  "产品目标与达成": "Product targets and achievement", "目标支持直接编辑，达成数据来自发布结果": "Targets are editable; actuals come from publishing results", "达人池共": "Creator pool", "位": " creators", "较上月": "vs last month", "目标": "Target", "费用提交后必须经过管理员审批": "Expenses require admin approval", "Post 发布前必须通过品牌审核": "Posts require brand approval before publishing", "物流超过 3 天未签收时提醒 PIC": "Notify PIC when delivery is unsigned after 3 days",
-  "工作流规则": "Workflow rules", "修改后自动保存在当前浏览器": "Changes are saved in this browser", "预算审批": "Budget approval", "内容审核": "Content review", "样品提醒": "Sample reminder", "达人等级规则": "Creator tier rules", "用于预算与发布结构分析": "Used for budget and publishing mix analysis",
-  "待启动": "Not started", "进行中": "In progress", "已完成": "Completed", "候选": "Candidate", "待确认": "Pending confirmation", "合作中": "Active", "已暂停": "Paused", "待分配": "Unassigned", "制作中": "In production", "待审核": "In review", "待发货": "Ready to ship", "运输中": "In transit", "已签收": "Delivered", "已批准": "Approved", "付款中": "Processing", "已付款": "Paid", "已拒绝": "Rejected", "暂无任务": "No tasks", "清除": "Clear",
-  "全部产品": "All products", "全部等级": "All tiers", "需要 PIC 跟进": "PIC follow-up required", "搜索达人、平台、品类": "Search creator, platform or category",
-  "Budget 使用率": "Budget usage", "Post MTD": "Post MTD", "GMV MTD": "GMV MTD", "合作中 KOL": "Active KOLs", "达人池共 ": "Creator pool: ", " 位": " creators", "较上月 ↑ 12.8%": "↑ 12.8% vs last month",
-  "Serum Spray 发布达成 73%，GMV 转化领先。建议复用即时补水 Hook，并增加 A 级达人。": "Serum Spray reached 73% of publishing target with leading GMV conversion. Reuse the instant-hydration hook and add A-tier creators.",
-  "Day Cream 发布仅达 22%，预算节奏同步偏慢。优先推动已收样达人在本周完成发布。": "Day Cream publishing is only 22% and budget pacing is slow. Prioritize creators who already received samples to publish this week.",
-  "审批 1 笔达人付款、确认 2 个待发样品、完成 3 条内容审核。": "Approve one creator payment, confirm two sample shipments and complete three content reviews.",
-  "本月内容产出": "Monthly content", "发布结果": "Publishing results", "月度目标": "Monthly target", "本次费用": "Expense amount", "说明": "Description", "负责人": "Owner", "结束日期": "End date", "达人名称": "Creator name", "平台": "Platform", "达人等级": "Creator tier", "内容品类": "Content category", "粉丝数": "Followers", "合作报价": "Rate", "任务名称": "Task name", "所属 Campaign": "Campaign", "渠道": "Channel", "截止日期": "Due date", "产品": "Product", "数量": "Quantity", "物流单号": "Tracking number", "计划日期": "Planned date", "收款方": "Payee", "付款事项": "Payment item", "金额": "Amount", "申请人": "Requester", "预算分类": "Budget category",
-  "AI 周报": "AI Weekly Report", "AI 月报": "AI Monthly Report", "1. 目标达成": "1. Target achievement", "2. Gap 诊断": "2. Gap diagnosis", "3. 行动建议": "3. Recommended actions", "管理透视": "Management lens", "管理意见": "Management guidance",
-  "Post MTD 达成 ": "Post MTD achievement is ", "%，整体接近时间进度；GMV 达成 55%，预算使用 56%。": "%, close to elapsed-time pace; GMV is at 55% and budget usage at 56%.",
-  "Day Cream 发布节奏落后，主要缺口集中在 A/B 级达人。Tone-Up Sunscreen 流量健康但转化仍可提升。": "Day Cream publishing is behind, mainly due to A/B-tier creator gaps. Tone-Up Sunscreen has healthy traffic but conversion can improve.",
-  "本周优先推动 4 条待发布内容，复制 Serum Spray 高转化 Hook，并完成待审批付款。": "Prioritize four pending posts this week, replicate Serum Spray's high-converting hook and complete pending payment approvals.",
-  "下半月预算应向高 ROI 产品倾斜，同时把发布节奏纳入 PIC 每日跟进。": "Shift second-half budget toward high-ROI products and make publishing pace part of daily PIC follow-up.",
-  "新建寄样": "New sample shipment", "登记 Video / Post": "Add Video / Post", "编辑月度目标": "Edit monthly target", "创建内容任务": "Create content task",
+const groupIcons: Record<string, LucideIcon> = {
+  home: Home,
+  target: Target,
+  creator: Users,
+  content: ClipboardList,
+  finance: CircleDollarSign,
+  analysis: BarChart3,
+  basic: Database,
+  system: Settings,
+  monitor: Monitor,
 };
 
-function translateTree(node: ReactNode): ReactNode {
-  if (typeof node === "string") return EN[node] || node;
-  if (Array.isArray(node)) return node.map(translateTree);
-  if (isValidElement(node)) {
-    const element = node as ReactElement<Record<string, unknown>>;
-    const props = element.props || {};
-    const translated: Record<string, unknown> = {};
-    for (const key of ["title", "desc", "placeholder", "aria-label", "label"]) if (typeof props[key] === "string") translated[key] = EN[props[key] as string] || props[key];
-    if ("action" in props) translated.action = translateTree(props.action as ReactNode);
-    if ("children" in props) translated.children = translateTree(props.children as ReactNode);
-    return cloneElement(element, translated);
+const pageIcons: Partial<Record<PageKey, LucideIcon>> = {
+  home: Gauge,
+  targetDashboard: LayoutDashboard,
+  target1: ClipboardList,
+  productTarget: BarChart3,
+  ownTarget: ListChecks,
+  creator: Users,
+  sample: Package,
+  campaign: FolderKanban,
+  reviews: FileText,
+  lsaReviews: FileText,
+  lsaKocReviews: FileText,
+  ownMediaReview: BookOpen,
+  inhouseContent: Box,
+  payment: WalletCards,
+  paymentPriceChange: RefreshCcw,
+  paymentAnalytics: FileBarChart,
+  paymentReview: FileBarChart,
+  yellowBasket: BarChart3,
+  topRankVideo: BarChart3,
+  targetAnalytics: Target,
+  productAnalytics: BarChart3,
+  reviewLevelAnalytics: BarChart3,
+  videoAnalytics: BarChart3,
+  kolTargetReport: FileBarChart,
+  missingPid: CircleHelp,
+  brandData: Building2,
+  productData: Box,
+  budgetRule: WalletCards,
+  users: UserCog,
+  roles: ShieldCheck,
+  menus: Menu,
+  notices: Megaphone,
+  operLogs: Activity,
+  loginLogs: LogIn,
+  onlineUsers: UserRoundCheck,
+};
+
+const actionIcons: Record<ActionKey, LucideIcon> = {
+  add: Plus,
+  edit: Edit3,
+  delete: Trash2,
+  import: Upload,
+  export: Download,
+  approve: Check,
+  clear: RotateCcw,
+  unlock: LockKeyholeOpen,
+};
+
+const initialRows = Object.fromEntries(
+  Object.entries(pageConfigs)
+    .filter((entry): entry is [string, PageConfig] => Boolean(entry[1]))
+    .map(([key, config]) => [key, (config.seed || []).map((row) => ({ ...row }))]),
+) as RowStore;
+
+const budgetRuleSeeds: Record<string, Row[]> = {
+  content: [
+    { id: 1, contentType: "Vlog", angleName: "Before & After", status: "Approved" },
+    { id: 2, contentType: "TTS", angleName: "Problem / Solution", status: "Approved" },
+    { id: 3, contentType: "Photoslide", angleName: "Texture & Ingredients", status: "Approved" },
+  ],
+  stage: [
+    { id: 1, englishName: "Introduction", chineseDescription: "导入期", status: "Approved" },
+    { id: 2, englishName: "Growth", chineseDescription: "成长期", status: "Approved" },
+    { id: 3, englishName: "Maturity", chineseDescription: "成熟期", status: "Approved" },
+  ],
+  tier: [
+    { id: 1, country: "ID", creatorType: "KOL", tier: "S", unitPrice: 2500000, status: "Approved" },
+    { id: 2, country: "ID", creatorType: "KOL", tier: "A", unitPrice: 1200000, status: "Approved" },
+    { id: 3, country: "ID", creatorType: "KOC", tier: "B", unitPrice: 450000, status: "Approved" },
+  ],
+};
+
+function useStored<T>(key: string, seed: T): [T, Dispatch<SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(seed);
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    let savedValue: T | undefined;
+    try {
+      const saved = window.localStorage.getItem(key);
+      if (saved) savedValue = JSON.parse(saved) as T;
+    } catch {
+      // Continue with the supplied demo data when storage is unavailable.
+    }
+    const timer = window.setTimeout(() => {
+      if (savedValue !== undefined) setValue(savedValue);
+      hydrated.current = true;
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [key]);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // The demo remains usable even if browser storage is full or disabled.
+    }
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+function label(zh: string, en: string, language: Language) {
+  return language === "zh" ? zh : en;
+}
+
+function compactNumber(value: number) {
+  return new Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function numeric(value: unknown) {
+  const result = Number(value);
+  return Number.isFinite(result) ? result : 0;
+}
+
+function percent(actual: number, target: number) {
+  return Math.max(0, Math.round((actual / Math.max(target, 1)) * 100));
+}
+
+function statusTone(value: unknown) {
+  const text = String(value || "").toLowerCase();
+  if (/approved|published|delivered|paid|success|normal|online|已通过|已发布|已签收|成功/.test(text)) return "good";
+  if (/rejected|failed|overdue|delayed|disabled|已拒绝|失败|逾期/.test(text)) return "bad";
+  if (/pending|draft|shipping|processing|待|运输|草稿/.test(text)) return "warn";
+  return "info";
+}
+
+function isStatusColumn(key: string) {
+  return /status|approval|paid|consistent|progress$/i.test(key);
+}
+
+function formatCell(key: string, value: unknown): ReactNode {
+  if (value === null || value === undefined || value === "") return <span className="empty-cell">—</span>;
+  if (key === "country") {
+    const code = String(value).toLowerCase();
+    return (
+      <span className="country-cell">
+        <span className={`fi fi-${code}`} aria-hidden="true" />
+        {String(value)}
+      </span>
+    );
   }
-  return node;
+  if (key === "avatar") return <span className="table-avatar">{String(value).slice(0, 2).toUpperCase()}</span>;
+  if (isStatusColumn(key)) return <span className={`status-pill ${statusTone(value)}`}>{String(value)}</span>;
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") {
+    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+  }
+  const text = String(value);
+  if (/^https?:\/\//.test(text)) {
+    return (
+      <a href={text} target="_blank" rel="noreferrer" className="table-link">
+        {text.replace(/^https?:\/\//, "")}
+      </a>
+    );
+  }
+  return text;
 }
 
-function Progress({ value, tone = "purple" }: { value: number; tone?: string }) {
-  return <div className="progress"><i className={tone} style={{ width: `${Math.min(value, 100)}%` }} /></div>;
+function parseCsvLine(line: string) {
+  const cells: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === "," && !quoted) {
+      cells.push(current.trim());
+      current = "";
+    } else {
+      current += character;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
 }
 
-function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
-  const english = typeof document !== "undefined" && document.documentElement.lang === "en";
-  return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}><section className="modal"><header><h3>{english ? EN[title] || title : title}</h3><button onClick={onClose} aria-label="关闭">×</button></header>{english ? translateTree(children) : children}</section></div>;
+function toCsvCell(value: unknown) {
+  const text = String(value ?? "");
+  return `"${text.replaceAll('"', '""')}"`;
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="field"><span>{label}</span>{children}</label>; }
+function downloadCsv(name: string, columns: ColumnDef[], rows: Row[], language: Language) {
+  const header = columns.map((column) => toCsvCell(label(column.zh, column.en, language))).join(",");
+  const body = rows.map((row) => columns.map((column) => toCsvCell(row[column.key])).join(",")).join("\n");
+  const blob = new Blob([`\uFEFF${header}\n${body}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${name.replaceAll(" ", "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function Modal({
+  title,
+  children,
+  onClose,
+  wide = false,
+}: {
+  title: string;
+  children: ReactNode;
+  onClose: () => void;
+  wide?: boolean;
+}) {
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className={`modal ${wide ? "modal-wide" : ""}`} role="dialog" aria-modal="true">
+        <header className="modal-header">
+          <h3>{title}</h3>
+          <button className="icon-button" onClick={onClose} aria-label="Close">
+            <X size={17} />
+          </button>
+        </header>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+function FieldControl({
+  field,
+  value,
+  language,
+  onChange,
+  filter = false,
+}: {
+  field: FieldDef;
+  value: unknown;
+  language: Language;
+  onChange: (value: unknown) => void;
+  filter?: boolean;
+}) {
+  const textLabel = label(field.zh, field.en, language);
+  if (field.kind === "select" || field.kind === "radio") {
+    return (
+      <select value={String(value ?? "")} onChange={(event) => onChange(event.target.value)}>
+        <option value="">{filter ? label("全部", "All", language) : label("请选择", "Select", language)}</option>
+        {(field.options || []).map((option) => (
+          <option key={option.value} value={option.value}>
+            {label(option.zh, option.en, language)}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  if (field.kind === "textarea") {
+    return (
+      <textarea
+        value={String(value ?? "")}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={language === "zh" ? field.placeholderZh : field.placeholderEn}
+        rows={3}
+      />
+    );
+  }
+  if (field.kind === "checkbox") {
+    return (
+      <label className="check-control">
+        <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(event.target.checked)} />
+        <span>{textLabel}</span>
+      </label>
+    );
+  }
+  if (field.kind === "file") {
+    return (
+      <input
+        type="file"
+        onChange={(event) => onChange(event.target.files?.[0]?.name || "")}
+        aria-label={textLabel}
+      />
+    );
+  }
+  const isMonth = field.kind === "date" && field.key.toLowerCase().includes("month");
+  const inputType = field.kind === "number" ? "number" : field.kind === "date" ? (isMonth ? "month" : "date") : "text";
+  return (
+    <input
+      type={inputType}
+      value={String(value ?? "")}
+      onChange={(event) => onChange(field.kind === "number" ? event.target.value : event.target.value)}
+      placeholder={(language === "zh" ? field.placeholderZh : field.placeholderEn) || textLabel}
+    />
+  );
+}
+
+function RecordModal({
+  config,
+  row,
+  language,
+  onSave,
+  onClose,
+}: {
+  config: PageConfig;
+  row: Row | null;
+  language: Language;
+  onSave: (row: Row) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<Record<string, unknown>>(() =>
+    Object.fromEntries(config.fields.map((field) => [field.key, row?.[field.key] ?? ""])),
+  );
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const normalized = Object.fromEntries(
+      config.fields.map((field) => {
+        const value = form[field.key];
+        if (field.kind === "number" && value !== "") return [field.key, numeric(value)];
+        return [field.key, value];
+      }),
+    );
+    onSave({
+      ...(row || {}),
+      ...normalized,
+      id: row?.id ?? Date.now(),
+      updatedAt: new Date().toISOString().slice(0, 16).replace("T", " "),
+    });
+  }
+
+  return (
+    <Modal
+      title={row ? label("修改记录", "Edit Record", language) : label("新增记录", "Add Record", language)}
+      onClose={onClose}
+      wide={config.fields.length > 8}
+    >
+      <form onSubmit={submit}>
+        <div className="form-grid">
+          {config.fields.map((field) => (
+            <label key={field.key} className={`form-field ${field.wide ? "wide" : ""}`}>
+              <span>{label(field.zh, field.en, language)}</span>
+              <FieldControl
+                field={field}
+                value={form[field.key]}
+                language={language}
+                onChange={(value) => setForm((current) => ({ ...current, [field.key]: value }))}
+              />
+            </label>
+          ))}
+        </div>
+        <footer className="modal-footer">
+          <button type="button" className="button ghost" onClick={onClose}>
+            {label("取消", "Cancel", language)}
+          </button>
+          <button type="submit" className="button primary">
+            <Check size={14} />
+            {label("保存", "Save", language)}
+          </button>
+        </footer>
+      </form>
+    </Modal>
+  );
+}
+
+function EmptyState({ language }: { language: Language }) {
+  return (
+    <div className="empty-state">
+      <Database size={30} strokeWidth={1.4} />
+      <strong>{label("暂无数据", "No data", language)}</strong>
+      <span>{label("调整筛选条件，或新增一条记录。", "Adjust filters or add a record.", language)}</span>
+    </div>
+  );
+}
+
+function TablePage({
+  config,
+  rows,
+  setRows,
+  language,
+  canEdit,
+  canApprove,
+  notify,
+}: {
+  config: PageConfig;
+  rows: Row[];
+  setRows: (next: Row[]) => void;
+  language: Language;
+  canEdit: boolean;
+  canApprove: boolean;
+  notify: (message: string) => void;
+}) {
+  const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>({});
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>({});
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [editing, setEditing] = useState<Row | null | undefined>(undefined);
+  const [activeView, setActiveView] = useState(config.views?.[0]?.key || "");
+  const [page, setPage] = useState(1);
+  const importRef = useRef<HTMLInputElement>(null);
+
+  const columns = config.views?.find((view) => view.key === activeView)?.columns || config.columns;
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((row) =>
+        Object.entries(appliedFilters).every(([key, expected]) => {
+          if (expected === "" || expected === undefined || expected === false) return true;
+          return String(row[key] ?? "")
+            .toLowerCase()
+            .includes(String(expected).toLowerCase());
+        }),
+      ),
+    [rows, appliedFilters],
+  );
+  const pageSize = 8;
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const visibleRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const selectedRows = rows.filter((row) => selected.has(String(row.id)));
+
+  function toggleRow(id: Row["id"]) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(String(id))) next.delete(String(id));
+      else next.add(String(id));
+      return next;
+    });
+  }
+
+  function selectPage(checked: boolean) {
+    setSelected((current) => {
+      const next = new Set(current);
+      visibleRows.forEach((row) => (checked ? next.add(String(row.id)) : next.delete(String(row.id))));
+      return next;
+    });
+  }
+
+  function saveRow(nextRow: Row) {
+    const exists = rows.some((row) => String(row.id) === String(nextRow.id));
+    setRows(exists ? rows.map((row) => (String(row.id) === String(nextRow.id) ? nextRow : row)) : [nextRow, ...rows]);
+    setEditing(undefined);
+    notify(exists ? label("记录已更新", "Record updated", language) : label("记录已创建", "Record created", language));
+  }
+
+  function requireSelection(single = false) {
+    if (!selectedRows.length) {
+      notify(label("请先选择记录", "Select a record first", language));
+      return false;
+    }
+    if (single && selectedRows.length !== 1) {
+      notify(label("请选择一条记录", "Select exactly one record", language));
+      return false;
+    }
+    return true;
+  }
+
+  function approveRows(kind: "standard" | "supervisor" | "ceo" = "standard") {
+    if (!requireSelection()) return;
+    setRows(
+      rows.map((row) => {
+        if (!selected.has(String(row.id))) return row;
+        if (config.key === "productTarget") return { ...row, status: "Published" };
+        if (kind === "supervisor") return { ...row, supervisorApproval: "Approved" };
+        if (kind === "ceo") return { ...row, ceoApproval: "Approved" };
+        if ("approvalStatus" in row) return { ...row, approvalStatus: "Approved", approvedAt: new Date().toISOString().slice(0, 10) };
+        if ("postStatus" in row) return { ...row, postStatus: "Approved" };
+        return { ...row, status: "Approved" };
+      }),
+    );
+    notify(label("审批状态已更新", "Approval status updated", language));
+  }
+
+  function runAction(action: ActionKey) {
+    if (action === "export") {
+      downloadCsv(label(config.titleZh, config.titleEn, language), columns, filteredRows, language);
+      notify(label("已导出 CSV", "CSV exported", language));
+      return;
+    }
+    if (action === "import") {
+      importRef.current?.click();
+      return;
+    }
+    if (action === "add") {
+      setEditing(null);
+      return;
+    }
+    if (action === "edit") {
+      if (requireSelection(true)) setEditing(selectedRows[0]);
+      return;
+    }
+    if (action === "approve") {
+      approveRows();
+      return;
+    }
+    if (action === "unlock") {
+      if (!requireSelection()) return;
+      setRows(rows.map((row) => (selected.has(String(row.id)) ? { ...row, status: "Approved", description: "Account unlocked" } : row)));
+      notify(label("账号已解锁", "Account unlocked", language));
+      return;
+    }
+    if (action === "delete") {
+      if (!requireSelection()) return;
+      if (!window.confirm(label(`确认删除已选的 ${selectedRows.length} 条记录？`, `Delete ${selectedRows.length} selected record(s)?`, language))) return;
+      setRows(rows.filter((row) => !selected.has(String(row.id))));
+      setSelected(new Set());
+      notify(label("记录已删除", "Records deleted", language));
+      return;
+    }
+    if (action === "clear") {
+      if (!window.confirm(label("确认清空当前列表？", "Clear the current list?", language))) return;
+      setRows([]);
+      setSelected(new Set());
+      notify(label("列表已清空", "List cleared", language));
+    }
+  }
+
+  async function importCsv(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const source = await file.text();
+    const lines = source.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) {
+      notify(label("CSV 中没有可导入的数据", "No importable data in CSV", language));
+      return;
+    }
+    const headers = parseCsvLine(lines[0]);
+    const availableFields = [...config.fields, ...config.columns.map((column) => ({ ...column, kind: "text" as const }))];
+    const keys = headers.map((header) => {
+      const match = availableFields.find(
+        (field) => field.key.toLowerCase() === header.toLowerCase() || field.zh === header || field.en === header,
+      );
+      return match?.key || header;
+    });
+    const imported = lines.slice(1).map((line, index) => {
+      const cells = parseCsvLine(line);
+      return Object.fromEntries([["id", Date.now() + index], ...keys.map((key, cellIndex) => [key, cells[cellIndex] ?? ""])]) as Row;
+    });
+    setRows([...imported, ...rows]);
+    event.target.value = "";
+    notify(label(`已导入 ${imported.length} 条记录`, `Imported ${imported.length} records`, language));
+  }
+
+  const actionAllowed = (action: ActionKey) => {
+    if (action === "export") return true;
+    if (action === "approve") return canApprove;
+    return canEdit;
+  };
+
+  const actionText = (action: ActionKey) => {
+    if (action === "approve" && config.key === "productTarget") return label("批量发布", "Batch Publish", language);
+    const names: Record<ActionKey, [string, string]> = {
+      add: ["新增", "Add"],
+      edit: ["修改", "Edit"],
+      delete: ["删除", "Delete"],
+      import: ["导入", "Import"],
+      export: ["导出", "Export"],
+      approve: ["审批", "Approve"],
+      clear: ["清空", "Clear"],
+      unlock: ["解锁", "Unlock"],
+    };
+    return label(names[action][0], names[action][1], language);
+  };
+
+  return (
+    <div className="page-stack">
+      <section className="page-heading">
+        <div>
+          <h1>{label(config.titleZh, config.titleEn, language)}</h1>
+          <p>{label(config.descZh, config.descEn, language)}</p>
+        </div>
+        <span className="record-count">{label(`共 ${filteredRows.length} 条`, `${filteredRows.length} records`, language)}</span>
+      </section>
+
+      {config.filters.length > 0 && (
+        <section className="filter-card">
+          <div className="filter-grid">
+            {config.filters.map((field) => (
+              <label className="filter-field" key={field.key}>
+                <span>{label(field.zh, field.en, language)}</span>
+                <FieldControl
+                  field={field}
+                  value={draftFilters[field.key]}
+                  language={language}
+                  filter
+                  onChange={(value) => setDraftFilters((current) => ({ ...current, [field.key]: value }))}
+                />
+              </label>
+            ))}
+            <div className="filter-actions">
+              <button
+                className="button primary"
+                onClick={() => {
+                  setAppliedFilters(draftFilters);
+                  setPage(1);
+                }}
+              >
+                <Search size={14} />
+                {label("搜索", "Search", language)}
+              </button>
+              <button
+                className="button ghost"
+                onClick={() => {
+                  setDraftFilters({});
+                  setAppliedFilters({});
+                  setPage(1);
+                }}
+              >
+                <RefreshCcw size={14} />
+                {label("重置", "Reset", language)}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="table-card">
+        <div className="table-toolbar">
+          <div className="toolbar-actions">
+            {config.actions.map((action) => {
+              if (!actionAllowed(action)) return null;
+              const Icon = actionIcons[action];
+              if (action === "approve" && config.key === "payment") {
+                return (
+                  <span className="split-actions" key={action}>
+                    <button className="button approve" onClick={() => approveRows("supervisor")}>
+                      <CheckCircle2 size={14} />
+                      {label("主管审批", "Supervisor Approve", language)}
+                    </button>
+                    <button className="button approve" onClick={() => approveRows("ceo")}>
+                      <ShieldCheck size={14} />
+                      {label("CEO 审批", "CEO Approve", language)}
+                    </button>
+                  </span>
+                );
+              }
+              return (
+                <button
+                  key={action}
+                  className={`button ${action === "add" ? "primary" : action === "delete" || action === "clear" ? "danger-outline" : action === "approve" ? "approve" : "ghost"}`}
+                  onClick={() => runAction(action)}
+                >
+                  <Icon size={14} />
+                  {actionText(action)}
+                </button>
+              );
+            })}
+            <input ref={importRef} className="hidden-input" type="file" accept=".csv,text/csv" onChange={importCsv} />
+          </div>
+          <span className="selection-copy">
+            {selected.size
+              ? label(`已选 ${selected.size} 条`, `${selected.size} selected`, language)
+              : label("请选择要操作的记录", "Select records to take action", language)}
+          </span>
+        </div>
+
+        {config.views && config.views.length > 0 && (
+          <div className="view-tabs">
+            {config.views.map((view) => (
+              <button key={view.key} className={activeView === view.key ? "active" : ""} onClick={() => setActiveView(view.key)}>
+                {label(view.zh, view.en, language)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="data-table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="select-column">
+                  <input
+                    type="checkbox"
+                    aria-label="Select current page"
+                    checked={visibleRows.length > 0 && visibleRows.every((row) => selected.has(String(row.id)))}
+                    onChange={(event) => selectPage(event.target.checked)}
+                  />
+                </th>
+                <th className="index-column">#</th>
+                {columns.map((column) => (
+                  <th key={column.key}>{label(column.zh, column.en, language)}</th>
+                ))}
+                {canEdit && config.fields.length > 0 && <th className="operation-column">{label("操作", "Actions", language)}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((row, rowIndex) => (
+                <tr key={String(row.id)} className={selected.has(String(row.id)) ? "selected" : ""}>
+                  <td className="select-column">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(String(row.id))}
+                      onChange={() => toggleRow(row.id)}
+                      aria-label={`Select row ${rowIndex + 1}`}
+                    />
+                  </td>
+                  <td className="index-column">{(currentPage - 1) * pageSize + rowIndex + 1}</td>
+                  {columns.map((column) => (
+                    <td key={column.key} title={String(row[column.key] ?? "")}>
+                      {formatCell(column.key, row[column.key])}
+                    </td>
+                  ))}
+                  {canEdit && config.fields.length > 0 && (
+                    <td className="operation-column">
+                      <button className="row-action" onClick={() => setEditing(row)} aria-label="Edit">
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        className="row-action danger"
+                        onClick={() => {
+                          if (!window.confirm(label("确认删除这条记录？", "Delete this record?", language))) return;
+                          setRows(rows.filter((item) => String(item.id) !== String(row.id)));
+                          notify(label("记录已删除", "Record deleted", language));
+                        }}
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {visibleRows.length === 0 && <EmptyState language={language} />}
+        </div>
+
+        <footer className="table-footer">
+          <span>
+            {label(
+              `显示 ${filteredRows.length ? (currentPage - 1) * pageSize + 1 : 0}–${Math.min(currentPage * pageSize, filteredRows.length)}，共 ${filteredRows.length} 条`,
+              `Showing ${filteredRows.length ? (currentPage - 1) * pageSize + 1 : 0}–${Math.min(currentPage * pageSize, filteredRows.length)} of ${filteredRows.length}`,
+              language,
+            )}
+          </span>
+          <div className="pagination">
+            <button disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+              <ChevronLeft size={14} />
+            </button>
+            <span>{currentPage} / {totalPages}</span>
+            <button disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </footer>
+      </section>
+
+      {editing !== undefined && (
+        <RecordModal config={config} row={editing} language={language} onSave={saveRow} onClose={() => setEditing(undefined)} />
+      )}
+    </div>
+  );
+}
+
+function MetricCard({
+  labelText,
+  value,
+  note,
+  icon: Icon,
+  tone = "blue",
+}: {
+  labelText: string;
+  value: string;
+  note: string;
+  icon: LucideIcon;
+  tone?: string;
+}) {
+  return (
+    <article className="metric-card">
+      <div className={`metric-icon ${tone}`}><Icon size={17} /></div>
+      <div>
+        <span>{labelText}</span>
+        <strong>{value}</strong>
+        <small>{note}</small>
+      </div>
+    </article>
+  );
+}
+
+function HomePage({
+  language,
+  onNavigate,
+}: {
+  language: Language;
+  onNavigate: (page: PageKey) => void;
+}) {
+  const activities = [
+    ["PID2026071785463", "Mami Si Kembar", "1,250,000 IDR", "Pending"],
+    ["RID20260803108934", "parasceria", "Day Cream · TikTok", "Published"],
+    ["TG-202608-001", "Nadia", "Tone Up Sunscreen", "Approved"],
+  ];
+  return (
+    <div className="page-stack">
+      <section className="page-heading home-heading">
+        <div>
+          <span className="eyebrow">MARKETING 3.0</span>
+          <h1>{label("营销运营总览", "Marketing Operations Overview", language)}</h1>
+          <p>{label("集中查看目标、达人、内容、付款与核心效果。", "Monitor targets, creators, content, payments and core performance.", language)}</p>
+        </div>
+        <button className="button primary" onClick={() => onNavigate("productTarget")}>
+          <Plus size={14} />
+          {label("创建目标", "Create Target", language)}
+        </button>
+      </section>
+      <div className="metrics-grid">
+        <MetricCard labelText={label("本月目标预算", "Monthly Target Budget", language)} value="IDR 72.0M" note={label("已使用 36%", "36% used", language)} icon={WalletCards} />
+        <MetricCard labelText={label("发布数量", "Published Videos", language)} value="45 / 84" note={label("月度达成 54%", "54% monthly progress", language)} icon={Send} tone="green" />
+        <MetricCard labelText={label("合作达人", "Active Creators", language)} value="128" note={label("本月新增 16", "16 added this month", language)} icon={Users} tone="purple" />
+        <MetricCard labelText={label("待审批付款", "Pending Payments", language)} value="12" note="IDR 18.4M" icon={CircleDollarSign} tone="amber" />
+      </div>
+      <div className="home-grid">
+        <section className="panel">
+          <div className="panel-title">
+            <div><h2>{label("目标执行进度", "Target Execution", language)}</h2><p>{label("按产品查看本月发布与预算节奏", "Monthly publishing and budget pace by product", language)}</p></div>
+            <button className="text-button" onClick={() => onNavigate("targetDashboard")}>{label("查看 Dashboard", "Open Dashboard", language)} <ChevronRight size={13} /></button>
+          </div>
+          {[
+            ["Tone Up Sunscreen", 73, 41],
+            ["Day Cream", 22, 29],
+            ["Body Scrub", 58, 46],
+            ["Juicy Tinted Lip Balm", 64, 52],
+          ].map(([name, post, budget]) => (
+            <div className="home-progress-row" key={String(name)}>
+              <strong>{name}</strong>
+              <div><span>Post</span><div className="micro-progress"><i style={{ width: `${post}%` }} /></div><b>{post}%</b></div>
+              <div><span>Budget</span><div className="micro-progress amber"><i style={{ width: `${budget}%` }} /></div><b>{budget}%</b></div>
+            </div>
+          ))}
+        </section>
+        <section className="panel">
+          <div className="panel-title"><div><h2>{label("快捷入口", "Quick Access", language)}</h2><p>{label("常用操作", "Common actions", language)}</p></div></div>
+          <div className="quick-grid">
+            {[
+              ["creator", Users, "达人档案", "Creators"],
+              ["reviews", FileText, "内容审核", "Reviews"],
+              ["payment", WalletCards, "付款审批", "Payments"],
+              ["kolTargetReport", FileBarChart, "目标分析", "Analytics"],
+            ].map(([page, Icon, zh, en]) => {
+              const QuickIcon = Icon as LucideIcon;
+              return <button key={String(page)} onClick={() => onNavigate(page as PageKey)}><QuickIcon size={18} /><span>{label(String(zh), String(en), language)}</span><ChevronRight size={13} /></button>;
+            })}
+          </div>
+        </section>
+      </div>
+      <section className="panel">
+        <div className="panel-title"><div><h2>{label("最新业务动态", "Recent Activity", language)}</h2><p>{label("来自付款、审核与目标模块", "From payment, review and target modules", language)}</p></div></div>
+        <div className="activity-list">
+          {activities.map((item) => (
+            <div key={item[0]}><span className="activity-dot" /><strong>{item[0]}</strong><span>{item[1]}</span><span>{item[2]}</span><span className={`status-pill ${statusTone(item[3])}`}>{item[3]}</span></div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+type DashboardBreakdown = {
+  name: string;
+  sub: string;
+  postMtd: number;
+  postTarget: number;
+  budgetMtd: number;
+  budgetTarget: number;
+};
+
+function ProgressSummary({
+  title,
+  actual,
+  target,
+  suffix,
+  tone,
+  language,
+}: {
+  title: string;
+  actual: number;
+  target: number;
+  suffix?: string;
+  tone: "green" | "amber";
+  language: Language;
+}) {
+  const rate = percent(actual, target);
+  const pace = rate - 57;
+  return (
+    <article className={`progress-summary ${tone}`}>
+      <div className="summary-top">
+        <strong>{title}</strong>
+        <span className={`status-pill ${pace >= -5 ? "good" : "warn"}`}>{pace >= -5 ? label("正常", "On Track", language) : label("偏慢", "Slow", language)}</span>
+      </div>
+      <div className="summary-values">
+        <div><b>{suffix}{compactNumber(actual)}</b><em>/ {suffix}{compactNumber(target)}</em><small>MTD / {label("月度目标", "Target", language)}</small></div>
+        <div><b>{suffix}{compactNumber(Math.max(target - actual, 0))}</b><small>{label("剩余", "Remaining", language)}</small></div>
+      </div>
+      <div className="progress-track"><i style={{ width: `${Math.min(rate, 100)}%` }} /></div>
+      <div className="summary-foot"><span>MTD&nbsp; <b>{rate}%</b></span><span>{label("节奏差", "Pace", language)} <b>{pace > 0 ? "+" : ""}{pace}%</b></span></div>
+    </article>
+  );
+}
+
+function TargetDashboard({
+  language,
+  targetRows,
+  notify,
+}: {
+  language: Language;
+  targetRows: Row[];
+  notify: (message: string) => void;
+}) {
+  const [tab, setTab] = useState("product");
+  const [resultTab, setResultTab] = useState("productTier");
+  const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
+  const [analysis, setAnalysis] = useState("");
+  const [resultOpen, setResultOpen] = useState(true);
+  const sourceRows = targetRows.length
+    ? targetRows
+    : [
+        { id: 1, product: "Tone Up Sunscreen", owner: "Nadia", qty: 38, qtyTarget: 52, actualCost: 17600000, budgetTarget: 43000000 },
+        { id: 2, product: "Day Cream", owner: "Delvi", qty: 7, qtyTarget: 32, actualCost: 8500000, budgetTarget: 29000000 },
+      ];
+  const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
+    name: String(row.product || "Product"),
+    sub: `Glowsicha · ${String(row.owner || "All PICs")}`,
+    postMtd: numeric(row.qty),
+    postTarget: numeric(row.qtyTarget),
+    budgetMtd: numeric(row.actualCost),
+    budgetTarget: numeric(row.budgetTarget),
+  }));
+  const tierRows: DashboardBreakdown[] = [
+    { name: "S Tier", sub: "4 Creators", postMtd: 4, postTarget: 8, budgetMtd: 7800000, budgetTarget: 16000000 },
+    { name: "A Tier", sub: "16 Creators", postMtd: 18, postTarget: 30, budgetMtd: 12100000, budgetTarget: 28000000 },
+    { name: "B Tier", sub: "32 Creators", postMtd: 23, postTarget: 46, budgetMtd: 6200000, budgetTarget: 28000000 },
+  ];
+  const picRows: DashboardBreakdown[] = [
+    { name: "Nadia", sub: "Tone Up Sunscreen · Body Scrub", postMtd: 28, postTarget: 48, budgetMtd: 16200000, budgetTarget: 39000000 },
+    { name: "Delvi", sub: "Day Cream · Hair Oil", postMtd: 17, postTarget: 36, budgetMtd: 9900000, budgetTarget: 33000000 },
+  ];
+  const rows = tab === "tier" ? tierRows : tab === "pic" ? picRows : tab === "productTier" ? [...productRows, ...tierRows.slice(0, 2)] : productRows;
+  const postMtd = productRows.reduce((sum, row) => sum + row.postMtd, 0);
+  const postTarget = productRows.reduce((sum, row) => sum + row.postTarget, 0);
+  const budgetMtd = productRows.reduce((sum, row) => sum + row.budgetMtd, 0);
+  const budgetTarget = productRows.reduce((sum, row) => sum + row.budgetTarget, 0);
+  const tabs = [
+    ["product", "产品", "Product"],
+    ["tier", "达人等级", "Creator Tier"],
+    ["productTier", "产品 & 达人等级", "Product × Creator Tier"],
+    ["tierProduct", "达人等级 & 产品", "Creator Tier × Product"],
+    ["pic", "PIC", "PIC"],
+  ];
+
+  return (
+    <div className="page-stack target-dashboard">
+      <section className="dashboard-filter">
+        {[
+          ["country", "国家", "Country", ["ID", "MY", "VN", "TH", "PH"]],
+          ["month", "月份", "Month", ["2026-08", "2026-07", "2026-06"]],
+          ["brand", "品牌", "Brand", ["", "Glowsicha", "Glad2Glow", "Skintific"]],
+          ["owner", "负责人", "PIC", ["", "Nadia", "Delvi", "Shafi", "Cilla"]],
+        ].map(([key, zh, en, options]) => (
+          <label key={String(key)}><span>{label(String(zh), String(en), language)}</span><select value={filters[String(key) as keyof typeof filters]} onChange={(event) => setFilters((current) => ({ ...current, [String(key)]: event.target.value }))}>{(options as string[]).map((option) => <option key={option || "all"} value={option}>{option || label("多选", "Multiple", language)}</option>)}</select></label>
+        ))}
+        <div className="filter-actions">
+          <button className="button primary" onClick={() => notify(label("Dashboard 已按条件刷新", "Dashboard filters applied", language))}><Search size={14} />{label("搜索", "Search", language)}</button>
+          <button className="button ghost" onClick={() => setFilters({ country: "ID", month: "2026-08", brand: "", owner: "" })}><RefreshCcw size={14} />{label("重置", "Reset", language)}</button>
+        </div>
+      </section>
+
+      <div className="dashboard-grid">
+        <section className="panel progress-panel">
+          <div className="section-caption"><span />{label("发布进度", "Publishing Progress", language)}</div>
+          <div className="progress-pair">
+            <ProgressSummary title={label("发布数量", "Post", language)} actual={postMtd} target={postTarget} tone="green" language={language} />
+            <ProgressSummary title={label("预算花费", "Budget", language)} actual={budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" language={language} />
+          </div>
+          <div className="dashboard-tabs">
+            {tabs.map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}
+          </div>
+          <div className="data-table-wrap dashboard-table-wrap">
+            <table className="data-table dashboard-table">
+              <thead>
+                <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
+                <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const postRate = percent(row.postMtd, row.postTarget);
+                  const budgetRate = percent(row.budgetMtd, row.budgetTarget);
+                  return (
+                    <tr key={`${row.name}-${row.sub}`}>
+                      <td><strong>{row.name}</strong><small>{row.sub}</small></td>
+                      <td><b>{row.postMtd}/{row.postTarget}</b></td>
+                      <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
+                      <td><span className={`pace-copy ${postRate < 45 ? "bad" : "good"}`}>MTD {postRate}%</span><div className="micro-progress"><i style={{ width: `${postRate}%` }} /></div></td>
+                      <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
+                      <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
+                      <td><span className={`pace-copy ${budgetRate < 40 ? "warn" : "good"}`}>MTD {budgetRate}%</span><div className="micro-progress amber"><i style={{ width: `${budgetRate}%` }} /></div></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <aside className="panel analysis-panel">
+          <div className="section-caption"><span />{label("分析说明", "Analysis Notes", language)}<button onClick={() => setAnalysis(label("发布数量达成 54%，接近时间节奏；Day Cream 仍有 25 条缺口。预算花费达成 36%，建议本周优先推动已收样的 A/B 级达人发布。", "Publishing reached 54%, close to elapsed-time pace. Day Cream still has a 25-post gap. Budget is at 36%; prioritize sampled A/B-tier creators this week.", language))}><Sparkles size={13} />AI</button></div>
+          {analysis ? <p className="analysis-copy">{analysis}</p> : <div className="analysis-empty"><Sparkles size={25} /><span>{label("点击右上角 AI 生成分析说明", "Use AI to generate an analysis note", language)}</span></div>}
+        </aside>
+      </div>
+
+      <section className="panel results-panel">
+        <div className="panel-title">
+          <div><span className="eyebrow">PUBLISHING RESULTS</span><h2>{label("发布结果", "Publishing Results", language)}</h2><p>{label("对比投入、商业结果和流量效率。", "Compare investment, business outcomes and traffic efficiency.", language)}</p></div>
+          <button className="button soft" onClick={() => setResultOpen((value) => !value)}>{resultOpen ? label("收起明细", "Hide Breakdown", language) : label("展开明细", "Show Breakdown", language)}<ChevronDown size={14} className={resultOpen ? "rotate" : ""} /></button>
+        </div>
+        <div className="result-metrics">
+          {[
+            ["Post", String(postMtd), String(postTarget), percent(postMtd, postTarget), "+10%"],
+            ["Budget", `IDR ${compactNumber(budgetMtd)}`, `IDR ${compactNumber(budgetTarget)}`, percent(budgetMtd, budgetTarget), "-6%"],
+            ["GMV", "IDR 333M", "IDR 640M", 52, "+10%"],
+            ["ROI", "11.48", "8.89", 129, "+48%"],
+            ["Views", "2.7M", "4.2M", 64, "+11%"],
+            ["CPM", "9.7K", "17.1K", 77, "-33%"],
+          ].map(([name, value, target, rate, trend]) => (
+            <article key={String(name)}><span>{name}</span><strong>{value}</strong><small>Target {target}</small><div><b>{rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(Number(rate), 100)}%` }} /></div></div><em className={String(trend).startsWith("+") || name === "CPM" ? "good" : "warn"}>{trend} {label("较上月", "vs last month", language)}</em></article>
+          ))}
+        </div>
+        {resultOpen && (
+          <div className="results-breakdown">
+            <div className="breakdown-heading"><div><h3>{label("结果明细", "Results Breakdown", language)}</h3><p>{label("六项核心指标：Post、Budget、GMV、ROI、Views、CPM。", "Six core KPIs: Post, Budget, GMV, ROI, Views and CPM.", language)}</p></div><div className="dashboard-tabs">{[["product", "产品", "Product"], ["tier", "达人等级", "Creator Tier"], ["productTier", "产品 × 达人等级", "Product × Creator Tier"]].map(([key, zh, en]) => <button key={key} className={resultTab === key ? "active" : ""} onClick={() => setResultTab(key)}>{label(zh, en, language)}</button>)}</div></div>
+            <div className="tier-result-card"><div><strong>{resultTab === "tier" ? "A Tier" : "Tone Up Sunscreen · A Tier"}</strong><span className="status-pill good">{label("正常", "On Track", language)}</span></div><div className="tier-kpis"><span><small>Post</small><b>28 / 48</b></span><span><small>Budget</small><b>IDR 16.2M</b></span><span><small>GMV</small><b>IDR 218M</b></span><span><small>ROI</small><b>13.46</b></span><span><small>Views</small><b>1.9M</b></span><span><small>CPM</small><b>8.5K</b></span></div></div>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function BudgetRulePage({
+  language,
+  store,
+  setStore,
+  canEdit,
+  notify,
+}: {
+  language: Language;
+  store: Record<string, Row[]>;
+  setStore: Dispatch<SetStateAction<Record<string, Row[]>>>;
+  canEdit: boolean;
+  notify: (message: string) => void;
+}) {
+  const [tab, setTab] = useState("content");
+  const option = (value: string, zh = value, en = value) => ({ value, zh, en });
+  const configs: Record<string, PageConfig> = {
+    content: {
+      key: "budgetRule", titleZh: "Budget Rule Config", titleEn: "Budget Rule Config",
+      descZh: "配置内容类型与内容角度。", descEn: "Configure content types and content angles.",
+      filters: [{ key: "contentType", zh: "内容类型", en: "Content Type", kind: "text" }, { key: "angleName", zh: "内容角度", en: "Content Angle", kind: "text" }],
+      fields: [{ key: "contentType", zh: "内容类型名称", en: "Content Type Name", kind: "text" }, { key: "angleName", zh: "内容角度名称", en: "Content Angle Name", kind: "text" }, { key: "status", zh: "状态", en: "Status", kind: "select", options: [option("Approved", "启用", "Enabled"), option("Pending", "停用", "Disabled")] }],
+      columns: [{ key: "contentType", zh: "内容类型", en: "Content Type" }, { key: "angleName", zh: "内容角度", en: "Content Angle" }, { key: "status", zh: "状态", en: "Status" }],
+      actions: ["add", "edit", "delete", "export"],
+    },
+    stage: {
+      key: "budgetRule", titleZh: "Budget Rule Config", titleEn: "Budget Rule Config",
+      descZh: "配置产品生命周期阶段。", descEn: "Configure product lifecycle stages.",
+      filters: [{ key: "englishName", zh: "英文名称", en: "English Name", kind: "text" }],
+      fields: [{ key: "englishName", zh: "英文名称", en: "English Name", kind: "text" }, { key: "chineseDescription", zh: "中文描述", en: "Chinese Description", kind: "text" }, { key: "status", zh: "状态", en: "Status", kind: "select", options: [option("Approved", "启用", "Enabled"), option("Pending", "停用", "Disabled")] }],
+      columns: [{ key: "englishName", zh: "英文名称", en: "English Name" }, { key: "chineseDescription", zh: "中文描述", en: "Chinese Description" }, { key: "status", zh: "状态", en: "Status" }],
+      actions: ["add", "edit", "delete", "export"],
+    },
+    tier: {
+      key: "budgetRule", titleZh: "Budget Rule Config", titleEn: "Budget Rule Config",
+      descZh: "按国家、达人类型与等级配置预算单价。", descEn: "Configure unit budget by country, creator type and tier.",
+      filters: [{ key: "country", zh: "国家", en: "Country", kind: "select", options: ["ID", "MY", "VN", "TH", "PH"].map((value) => option(value)) }, { key: "creatorType", zh: "达人类型", en: "Creator Type", kind: "select", options: ["KOL", "KOC", "Others"].map((value) => option(value)) }],
+      fields: [{ key: "country", zh: "国家", en: "Country", kind: "select", options: ["ID", "MY", "VN", "TH", "PH"].map((value) => option(value)) }, { key: "creatorType", zh: "达人类型", en: "Creator Type", kind: "select", options: ["KOL", "KOC", "Others"].map((value) => option(value)) }, { key: "tier", zh: "达人等级", en: "Creator Tier", kind: "select", options: ["S", "A", "B", "C", "D"].map((value) => option(value)) }, { key: "unitPrice", zh: "单价", en: "Unit Price", kind: "number" }, { key: "status", zh: "状态", en: "Status", kind: "select", options: [option("Approved", "启用", "Enabled"), option("Pending", "停用", "Disabled")] }],
+      columns: [{ key: "country", zh: "国家", en: "Country" }, { key: "creatorType", zh: "达人类型", en: "Creator Type" }, { key: "tier", zh: "达人等级", en: "Creator Tier" }, { key: "unitPrice", zh: "单价", en: "Unit Price" }, { key: "status", zh: "状态", en: "Status" }],
+      actions: ["add", "edit", "delete", "export"],
+    },
+  };
+  return (
+    <div className="budget-rule-page">
+      <div className="rule-tabs">
+        {[["content", "内容类型 / 角度", "Content Type / Angles"], ["stage", "产品阶段", "Product Stage"], ["tier", "达人等级预算", "Creator Tier Budget"]].map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}
+      </div>
+      <TablePage key={tab} config={configs[tab]} rows={store[tab] || []} setRows={(next) => setStore((current) => ({ ...current, [tab]: next }))} language={language} canEdit={canEdit} canApprove={false} notify={notify} />
+    </div>
+  );
+}
 
 export default function MarketingSystem() {
-  const [active, setActive] = useState<MenuKey>("dashboard");
-  const [targets, setTargets] = useStored("mkt-targets", initialTargets);
-  const [budgets, setBudgets] = useStored("mkt-budgets", initialBudgets);
-  const [kols, setKols] = useStored("mkt-kols", initialKols);
-  const [campaigns, setCampaigns] = useStored("mkt-campaigns", initialCampaigns);
-  const [contents, setContents] = useStored("mkt-content", initialContent);
-  const [samples, setSamples] = useStored("mkt-samples", initialSamples);
-  const [posts, setPosts] = useStored("mkt-posts", initialPosts);
-  const [payments, setPayments] = useStored("mkt-payments", initialPayments);
-  const [settings, setSettings] = useStored("mkt-settings", { budgetApproval: true, contentReview: true, sampleReminder: true, currency: "CNY" });
-  const [language, setLanguage] = useStored("mkt-language", "zh");
-  const [theme, setTheme] = useStored("mkt-theme", "light");
-  const [role, setRole] = useStored<RoleKey>("mkt-role", "brand");
-  const [modal, setModal] = useState<ModalState>(null);
+  const [activePage, setActivePage] = useStored<PageKey>("marketing-v8-active-page", "targetDashboard");
+  const [language, setLanguage] = useStored<Language>("marketing-v8-language", "zh");
+  const [theme, setTheme] = useStored<Theme>("marketing-v8-theme", "dark");
+  const [role, setRole] = useStored<RoleKey>("marketing-v8-role", "admin");
+  const [rows, setRows] = useStored<RowStore>("marketing-v8-records", initialRows);
+  const [budgetRules, setBudgetRules] = useStored<Record<string, Row[]>>("marketing-v8-budget-rules", budgetRuleSeeds);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(["target"]));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [quickSearchOpen, setQuickSearchOpen] = useState(false);
+  const [quickSearch, setQuickSearch] = useState("");
+  const [utilityPanel, setUtilityPanel] = useState<"notice" | "help" | null>(null);
   const [toast, setToast] = useState("");
-  const [search, setSearch] = useState("");
-  const [scope, setScope] = useState("Brand Dashboard");
-  const [targetOpen, setTargetOpen] = useState(true);
-  const [progressMode, setProgressMode] = useState<"product" | "tier" | "cross">("product");
-  const [resultMode, setResultMode] = useState<"product" | "tier" | "cross">("cross");
-  const [resultsOpen, setResultsOpen] = useState(true);
-  const [productFilter, setProductFilter] = useState("全部产品");
-  const [tierFilter, setTierFilter] = useState("全部等级");
-  const [generatedAt, setGeneratedAt] = useState("");
-  const T = (text: string) => language === "en" ? EN[text] || text : text;
-  useEffect(() => { document.documentElement.dataset.theme = theme; document.documentElement.lang = language === "en" ? "en" : "zh-CN"; }, [language, theme]);
 
-  const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2200); };
-  const currentRole = roles.find(r => r.key === role) || roles[1];
-  const allowedMenus = menus.filter(m => currentRole.menus.includes(m.key));
-  const activeMenu = menus.find(m => m.key === active) || allowedMenus[0];
-  const canEditTarget = role === "country" || role === "brand" || role === "admin";
-  const canManageCampaign = role === "brand" || role === "ads" || role === "admin";
-  const canManageKol = role === "brand" || role === "kolPic" || role === "admin";
-  const canManageContent = role === "brand" || role === "kolPic" || role === "ads" || role === "admin";
-  const canManagePost = role === "brand" || role === "kolPic" || role === "ads" || role === "admin";
-  const canManageBudget = role === "brand" || role === "ads" || role === "finance" || role === "admin";
-  const canApprovePayment = role === "country" || role === "finance" || role === "admin";
-  const roleDesc = language === "en" ? ({ country: "Monitor brands, markets, investment efficiency and country-level risks.", brand: "Manage brand targets, creators, content, campaigns and publishing results.", kolPic: "Execute creator outreach, samples, content delivery and post publishing.", ads: "Manage paid-media budget, campaigns, creatives and performance.", finance: "Review budget usage, approve payments and monitor financial controls.", analyst: "Analyze targets, budget, creator mix and publishing performance.", admin: "Manage all modules, workflow rules, approvals and system-wide operations." } as Record<RoleKey,string>)[role] : ({ country: "查看品牌组合、市场表现、投资效率与国家级风险。", brand: "管理品牌目标、达人、内容、活动和发布结果。", kolPic: "执行达人建联、寄样、内容交付和发布跟进。", ads: "管理广告预算、投放活动、素材与效果表现。", finance: "审核预算使用、付款申请与财务合规。", analyst: "分析目标、预算、达人结构和发布效果。", admin: "管理全部模块、工作流规则、审批与系统级操作。" } as Record<RoleKey,string>)[role];
-  useEffect(() => { if (!currentRole.menus.includes(active)) setActive("dashboard"); }, [active, currentRole]);
-  const totalBudget = budgets.reduce((s, x) => s + x.allocated, 0);
-  const spentBudget = budgets.reduce((s, x) => s + x.spent, 0);
-  const totalGmv = targets.reduce((s, x) => s + x.gmvMtd, 0);
-  const totalPosts = targets.reduce((s, x) => s + x.postsMtd, 0);
-  const targetPosts = targets.reduce((s, x) => s + x.posts, 0);
-  const filteredPosts = posts.filter(x => (productFilter === "全部产品" || x.product === productFilter) && (tierFilter === "全部等级" || x.tier === tierFilter));
+  const roleConfig = roles.find((item) => item.key === role) || roles[roles.length - 1];
+  const allowedGroups = menuGroups.filter((group) => roleConfig.groups.includes(group.key));
+  const activeGroup = menuGroups.find((group) => group.pages.some((page) => page.key === activePage)) || menuGroups[0];
+  const activeItem = activeGroup.pages.find((page) => page.key === activePage) || activeGroup.pages[0];
+  const canEdit = roleConfig.canEdit.includes(pageGroup(activePage));
+  const canApprove = roleConfig.canApprove.includes(pageGroup(activePage));
 
-  function nextStatus(current: string, list: string[]) { return list[(list.indexOf(current) + 1) % list.length]; }
-  function cycleCampaign(id: number) { setCampaigns(rows => rows.map(r => r.id === id ? { ...r, status: nextStatus(r.status, ["待启动", "进行中", "已完成"]), progress: r.status === "待启动" ? 35 : r.status === "进行中" ? 100 : 0 } : r)); notify("Campaign 状态已更新"); }
-  function cycleContent(id: number) { setContents(rows => rows.map(r => r.id === id ? { ...r, status: nextStatus(r.status, ["待分配", "制作中", "待审核", "已完成"]) } : r)); notify("内容任务已推进"); }
-  function cycleSample(id: number) { setSamples(rows => rows.map(r => r.id === id ? { ...r, status: nextStatus(r.status, ["待发货", "运输中", "已签收"]) } : r)); notify("样品状态已更新"); }
-  function cyclePost(id: number) { setPosts(rows => rows.map(r => r.id === id ? { ...r, status: nextStatus(r.status, ["Planning", "Delay Soon", "Delayed", "Posted"]) } : r)); notify("发布状态已更新"); }
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+  }, [language, theme]);
 
-  function handleForm(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault(); const f = new FormData(e.currentTarget); const type = modal?.type;
-    const s = (key: string) => String(f.get(key) || ""); const n = (key: string) => Number(f.get(key) || 0); const id = Date.now();
-    if (type === "campaign") setCampaigns(v => [...v, { id, name: s("name"), owner: s("owner"), status: "待启动", progress: 0, budget: n("budget"), end: s("end") }]);
-    if (type === "kol") setKols(v => [...v, { id, name: s("name"), platform: s("platform"), tier: s("tier"), category: s("category"), followers: n("followers"), rate: n("rate"), status: "候选" }]);
-    if (type === "content") setContents(v => [...v, { id, title: s("title"), campaign: s("campaign"), owner: s("owner"), channel: s("channel"), due: s("due"), status: "待分配" }]);
-    if (type === "sample") setSamples(v => [...v, { id, kol: s("kol"), product: s("product"), qty: n("qty"), tracking: s("tracking") || "待生成", status: "待发货" }]);
-    if (type === "post") setPosts(v => [...v, { id, creator: s("creator"), product: s("product"), tier: s("tier"), status: "Planning", views: n("views"), gmv: n("gmv"), date: s("date") }]);
-    if (type === "payment") setPayments(v => [...v, { id, payee: s("payee"), item: s("item"), amount: n("amount"), owner: s("owner"), status: "待审批" }]);
-    if (type === "expense") setBudgets(v => v.map(x => x.id === n("category") ? { ...x, spent: x.spent + n("amount") } : x));
-    if (type === "target") setTargets(v => v.map(x => x.id === modal?.id ? { ...x, posts: n("posts"), budget: n("budget"), gmv: n("gmv"), views: n("views") } : x));
-    setModal(null); notify(type === "target" ? "目标已保存" : "记录已创建");
+  useEffect(() => {
+    if (!roleConfig.groups.includes(pageGroup(activePage))) setActivePage("home");
+  }, [activePage, roleConfig.groups, setActivePage]);
+
+  function notify(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2400);
   }
 
-  function exportCsv() {
-    const rows = [["Product", "PIC", "Post MTD", "Post Target", "Budget MTD", "Budget Target", "GMV MTD", "GMV Target"], ...targets.map(x => [x.product, x.pic, x.postsMtd, x.posts, x.budgetMtd, x.budget, x.gmvMtd, x.gmv])];
-    const blob = new Blob(["\ufeff" + rows.map(r => r.join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "marketing-report.csv"; link.click(); URL.revokeObjectURL(link.href); notify("报表已导出");
+  function navigate(page: PageKey) {
+    setActivePage(page);
+    setSidebarOpen(false);
+    setExpanded((current) => new Set([...current, pageGroup(page)]));
   }
 
-  function PageHeader({ title, desc, action }: { title: string; desc: string; action?: ReactNode }) {
-    return <div className="page-head"><div><p>{(language === "en" ? currentRole.en : currentRole.zh).toUpperCase()} · JUNE 2026</p><h1>{T(title)}</h1><span>{T(desc)}</span></div>{action}</div>;
+  function toggleGroup(group: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
   }
 
-  function Dashboard() {
-    const shared = {
-      budget: { label: language === "en" ? "Budget usage" : "预算使用率", value: `${pct(spentBudget,totalBudget)}%`, note: `${money(spentBudget)} / ${money(totalBudget)}`, progress: pct(spentBudget,totalBudget), tone: "purple" },
-      post: { label: "Post MTD", value: String(totalPosts), note: `${language === "en" ? "Target" : "目标"} ${targetPosts} · Pace ${pct(totalPosts,targetPosts)}%`, progress: pct(totalPosts,targetPosts), tone: "blue" },
-      gmv: { label: "GMV MTD", value: money(totalGmv), note: language === "en" ? "↑ 12.8% vs last month" : "较上月 ↑ 12.8%", progress: 71, tone: "green" },
-      kol: { label: language === "en" ? "Active KOLs" : "合作中 KOL", value: String(kols.filter(x=>x.status==="合作中").length), note: language === "en" ? `${kols.length} creators in pool` : `达人池共 ${kols.length} 位`, progress: 68, tone: "orange" },
-      payment: { label: language === "en" ? "Pending payments" : "待审批付款", value: money(payments.filter(x=>x.status==="待审批").reduce((s,x)=>s+x.amount,0)), note: `${payments.filter(x=>x.status==="待审批").length} ${language === "en" ? "requests" : "笔申请"}`, progress: 42, tone: "orange" },
-      content: { label: language === "en" ? "Open content tasks" : "进行中内容", value: String(contents.filter(x=>x.status!=="已完成").length), note: language === "en" ? "Across active campaigns" : "覆盖当前活动", progress: 62, tone: "blue" },
-      sample: { label: language === "en" ? "Samples in transit" : "运输中样品", value: String(samples.filter(x=>x.status==="运输中").length), note: language === "en" ? "PIC follow-up" : "等待 PIC 跟进", progress: 35, tone: "orange" },
-      roi: { label: language === "en" ? "Media ROI" : "广告 ROI", value: "4.12x", note: language === "en" ? "+0.48x vs target" : "较目标 +0.48x", progress: 78, tone: "green" },
-    };
-    const roleMetrics = role === "finance" ? [shared.budget,shared.payment,{...shared.gmv,label:language==="en"?"Recognized GMV":"确认 GMV"},{...shared.budget,label:language==="en"?"Available budget":"可用预算",value:money(totalBudget-spentBudget),note:"31.6% Remaining",progress:32}] : role === "kolPic" ? [shared.post,shared.kol,shared.content,shared.sample] : role === "ads" ? [shared.budget,shared.roi,shared.gmv,shared.content] : role === "analyst" ? [shared.post,shared.gmv,shared.budget,shared.roi] : [shared.budget,shared.post,shared.gmv,shared.kol];
-    const roleAi = language === "en" ? ({ country: ["Thailand is leading portfolio growth and can absorb incremental budget.","Philippines is spending ahead of GMV pace; review country allocation.","Review country risks and approve one budget reallocation."], brand: ["Serum Spray reached 73% of publishing target with leading GMV conversion.","Day Cream publishing is only 22% and needs creator follow-up.","Approve one payment, two samples and three content reviews."], kolPic: ["Nisa Glow is the strongest converting creator this week.","Two creators have samples but no confirmed publishing date.","Confirm publishing dates and close three content reviews today."], ads: ["Retargeting ROI is 4.6x and ready for controlled scaling.","Day Cream creative fatigue is increasing CPM and reducing CTR.","Move 10% budget to Serum Spray and launch two new hooks."], finance: ["Budget usage is aligned with month elapsed and remains within control.","One media payment lacks final campaign evidence.","Approve two complete requests and return one for documentation."], analyst: ["Post volume and GMV show a positive 0.74 correlation this month.","A-tier creator conversion varies widely across products.","Publish the weekly variance analysis and flag outliers."] } as Record<RoleKey,string[]>)[role] : ({ country: ["Thailand 品牌增长领先，可承接增量预算。","Philippines 预算消耗快于 GMV 节奏，需要复核国家预算。","复盘国家风险并审批 1 笔预算调拨。"], brand: ["Serum Spray 发布达成 73%，GMV 转化领先。","Day Cream 发布仅达 22%，需要推动达人交付。","审批 1 笔付款、2 个寄样和 3 条内容。"], kolPic: ["Nisa Glow 是本周转化表现最好的达人。","2 位达人已收样但尚未确认发布时间。","今天确认发布时间并完成 3 条内容审核。"], ads: ["重定向广告 ROI 4.6x，可进行小幅加码。","Day Cream 素材疲劳导致 CPM 上升、CTR 下降。","转移 10% 预算到 Serum Spray，并上线 2 个新 Hook。"], finance: ["预算使用与时间进度一致，整体仍在控制范围内。","1 笔媒体付款缺少最终活动凭证。","批准 2 笔完整申请，退回 1 笔补充材料。"], analyst: ["本月 Post 数量与 GMV 呈 0.74 正相关。","A 级达人转化在不同产品间差异较大。","发布周度方差分析并标记异常项。"] } as Record<RoleKey,string[]>)[role];
-    const detailMenu: MenuKey = role === "finance" ? "budget" : role === "kolPic" ? "post" : role === "ads" ? "campaign" : "target";
-    return <><PageHeader title={language === "en" ? currentRole.dashboardEn : currentRole.dashboardZh} desc={roleDesc} action={canManageCampaign ? <button className="primary" onClick={() => setModal({ type: "campaign" })}>＋ {T("新建 Campaign")}</button> : <span className="role-badge">{language === "en" ? currentRole.en : currentRole.zh}</span>} />
-      <div className="metrics">{roleMetrics.map((m,i)=><article key={`${m.label}-${i}`}><span>{m.label}</span><b>{m.value}</b><small>{m.note}</small><Progress value={m.progress} tone={m.tone} /></article>)}</div>
-      <div className="two-col"><section className="card"><div className="card-head"><div><h2>{role === "finance" ? (language === "en" ? "Budget by product" : "产品预算效率") : role === "kolPic" ? (language === "en" ? "My delivery" : "我的交付进度") : role === "ads" ? (language === "en" ? "Campaign products" : "投放产品表现") : (language === "en" ? "Target achievement" : "目标达成")}</h2><p>Marketing 3.0 · Product Performance</p></div><button className="text-btn" onClick={() => setActive(detailMenu)}>{language === "en" ? "View details →" : "查看详情 →"}</button></div><div className="product-list">{targets.map(x => <div className="product-line" key={x.id}><div><b>{x.product}</b><small>{x.priority} · {x.pic}</small></div><div className="inline-progress"><span>Post {x.postsMtd}/{x.posts}</span><Progress value={pct(x.postsMtd, x.posts)} tone={pct(x.postsMtd, x.posts) < 40 ? "orange" : "purple"} /></div><strong>{pct(x.gmvMtd, x.gmv)}% GMV</strong></div>)}</div></section>
-      <section className="card"><div className="card-head"><div><h2>{language === "en" ? "AI role summary" : "AI 角色摘要"}</h2><p>{language === "en" ? `Prioritized for ${currentRole.en}` : `面向${currentRole.zh}的重点判断`}</p></div><span className="ai-badge">AI</span></div><div className="ai-summary"><div className="good"><b>{language === "en" ? "Leading signal" : "积极信号"}</b><p>{roleAi?.[0] || (language === "en" ? "All modules and workflows are operating normally." : "全部模块与工作流运行正常。")}</p></div><div className="warn"><b>{language === "en" ? "Needs attention" : "需要跟进"}</b><p>{roleAi?.[1] || (language === "en" ? "Review pending approvals and role permissions." : "检查待处理审批与角色权限配置。")}</p></div><div><b>{language === "en" ? "Next action" : "下一步动作"}</b><p>{roleAi?.[2] || (language === "en" ? "Maintain system settings and resolve cross-team blockers." : "维护系统配置并处理跨团队阻塞事项。")}</p></div></div></section></div>
-      <section className="card"><div className="card-head"><div><h2>重点 Campaign</h2><p>点击状态即可推进工作流</p></div><button className="text-btn" onClick={() => setActive("campaign")}>管理活动 →</button></div><DataTable headers={["CAMPAIGN", "OWNER", "STATUS", "PROGRESS", "BUDGET", "END DATE"]}>{campaigns.slice(0, 4).map(x => <div className="tr" key={x.id}><div><b>{x.name}</b></div><div>{x.owner}</div><div><button className={`status ${x.status}`} onClick={() => cycleCampaign(x.id)}>{x.status}</button></div><div className="progress-cell"><Progress value={x.progress} /><span>{x.progress}%</span></div><div>{money(x.budget)}</div><div>{x.end}</div></div>)}</DataTable></section></>;
+  function runQuickSearch(event: FormEvent) {
+    event.preventDefault();
+    const query = quickSearch.trim().toLowerCase();
+    if (!query) return;
+    const match = allowedGroups.flatMap((group) => group.pages).find((page) => `${page.zh} ${page.en}`.toLowerCase().includes(query));
+    if (match) {
+      navigate(match.key);
+      setQuickSearch("");
+      setQuickSearchOpen(false);
+    } else {
+      notify(label("没有找到对应页面", "No matching page found", language));
+    }
   }
 
-  function TargetDashboardPage() {
-    const focus = role === "kolPic" ? targets.slice(0, 2) : targets;
-    const sum = (key: keyof typeof focus[number]) => focus.reduce((total, row) => total + Number(row[key] || 0), 0);
-    const totals = { posts: sum("posts"), postsMtd: sum("postsMtd"), budget: sum("budget"), budgetMtd: sum("budgetMtd"), gmv: sum("gmv"), gmvMtd: sum("gmvMtd"), views: sum("views"), viewsMtd: sum("viewsMtd") };
-    const elapsed = 57;
-    const pace = (actual: number, target: number) => pct(actual, target) - elapsed;
-    const status = (value: number) => value > 15 ? "Ahead" : value >= -15 ? "On Track" : value > -30 ? "Slow" : "Behind";
-    const tone = (value: number) => value >= -15 ? "good" : value > -30 ? "watch" : "risk";
-    const tierShares = [{ name: "S Tier", share: .14, actual: .12 }, { name: "A Tier", share: .30, actual: .28 }, { name: "B Tier", share: .56, actual: .60 }];
-    const tierRows = tierShares.map((tier, index) => ({ id: 100 + index, name: tier.name, sub: language === "en" ? "All products" : "全部产品", posts: Math.round(totals.posts * tier.share), postsMtd: Math.round(totals.postsMtd * tier.actual), budget: Math.round(totals.budget * tier.share), budgetMtd: Math.round(totals.budgetMtd * tier.actual) }));
-    const productRows = focus.map(row => ({ id: row.id, name: row.product, sub: `${row.priority} · ${language === "en" ? "All tiers" : "全部等级"}`, posts: row.posts, postsMtd: row.postsMtd, budget: row.budget, budgetMtd: row.budgetMtd }));
-    const crossRows = focus.flatMap(row => tierShares.map((tier, index) => ({ id: row.id * 10 + index, name: `${row.product} · ${tier.name}`, sub: `${row.priority} · ${tier.name}`, posts: Math.max(1, Math.round(row.posts * tier.share)), postsMtd: Math.round(row.postsMtd * tier.actual), budget: Math.round(row.budget * tier.share), budgetMtd: Math.round(row.budgetMtd * tier.actual) })));
-    const rows = progressMode === "product" ? productRows : progressMode === "tier" ? tierRows : crossRows;
-    const resultRows = resultMode === "product" ? productRows : resultMode === "tier" ? tierRows : crossRows;
-    const postPct = pct(totals.postsMtd, totals.posts), budgetPct = pct(totals.budgetMtd, totals.budget), gmvPct = pct(totals.gmvMtd, totals.gmv), viewsPct = pct(totals.viewsMtd, totals.views);
-    const roi = totals.budgetMtd ? totals.gmvMtd / totals.budgetMtd : 0, roiTarget = totals.budget ? totals.gmv / totals.budget : 0;
-    const cpm = totals.viewsMtd ? totals.budgetMtd / totals.viewsMtd * 1000 : 0, cpmTarget = totals.views ? totals.budget / totals.views * 1000 : 0;
-    const kpis = [{ label: "Post", value: String(totals.postsMtd), target: String(totals.posts), progress: postPct, delta: "↑ 10%", positive: true }, { label: "Budget", value: money(totals.budgetMtd), target: money(totals.budget), progress: budgetPct, delta: "↓ 26%", positive: false }, { label: "GMV", value: money(totals.gmvMtd), target: money(totals.gmv), progress: gmvPct, delta: "↑ 10%", positive: true }, { label: "ROI", value: roi.toFixed(2), target: roiTarget.toFixed(2), progress: pct(roi, roiTarget), delta: "↑ 48%", positive: true }, { label: "Views", value: num(totals.viewsMtd), target: num(totals.views), progress: viewsPct, delta: "↑ 11%", positive: true }, { label: "CPM", value: money(cpm), target: money(cpmTarget), progress: pct(cpmTarget, cpm), delta: "↓ 33%", positive: true }];
-    const labels = language === "en" ? { title: "Target Dashboard", desc: "Track publishing progress and results by product and creator tier.", progress: "Publishing Progress", progressDesc: "Track post and budget progress by product and creator tier.", scope: "Scope", remaining: "Remaining", mtdTarget: "MTD / Target", pace: "Pace", breakdown: "Breakdown", results: "Publishing Results", resultsDesc: "Review total performance, then compare product and creator-tier results.", hide: "Hide breakdown", show: "Show breakdown", last: "vs Last Month" } : { title: "目标进度 Dashboard", desc: "按产品和达人等级查看发布进度与发布结果。", progress: "Publishing Progress", progressDesc: "追踪 Post 与 Budget 的月度进度和时间节奏。", scope: "范围", remaining: "剩余", mtdTarget: "MTD / 目标", pace: "节奏", breakdown: "明细", results: "Publishing Results", resultsDesc: "先看总结果，再比较产品与达人等级表现。", hide: "收起明细", show: "展开明细", last: "较上月" };
-    const ModeTabs = ({ value, setValue }: { value: "product" | "tier" | "cross"; setValue: (v: "product" | "tier" | "cross") => void }) => <div className="target-tabs"><button className={value === "product" ? "active" : ""} onClick={() => setValue("product")}>Product</button><button className={value === "tier" ? "active" : ""} onClick={() => setValue("tier")}>Creator Tier</button><button className={value === "cross" ? "active" : ""} onClick={() => setValue("cross")}>Product × Creator Tier</button></div>;
-    return <><PageHeader title={labels.title} desc={labels.desc} action={<span className={`pace-tag ${tone(Math.min(pace(totals.postsMtd,totals.posts),pace(totals.budgetMtd,totals.budget)))}`}>Watch</span>} />
-      <section className="target-card progress-section"><div className="target-section-head"><div><h2>{labels.progress}</h2><p>{labels.progressDesc}</p></div></div><div className="scope-line"><span>{labels.scope}</span><b>{language === "en" ? "All Products · All Creator Tiers" : "全部产品 · 全部达人等级"}</b></div><div className="progress-duo"><article className={`progress-hero ${tone(pace(totals.postsMtd, totals.posts))}`}><header><b>Post</b><span>{status(pace(totals.postsMtd, totals.posts))}</span></header><div className="hero-values"><div><strong>{totals.postsMtd}<em>/{totals.posts}</em></strong><small>{labels.mtdTarget}</small></div><div><strong>{Math.max(0, totals.posts - totals.postsMtd)}</strong><small>{labels.remaining}</small></div></div><Progress value={postPct} tone="green" /><footer><span>MTD <b>{postPct}%</b></span><span>{labels.pace} <b>{pace(totals.postsMtd, totals.posts) >= 0 ? "+" : ""}{pace(totals.postsMtd, totals.posts)}%</b></span></footer></article><article className={`progress-hero ${tone(pace(totals.budgetMtd, totals.budget))}`}><header><b>Budget</b><span>{status(pace(totals.budgetMtd, totals.budget))}</span></header><div className="hero-values"><div><strong>{money(totals.budgetMtd)}<em>/{money(totals.budget)}</em></strong><small>{labels.mtdTarget}</small></div><div><strong>{money(Math.max(0, totals.budget - totals.budgetMtd))}</strong><small>{labels.remaining}</small></div></div><Progress value={budgetPct} tone="orange" /><footer><span>MTD <b>{budgetPct}%</b></span><span>{labels.pace} <b>{pace(totals.budgetMtd, totals.budget) >= 0 ? "+" : ""}{pace(totals.budgetMtd, totals.budget)}%</b></span></footer></article></div><div className="breakdown-block"><ModeTabs value={progressMode} setValue={setProgressMode} /><div className="progress-table"><div className="progress-th"><span>{labels.breakdown}</span><span>Post · {labels.mtdTarget}</span><span>Post · {labels.remaining}</span><span>Post · MTD / {labels.pace}</span><span>Budget · {labels.mtdTarget}</span><span>Budget · {labels.remaining}</span><span>Budget · MTD / {labels.pace}</span></div>{rows.map(row => { const pp = pct(row.postsMtd,row.posts), bp = pct(row.budgetMtd,row.budget); return <div className="progress-tr" key={row.id}><div><b>{row.name}</b><small>{row.sub}</small></div><div><b>{row.postsMtd}/{row.posts}</b></div><div>{Math.max(0,row.posts-row.postsMtd)}</div><div><span>MTD <b>{pp}%</b></span><em className={tone(pace(row.postsMtd,row.posts))}>{pace(row.postsMtd,row.posts)>=0?"+":""}{pace(row.postsMtd,row.posts)}%</em><Progress value={pp} tone={tone(pace(row.postsMtd,row.posts)) === "good" ? "green" : "orange"} /></div><div><b>{money(row.budgetMtd)}/{money(row.budget)}</b></div><div>{money(Math.max(0,row.budget-row.budgetMtd))}</div><div><span>MTD <b>{bp}%</b></span><em className={tone(pace(row.budgetMtd,row.budget))}>{pace(row.budgetMtd,row.budget)>=0?"+":""}{pace(row.budgetMtd,row.budget)}%</em><Progress value={bp} tone={tone(pace(row.budgetMtd,row.budget)) === "good" ? "green" : "orange"} /></div></div>})}</div></div></section>
-      <section className="target-card results-section"><div className="target-section-head"><div><p className="blue-eyebrow">PUBLISHING RESULTS</p><h2>{labels.results}</h2><p>{labels.resultsDesc}</p></div><button className="collapse-btn" onClick={() => setResultsOpen(!resultsOpen)}>{resultsOpen ? labels.hide : labels.show} {resultsOpen ? "⌃" : "⌄"}</button></div><div className="result-kpis">{kpis.map(kpi => <article key={kpi.label}><span>{kpi.label}</span><strong>{kpi.value}</strong><small>Target {kpi.target}</small><div><b>{kpi.progress}%</b><Progress value={kpi.progress} tone={kpi.positive ? "green" : "orange"} /></div><em className={kpi.positive ? "positive" : "negative"}>{kpi.delta} {labels.last}</em></article>)}</div>{resultsOpen && <div className="results-breakdown"><div className="results-breakdown-head"><div><h3>{language === "en" ? "Results Breakdown" : "结果明细"}</h3><p>{language === "en" ? "Six core KPIs: Post, Budget, GMV, ROI, Views and CPM." : "六项核心指标：Post、Budget、GMV、ROI、Views 与 CPM。"}</p></div><ModeTabs value={resultMode} setValue={setResultMode} /></div><div className="result-row-grid">{resultRows.map(row => <article key={row.id}><div><b>{row.name}</b><small>{row.sub}</small></div><span className={`pace-tag ${tone(Math.min(pace(row.postsMtd,row.posts),pace(row.budgetMtd,row.budget)))}`}>{status(Math.min(pace(row.postsMtd,row.posts),pace(row.budgetMtd,row.budget)))}</span><div className="mini-results"><span>Post <b>{row.postsMtd}/{row.posts}</b></span><span>Budget <b>{money(row.budgetMtd)}</b></span><span>Post Pace <b>{pace(row.postsMtd,row.posts)}%</b></span><span>Budget Pace <b>{pace(row.budgetMtd,row.budget)}%</b></span></div></article>)}</div></div>}</section></>;
+  function toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
   }
 
-  function TargetPage() {
-    const totalTargetBudget = targets.reduce((s,x)=>s+x.budget,0), totalTargetGmv = targets.reduce((s,x)=>s+x.gmv,0), totalTargetPosts = targets.reduce((s,x)=>s+x.posts,0);
-    return <><PageHeader title={language === "en" ? "Target Management" : "Target 目标管理"} desc={language === "en" ? "Set and maintain monthly targets. Progress is reviewed separately in Dashboard." : "设置并维护月度目标；目标进度请在 Dashboard 中查看。"} action={<div className="segmented">{["Country", "Brand", "PIC"].map(x => <button key={x} className={scope.startsWith(x) ? "active" : ""} onClick={() => setScope(`${x} Dashboard`)}>{x}</button>)}</div>} />
-      <div className="target-management-summary"><div><span>{language === "en" ? "Target period" : "目标周期"}</span><b>June 2026</b></div><div><span>Post Target</span><b>{totalTargetPosts}</b></div><div><span>Budget Target</span><b>{money(totalTargetBudget)}</b></div><div><span>GMV Target</span><b>{money(totalTargetGmv)}</b></div><div><span>{language === "en" ? "Status" : "状态"}</span><b className="ready">{language === "en" ? "Published" : "已发布"}</b></div></div>
-      <section className="card no-pad"><div className="target-manage-head"><div><h2>{language === "en" ? "Monthly Target Setup" : "月度目标设置"}</h2><p>{language === "en" ? "Edit product targets; changes update Dashboard immediately." : "编辑产品目标后，Dashboard 会立即同步更新。"}</p></div></div><DataTable headers={["PRODUCT", "PIC", "PRIORITY", "POST TARGET", "BUDGET TARGET", "GMV TARGET", "VIEWS TARGET", "ACTION"]}>{targets.map(x => <div className="tr" key={x.id}><div><b>{x.product}</b></div><div>{x.pic}</div><div><span className="status">{x.priority}</span></div><div><b>{x.posts}</b></div><div><b>{money(x.budget)}</b></div><div><b>{money(x.gmv)}</b></div><div><b>{num(x.views)}</b></div><div>{canEditTarget ? <button className="small-btn" onClick={() => setModal({ type: "target", id: x.id })}>{language === "en" ? "Edit" : "编辑目标"}</button> : <span className="readonly">{language === "en" ? "View only" : "仅查看"}</span>}</div></div>)}</DataTable></section></>;
+  const ActivePageIcon = pageIcons[activePage] || FileText;
+  const activeConfig = pageConfigs[activePage];
+  const pageRows = rows[activePage] || [];
+
+  let pageContent: ReactNode;
+  if (activePage === "home") {
+    pageContent = <HomePage language={language} onNavigate={navigate} />;
+  } else if (activePage === "targetDashboard") {
+    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} notify={notify} />;
+  } else if (activePage === "budgetRule") {
+    pageContent = <BudgetRulePage language={language} store={budgetRules} setStore={setBudgetRules} canEdit={canEdit} notify={notify} />;
+  } else if (activeConfig) {
+    pageContent = (
+      <TablePage
+        key={activePage}
+        config={activeConfig}
+        rows={pageRows}
+        setRows={(next) => setRows((current) => ({ ...current, [activePage]: next }))}
+        language={language}
+        canEdit={canEdit}
+        canApprove={canApprove}
+        notify={notify}
+      />
+    );
+  } else {
+    pageContent = <EmptyState language={language} />;
   }
 
-  function BudgetPage() { return <><PageHeader title="Budget 预算管理" desc="统一管理预算分配、实际消耗和审批节奏。" action={<button className="primary" onClick={() => setModal({ type: "expense" })}>＋ 登记费用</button>} /><div className="metrics compact"><article><span>总预算</span><b>{money(totalBudget)}</b><small>June 2026</small></article><article><span>已使用</span><b>{money(spentBudget)}</b><small>{pct(spentBudget, totalBudget)}% Used</small></article><article><span>可用余额</span><b>{money(totalBudget - spentBudget)}</b><small>31.6% Remaining</small></article><article><span>待审批</span><b>{money(payments.filter(x => x.status === "待审批").reduce((s, x) => s + x.amount, 0))}</b><small>{payments.filter(x => x.status === "待审批").length} 笔申请</small></article></div><section className="card"><div className="card-head"><div><h2>预算分配</h2><p>登记费用后会实时更新使用率</p></div></div><div className="budget-grid">{budgets.map(x => <article key={x.id}><div><span className="category-dot" /><b>{x.category}</b><small>Owner · {x.owner}</small></div><strong>{money(x.spent)}</strong><span>of {money(x.allocated)}</span><Progress value={pct(x.spent, x.allocated)} tone={pct(x.spent, x.allocated) > 80 ? "orange" : "purple"} /><footer>{pct(x.spent, x.allocated)}% Used · {money(x.allocated - x.spent)} Remaining</footer></article>)}</div></section></> }
+  return (
+    <div className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+      <aside className={`sidebar ${sidebarOpen ? "mobile-open" : ""}`}>
+        <div className="brand-lockup">
+          <span className="brand-mark"><Activity size={20} /></span>
+          <div><strong>Marketing 3.0</strong><small>GOODSALe TECH</small></div>
+          <button className="mobile-close icon-button" onClick={() => setSidebarOpen(false)}><X size={17} /></button>
+        </div>
+        <nav className="sidebar-nav">
+          {allowedGroups.map((group) => {
+            const GroupIcon = groupIcons[group.key] || Box;
+            const isOpen = expanded.has(group.key);
+            const hasChildren = group.pages.length > 1;
+            const groupActive = group.pages.some((page) => page.key === activePage);
+            return (
+              <div className="nav-group" key={group.key}>
+                <button
+                  className={`nav-group-button ${groupActive ? "group-active" : ""}`}
+                  onClick={() => {
+                    if (hasChildren) toggleGroup(group.key);
+                    else navigate(group.pages[0].key);
+                  }}
+                  title={label(group.zh, group.en, language)}
+                >
+                  <GroupIcon size={17} />
+                  <span>{label(group.zh, group.en, language)}</span>
+                  {hasChildren && <ChevronDown size={13} className={isOpen ? "rotate" : ""} />}
+                </button>
+                {hasChildren && isOpen && (
+                  <div className="nav-children">
+                    {group.pages.map((page) => {
+                      const PageIcon = pageIcons[page.key] || FileText;
+                      return (
+                        <button key={page.key} className={activePage === page.key ? "active" : ""} onClick={() => navigate(page.key)} title={label(page.zh, page.en, language)}>
+                          <PageIcon size={15} />
+                          <span>{label(page.zh, page.en, language)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+        <div className="sidebar-footer">
+          <div className="avatar">UT</div>
+          <div><strong>Uthan</strong><small>{label(roleConfig.zh, roleConfig.en, language)}</small></div>
+          <button className="icon-button" onClick={() => setSidebarCollapsed((value) => !value)} title={label("收起菜单", "Collapse menu", language)}><PanelLeftClose size={16} /></button>
+        </div>
+      </aside>
+      {sidebarOpen && <button className="sidebar-scrim" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />}
 
-  function KolPage() { const rows = kols.filter(x => `${x.name}${x.platform}${x.category}`.toLowerCase().includes(search.toLowerCase())); return <><PageHeader title="KOL 达人中心" desc="维护达人池、合作报价和当前合作阶段。" action={<button className="primary" onClick={() => setModal({ type: "kol" })}>＋ 添加 KOL</button>} /><Toolbar search={search} setSearch={setSearch} placeholder="搜索达人、平台、品类" /><section className="card no-pad"><DataTable headers={["KOL", "PLATFORM", "TIER", "CATEGORY", "FOLLOWERS", "RATE", "STATUS"]}>{rows.map(x => <div className="tr" key={x.id}><div className="person"><i>{x.name[0]}</i><b>{x.name}</b></div><div>{x.platform}</div><div><span className={`tier tier-${x.tier}`}>{x.tier}</span></div><div>{x.category}</div><div>{num(x.followers)}</div><div>{money(x.rate)}</div><div><button className={`status ${x.status}`} onClick={() => { setKols(v => v.map(r => r.id === x.id ? { ...r, status: nextStatus(r.status, ["候选", "待确认", "合作中", "已暂停"]) } : r)); notify("达人状态已更新"); }}>{x.status}</button></div></div>)}</DataTable></section></> }
+      <header className="topbar">
+        <div className="topbar-left">
+          <button className="mobile-menu icon-button" onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
+          <button className="desktop-collapse icon-button" onClick={() => setSidebarCollapsed((value) => !value)}><Menu size={18} /></button>
+          <div className="breadcrumbs"><span>Home</span><ChevronRight size={13} /><span>{label(activeGroup.zh, activeGroup.en, language)}</span>{activePage !== "home" && <><ChevronRight size={13} /><strong>{label(activeItem.zh, activeItem.en, language)}</strong></>}</div>
+        </div>
+        <div className="topbar-actions">
+          {quickSearchOpen && <form className="quick-search" onSubmit={runQuickSearch}><Search size={14} /><input autoFocus value={quickSearch} onChange={(event) => setQuickSearch(event.target.value)} placeholder={label("搜索页面…", "Search pages…", language)} /><button type="button" onClick={() => setQuickSearchOpen(false)}><X size={13} /></button></form>}
+          <button className="icon-button" onClick={() => setQuickSearchOpen((value) => !value)} title={label("搜索", "Search", language)}><Search size={18} /></button>
+          <button className="icon-button with-dot" onClick={() => setUtilityPanel((value) => value === "notice" ? null : "notice")} title={label("通知", "Notifications", language)}><Bell size={18} /><i /></button>
+          <button className="icon-button" onClick={() => setUtilityPanel((value) => value === "help" ? null : "help")} title={label("帮助", "Help", language)}><CircleHelp size={18} /></button>
+          <button className="icon-button" onClick={toggleFullscreen} title={label("全屏", "Fullscreen", language)}><Maximize2 size={18} /></button>
+          <button className="compact-switch" onClick={() => setLanguage((value) => value === "zh" ? "en" : "zh")}><Languages size={15} /><span>{language === "zh" ? "EN" : "中文"}</span></button>
+          <button className="compact-switch" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}<span>{theme === "dark" ? label("亮色", "Light", language) : label("暗黑", "Dark", language)}</span></button>
+          <label className="role-switch"><span className="avatar mini">UT</span><select value={role} onChange={(event) => setRole(event.target.value as RoleKey)}>{roles.map((item) => <option value={item.key} key={item.key}>{label(item.zh, item.en, language)}</option>)}</select><ChevronDown size={12} /></label>
+        </div>
+        {utilityPanel && (
+          <section className="utility-popover">
+            <div className="popover-title"><strong>{utilityPanel === "notice" ? label("通知", "Notifications", language) : label("帮助中心", "Help Center", language)}</strong><button onClick={() => setUtilityPanel(null)}><X size={14} /></button></div>
+            {utilityPanel === "notice" ? (
+              <><p><span className="notice-dot blue" />{label("August 目标规划窗口已开启", "August target planning is open", language)}<small>10 min</small></p><p><span className="notice-dot amber" />{label("12 笔付款等待审批", "12 payments await approval", language)}<small>1 hr</small></p></>
+            ) : (
+              <><p><CircleHelp size={14} />{label("选择左侧模块进入业务页面。", "Choose a module from the sidebar.", language)}</p><p><Languages size={14} />{label("右上角可切换语言、主题和角色。", "Switch language, theme and role from the top right.", language)}</p></>
+            )}
+          </section>
+        )}
+      </header>
 
-  function CampaignPage() { return <><PageHeader title="Campaign 活动管理" desc="创建活动、推进状态并跟踪预算和完成进度。" action={<button className="primary" onClick={() => setModal({ type: "campaign" })}>＋ 新建 Campaign</button>} /><section className="card no-pad"><DataTable headers={["CAMPAIGN", "OWNER", "STATUS", "PROGRESS", "BUDGET", "END", "ACTION"]}>{campaigns.map(x => <div className="tr" key={x.id}><div><b>{x.name}</b><small>ID · C-{String(x.id).slice(-4)}</small></div><div>{x.owner}</div><div><button className={`status ${x.status}`} onClick={() => cycleCampaign(x.id)}>{x.status}</button></div><div className="progress-cell"><Progress value={x.progress} /><span>{x.progress}%</span></div><div>{money(x.budget)}</div><div>{x.end}</div><div><button className="small-btn danger" onClick={() => { setCampaigns(v => v.filter(r => r.id !== x.id)); notify("Campaign 已删除"); }}>删除</button></div></div>)}</DataTable></section></> }
+      <div className="page-tabs-bar">
+        <button onClick={() => navigate("home")} className={activePage === "home" ? "active" : ""}><Home size={13} />Home</button>
+        {activePage !== "home" && <button className="active"><ActivePageIcon size={13} />{label(activeItem.zh, activeItem.en, language)}<X size={12} onClick={(event) => { event.stopPropagation(); navigate("home"); }} /></button>}
+      </div>
 
-  function ContentPage() { return <><PageHeader title="Content 内容任务" desc="从 Brief、制作、审核到完成的统一任务流。" action={<button className="primary" onClick={() => setModal({ type: "content" })}>＋ 创建任务</button>} /><div className="kanban">{["待分配", "制作中", "待审核", "已完成"].map(status => <section key={status}><header><b>{status}</b><span>{contents.filter(x => x.status === status).length}</span></header>{contents.filter(x => x.status === status).map(x => <article key={x.id}><span className="channel">{x.channel}</span><h3>{x.title}</h3><p>{x.campaign}</p><footer><span>{x.owner} · {x.due}</span><button onClick={() => cycleContent(x.id)}>推进 →</button></footer></article>)}{contents.filter(x => x.status === status).length === 0 && <div className="empty">暂无任务</div>}</section>)}</div></> }
-
-  function SamplePage() { return <><PageHeader title="Sample 样品管理" desc="管理寄样申请、物流单号和签收进度。" action={<button className="primary" onClick={() => setModal({ type: "sample" })}>＋ 新建寄样</button>} /><section className="card no-pad"><DataTable headers={["KOL", "PRODUCT", "QTY", "TRACKING", "STATUS", "ACTION"]}>{samples.map(x => <div className="tr" key={x.id}><div><b>{x.kol}</b></div><div>{x.product}</div><div>{x.qty}</div><div>{x.tracking}</div><div><span className={`status ${x.status}`}>{x.status}</span></div><div><button className="small-btn" onClick={() => cycleSample(x.id)}>更新状态</button></div></div>)}</DataTable></section></> }
-
-  function PostPage() { const posted = filteredPosts.filter(x => x.status === "Posted"); const views = posted.reduce((s, x) => s + x.views, 0); const gmv = posted.reduce((s, x) => s + x.gmv, 0); return <><PageHeader title="Video / Post 发布管理" desc="Marketing 3.0 的 Publishing Progress 与 Publishing Results 已原生融合。" action={<button className="primary" onClick={() => setModal({ type: "post" })}>＋ 登记 Post</button>} /><div className="filter-row"><select value={productFilter} onChange={e => setProductFilter(e.target.value)}><option>全部产品</option>{[...new Set(posts.map(x => x.product))].map(x => <option key={x}>{x}</option>)}</select><select value={tierFilter} onChange={e => setTierFilter(e.target.value)}><option>全部等级</option><option>S</option><option>A</option><option>B</option></select><button onClick={() => { setProductFilter("全部产品"); setTierFilter("全部等级"); }}>清除筛选</button></div><div className="metrics compact"><article><span>Post</span><b>{posted.length}/{filteredPosts.length}</b><small>Posted / Total</small><Progress value={pct(posted.length, filteredPosts.length)} /></article><article><span>Views</span><b>{num(views)}</b><small>Published content</small><Progress value={64} tone="blue" /></article><article><span>GMV</span><b>{money(gmv)}</b><small>ROI 4.1x</small><Progress value={72} tone="green" /></article><article><span>Delayed</span><b>{filteredPosts.filter(x => x.status === "Delayed").length}</b><small>需要 PIC 跟进</small><Progress value={22} tone="orange" /></article></div><section className="card no-pad"><DataTable headers={["CREATOR", "PRODUCT", "TIER", "STATUS", "VIEWS", "GMV", "DATE", "ACTION"]}>{filteredPosts.map(x => <div className="tr" key={x.id}><div><b>{x.creator}</b></div><div>{x.product}</div><div><span className={`tier tier-${x.tier}`}>{x.tier}</span></div><div><span className={`status ${x.status}`}>{x.status}</span></div><div>{num(x.views)}</div><div>{money(x.gmv)}</div><div>{x.date}</div><div><button className="small-btn" onClick={() => cyclePost(x.id)}>推进状态</button></div></div>)}</DataTable></section></> }
-
-  function PaymentPage() {
-    const canRequest = role === "brand" || role === "kolPic" || role === "finance" || role === "admin";
-    return <><PageHeader title="Payment 付款中心" desc={canApprovePayment ? "审核付款申请并跟踪实际付款状态。" : "提交付款申请并查看财务处理进度。"} action={canRequest ? <button className="primary" onClick={() => setModal({ type: "payment" })}>＋ 申请付款</button> : undefined} /><section className="card no-pad"><DataTable headers={["PAYEE", "ITEM", "OWNER", "AMOUNT", "STATUS", "ACTION"]}>{payments.map(x => <div className="tr" key={x.id}><div><b>{x.payee}</b></div><div>{x.item}</div><div>{x.owner}</div><div><b>{money(x.amount)}</b></div><div><span className={`status ${x.status}`}>{x.status}</span></div><div className="row-actions">{canApprovePayment && x.status === "待审批" ? <><button className="small-btn approve" onClick={() => { setPayments(v => v.map(r => r.id === x.id ? { ...r, status: "已批准" } : r)); notify("付款已批准"); }}>批准</button><button className="small-btn danger" onClick={() => { setPayments(v => v.map(r => r.id === x.id ? { ...r, status: "已拒绝" } : r)); notify("付款已拒绝"); }}>拒绝</button></> : canApprovePayment && (x.status === "已批准" || x.status === "付款中") ? <button className="small-btn" onClick={() => { setPayments(v => v.map(r => r.id === x.id ? { ...r, status: r.status === "已批准" ? "付款中" : "已付款" } : r)); notify("付款状态已更新"); }}>推进</button> : <span className="readonly">{language === "en" ? "View only" : "仅查看"}</span>}</div></div>)}</DataTable></section></>
-  }
-
-  function ReportPage() { return <><PageHeader title="Report 报表中心" desc="生成管理摘要，导出目标达成数据。" action={<div className="head-actions"><button className="secondary" onClick={exportCsv}>导出 CSV</button><button className="primary" onClick={() => { setGeneratedAt(new Date().toLocaleString("zh-CN")); notify("AI 报告已生成"); }}>✦ 生成 AI 报告</button></div>} /><div className="report-grid"><article className="report-card"><header><span>WEEKLY</span><b>AI 周报</b><small>{generatedAt || "数据更新于今天 09:30"}</small></header><section><h3>1. 目标达成</h3><p>Post MTD 达成 {pct(totalPosts, targetPosts)}%，整体接近时间进度；GMV 达成 55%，预算使用 56%。</p><h3>2. Gap 诊断</h3><p>Day Cream 发布节奏落后，主要缺口集中在 A/B 级达人。Tone-Up Sunscreen 流量健康但转化仍可提升。</p><h3>3. 行动建议</h3><p>本周优先推动 4 条待发布内容，复制 Serum Spray 高转化 Hook，并完成待审批付款。</p></section></article><article className="report-card"><header><span>MONTHLY</span><b>AI 月报</b><small>June 2026 · MTD</small></header><section><h3>管理透视</h3><div className="insight-table"><div><b>产品</b><span>Serum Spray 领先</span><em>加码</em></div><div><b>达人</b><span>S 级内容不足</span><em>补量</em></div><div><b>PIC</b><span>Nisa 达成最佳</span><em>复制</em></div><div><b>预算</b><span>Media 消耗偏慢</span><em>复核</em></div></div><h3>管理意见</h3><p>下半月预算应向高 ROI 产品倾斜，同时把发布节奏纳入 PIC 每日跟进。</p></section></article></div></> }
-
-  function SettingsPage() { return <><PageHeader title="基础配置" desc="配置审批规则、提醒和系统偏好。" /><div className="settings-grid"><section className="card"><div className="card-head"><div><h2>工作流规则</h2><p>修改后自动保存在当前浏览器</p></div></div>{[["budgetApproval", "预算审批", "费用提交后必须经过管理员审批"], ["contentReview", "内容审核", "Post 发布前必须通过品牌审核"], ["sampleReminder", "样品提醒", "物流超过 3 天未签收时提醒 PIC"]].map(([key, title, desc]) => <label className="setting" key={key}><span><b>{title}</b><small>{desc}</small></span><input type="checkbox" checked={Boolean(settings[key as keyof typeof settings])} onChange={e => setSettings(v => ({ ...v, [key]: e.target.checked }))} /></label>)}</section><section className="card"><div className="card-head"><div><h2>达人等级规则</h2><p>用于预算与发布结构分析</p></div></div><div className="rule"><span className="tier tier-S">S</span><b>Top Creator</b><small>成本权重 4 · 核心品牌声量</small></div><div className="rule"><span className="tier tier-A">A</span><b>Growth Creator</b><small>成本权重 2 · GMV 增长</small></div><div className="rule"><span className="tier tier-B">B</span><b>Scale Creator</b><small>成本权重 1 · 内容规模</small></div></section></div></> }
-
-  function renderPage() { const map: Record<MenuKey, ReactNode> = { dashboard: Dashboard(), targetDashboard: TargetDashboardPage(), target: TargetPage(), budget: BudgetPage(), kol: KolPage(), campaign: CampaignPage(), content: ContentPage(), sample: SamplePage(), post: PostPage(), payment: PaymentPage(), report: ReportPage(), settings: SettingsPage() }; return language === "en" ? translateTree(map[active]) : map[active]; }
-
-  const editTarget = modal?.type === "target" ? targets.find(x => x.id === modal.id) : undefined;
-  return <main className={`app-shell role-${role} page-${active}`}>
-    <aside className="sidebar"><div className="brand"><i>M</i><span>Marketing<strong>.</strong></span></div><div className="workspace"><i>{currentRole.zh[0]}</i><span><b>{language === "en" ? currentRole.en : currentRole.zh}</b><small>Glowsicha Indonesia · June 2026</small></span><em>⌄</em></div><p className="nav-title">WORKSPACE</p><nav>{allowedMenus.filter(m => m.key !== "target" && m.key !== "targetDashboard").map(m => <div key={m.key}>{m.key === (role === "kolPic" ? "kol" : "budget") && (currentRole.menus.includes("target") || currentRole.menus.includes("targetDashboard")) && <div className={`nav-group ${active === "target" || active === "targetDashboard" ? "selected" : ""}`}><button className="nav-parent" onClick={() => setTargetOpen(!targetOpen)}><i>◎</i><span>Target</span><b>{targetOpen ? "⌃" : "⌄"}</b></button>{targetOpen && <div className="nav-children">{currentRole.menus.includes("targetDashboard") && <button className={active === "targetDashboard" ? "active" : ""} onClick={() => setActive("targetDashboard")}><i>◫</i><span>Dashboard</span>{active === "targetDashboard" && <em />}</button>}{currentRole.menus.includes("target") && <button className={active === "target" ? "active" : ""} onClick={() => setActive("target")}><i>◎</i><span>Target</span>{active === "target" && <em />}</button>}</div>}</div>}<button className={active === m.key ? "active" : ""} onClick={() => setActive(m.key)}><i>{m.icon}</i><span>{language === "en" ? m.labelEn : m.label}</span>{active === m.key && <em />}</button></div>)}</nav><footer><div className="profile"><i>MC</i><span><b>Mia Chen</b><small>{language === "en" ? currentRole.en : currentRole.zh}</small></span><button>···</button></div></footer></aside>
-    <section className="main-area"><header className="topbar"><div className="crumb"><span>{language === "en" ? currentRole.en : currentRole.zh}</span><b>/</b><strong>{language === "en" ? activeMenu.labelEn : activeMenu.label}</strong></div><div className="top-controls"><select className="role-select" value={role} onChange={e => setRole(e.target.value as RoleKey)}>{roles.map(r => <option value={r.key} key={r.key}>{language === "en" ? r.en : r.zh}</option>)}</select><label className="global-search">⌕<input value={search} onChange={e => setSearch(e.target.value)} placeholder={T("搜索当前模块...")} /></label><button className="switch" onClick={() => setLanguage(language === "zh" ? "en" : "zh")} title="中英文切换">{language === "zh" ? "EN" : "中"}</button><button className="switch theme-switch" onClick={() => setTheme(theme === "light" ? "dark" : "light")} title="亮色/暗黑切换">{theme === "light" ? "☾" : "☀"}</button><button className="bell">♧<i /></button><span className="avatar">M</span></div></header><div className="content">{renderPage()}</div></section>
-    {toast && <div className="toast">✓ {toast}</div>}
-    {modal && <Modal title={modalTitle(modal.type)} onClose={() => setModal(null)}><form onSubmit={handleForm} className="form-grid">{modal.type === "campaign" && <><Field label="Campaign 名称"><input name="name" required /></Field><Field label="负责人"><input name="owner" required defaultValue="Mia" /></Field><Field label="预算"><input name="budget" type="number" min="0" required /></Field><Field label="结束日期"><input name="end" type="date" required /></Field></>}{modal.type === "kol" && <><Field label="达人名称"><input name="name" required /></Field><Field label="平台"><select name="platform"><option>TikTok</option><option>小红书</option><option>Instagram</option><option>YouTube</option></select></Field><Field label="达人等级"><select name="tier"><option>S</option><option>A</option><option>B</option></select></Field><Field label="内容品类"><input name="category" defaultValue="美妆" /></Field><Field label="粉丝数"><input name="followers" type="number" min="0" /></Field><Field label="合作报价"><input name="rate" type="number" min="0" /></Field></>}{modal.type === "content" && <><Field label="任务名称"><input name="title" required /></Field><Field label="所属 Campaign"><select name="campaign">{campaigns.map(x => <option key={x.id}>{x.name}</option>)}</select></Field><Field label="负责人"><input name="owner" required /></Field><Field label="渠道"><select name="channel"><option>TikTok</option><option>小红书</option><option>Instagram</option></select></Field><Field label="截止日期"><input name="due" type="date" required /></Field></>}{modal.type === "sample" && <><Field label="KOL"><select name="kol">{kols.map(x => <option key={x.id}>{x.name}</option>)}</select></Field><Field label="产品"><select name="product">{targets.map(x => <option key={x.id}>{x.product}</option>)}</select></Field><Field label="数量"><input name="qty" type="number" min="1" defaultValue="1" /></Field><Field label="物流单号"><input name="tracking" placeholder="可稍后补充" /></Field></>}{modal.type === "post" && <><Field label="Creator"><select name="creator">{kols.map(x => <option key={x.id}>{x.name}</option>)}</select></Field><Field label="产品"><select name="product">{targets.map(x => <option key={x.id}>{x.product}</option>)}</select></Field><Field label="达人等级"><select name="tier"><option>S</option><option>A</option><option>B</option></select></Field><Field label="计划日期"><input name="date" type="date" required /></Field><Field label="Views（如已发布）"><input name="views" type="number" min="0" defaultValue="0" /></Field><Field label="GMV（如已发布）"><input name="gmv" type="number" min="0" defaultValue="0" /></Field></>}{modal.type === "payment" && <><Field label="收款方"><input name="payee" required /></Field><Field label="付款事项"><input name="item" required /></Field><Field label="金额"><input name="amount" type="number" min="1" required /></Field><Field label="申请人"><input name="owner" required defaultValue="Mia" /></Field></>}{modal.type === "expense" && <><Field label="预算分类"><select name="category">{budgets.map(x => <option key={x.id} value={x.id}>{x.category}</option>)}</select></Field><Field label="本次费用"><input name="amount" type="number" min="1" required /></Field><Field label="说明"><input name="note" required /></Field></>}{editTarget && <><Field label="产品"><input value={editTarget.product} disabled /></Field><Field label="Post Target"><input name="posts" type="number" min="1" defaultValue={editTarget.posts} required /></Field><Field label="Budget Target"><input name="budget" type="number" min="1" defaultValue={editTarget.budget} required /></Field><Field label="GMV Target"><input name="gmv" type="number" min="1" defaultValue={editTarget.gmv} required /></Field><Field label="Views Target"><input name="views" type="number" min="1" defaultValue={editTarget.views} required /></Field></>}<footer><button type="button" className="secondary" onClick={() => setModal(null)}>取消</button><button type="submit" className="primary">保存</button></footer></form></Modal>}
-  </main>;
+      <main className="main-content">{pageContent}</main>
+      {toast && <div className="toast"><CheckCircle2 size={16} />{toast}</div>}
+    </div>
+  );
 }
-
-function modalTitle(type: string) { return ({ campaign: "新建 Campaign", kol: "添加 KOL", content: "创建内容任务", sample: "新建寄样", post: "登记 Video / Post", payment: "申请付款", expense: "登记费用", target: "编辑月度目标" } as Record<string, string>)[type] || "新建记录"; }
-function DataTable({ headers, children }: { headers: string[]; children: ReactNode }) { return <div className="data-table" style={{ ["--cols" as string]: headers.length }}><div className="thead">{headers.map(x => <div key={x}>{x}</div>)}</div>{children}</div>; }
-function Toolbar({ search, setSearch, placeholder }: { search: string; setSearch: (v: string) => void; placeholder: string }) { const english = typeof document !== "undefined" && document.documentElement.lang === "en"; return <div className="toolbar"><label>⌕<input value={search} onChange={e => setSearch(e.target.value)} placeholder={placeholder} /></label><button onClick={() => setSearch("")}>{english ? "Clear" : "清除"}</button></div>; }

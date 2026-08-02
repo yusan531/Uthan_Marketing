@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "flag-icons/css/flag-icons.min.css";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Marketing系统 · 增长营销工作台",
-  description: "面向品牌与增长团队的 Marketing 一体化管理工作台。",
+  title: "Marketing 3.0 · 营销管理系统",
+  description: "目标、达人、内容、财务与数据分析一体化营销管理系统。",
   metadataBase: new URL("https://marketing-system.uthan531.chatgpt.site"),
   openGraph: {
-    title: "Marketing System",
-    description: "一体化营销管理工作台",
+    title: "Marketing 3.0",
+    description: "目标、达人、内容、财务与分析一体化营销管理系统",
     images: [{ url: "/og.png", width: 1730, height: 909, alt: "Marketing System 一体化营销管理工作台" }],
   },
   twitter: { card: "summary_large_image", images: ["/og.png"] },

@@ -1,0 +1,2168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PIC Publishing Modules · Product & IT Handoff</title>
+    <style>
+      :root {
+        --page: #eef2f7;
+        --panel: #ffffff;
+        --panel-soft: #f8fafc;
+        --text: #132037;
+        --muted: #62738f;
+        --line: #d8e1ee;
+        --blue: #2563eb;
+        --blue-soft: #eaf1ff;
+        --green: #0fa36f;
+        --green-soft: #e5f7f0;
+        --ahead: #08745a;
+        --ahead-soft: #e2f1ec;
+        --yellow: #bd7a17;
+        --yellow-soft: #fff4d8;
+        --slow: #987446;
+        --slow-soft: #f5efe6;
+        --red: #dc4548;
+        --red-soft: #ffe8e9;
+        --behind: #a86464;
+        --behind-soft: #f7ebeb;
+        --shadow: 0 16px 40px rgba(20, 32, 51, 0.07);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.25);
+        outline-offset: 2px;
+      }
+
+      .page-shell {
+        width: min(1720px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 64px;
+      }
+
+      .handoff-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 28px;
+        margin-bottom: 18px;
+        padding: 26px 28px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: linear-gradient(135deg, #ffffff 0%, #f5f8fd 100%);
+        box-shadow: var(--shadow);
+      }
+
+      .page-eyebrow,
+      .section-kicker {
+        display: block;
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 850;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .handoff-header h1 {
+        margin: 8px 0 8px;
+        font-size: clamp(28px, 3vw, 42px);
+        letter-spacing: -0.03em;
+      }
+
+      .handoff-header p {
+        max-width: 920px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.75;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .header-actions a,
+      .header-actions button {
+        min-height: 40px;
+        padding: 9px 14px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #ffffff;
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 780;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .header-actions a:hover,
+      .header-actions button:hover {
+        border-color: #b9c8dd;
+        color: var(--blue);
+      }
+
+      .module-stack {
+        display: grid;
+        gap: 20px;
+      }
+
+      .module-panel,
+      .documentation {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .module-panel {
+        padding: 22px;
+      }
+
+      .module-header,
+      .results-header,
+      .detail-heading,
+      .breakdown-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .module-header h2,
+      .results-header h2 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: -0.02em;
+      }
+
+      .module-header p,
+      .results-header p,
+      .detail-heading p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 29px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 820;
+        white-space: nowrap;
+      }
+
+      .pill.green {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .pill.ahead {
+        background: var(--ahead-soft);
+        color: var(--ahead);
+      }
+
+      .pill.yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+      }
+
+      .pill.slow {
+        background: var(--slow-soft);
+        color: var(--slow);
+      }
+
+      .pill.red {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .pill.behind {
+        background: var(--behind-soft);
+        color: var(--behind);
+      }
+
+      .scope-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 18px 0 14px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .scope-row strong {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .hero-card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-top: 4px solid var(--yellow);
+        border-radius: 10px;
+        background: var(--panel-soft);
+      }
+
+      .hero-card.green {
+        border-top-color: var(--green);
+      }
+
+      .hero-card.ahead {
+        border-top-color: var(--ahead);
+      }
+
+      .hero-card.slow {
+        border-top-color: var(--slow);
+      }
+
+      .hero-card.red {
+        border-top-color: var(--red);
+      }
+
+      .hero-card.behind {
+        border-top-color: var(--behind);
+      }
+
+      .hero-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .hero-card-head > strong {
+        font-size: 15px;
+      }
+
+      .hero-stats {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+        align-items: end;
+        gap: 28px;
+        margin: 28px 0 20px;
+      }
+
+      .hero-ratio strong {
+        display: flex;
+        align-items: baseline;
+        gap: 3px;
+        white-space: nowrap;
+      }
+
+      .hero-ratio .actual {
+        font-size: clamp(38px, 4vw, 48px);
+        line-height: 0.9;
+        letter-spacing: -0.04em;
+      }
+
+      .hero-ratio .divider {
+        color: #9aa6b8;
+        font-weight: 600;
+      }
+
+      .hero-ratio .divider {
+        font-size: 28px;
+      }
+
+      .hero-ratio .target {
+        font-size: 30px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      .hero-ratio > span,
+      .hero-remaining span,
+      .result-target-label {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 720;
+      }
+
+      .hero-remaining {
+        padding-left: 28px;
+        border-left: 1px solid var(--line);
+      }
+
+      .hero-remaining strong {
+        display: block;
+        font-size: 32px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      .progress-track {
+        width: 100%;
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e9eef5;
+      }
+
+      .progress-track span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--yellow);
+      }
+
+      .progress-track.green span {
+        background: var(--green);
+      }
+
+      .progress-track.ahead span {
+        background: var(--ahead);
+      }
+
+      .progress-track.slow span {
+        background: var(--slow);
+      }
+
+      .progress-track.red span {
+        background: var(--red);
+      }
+
+      .progress-track.behind span {
+        background: var(--behind);
+      }
+
+      .hero-diagnostics {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 720;
+      }
+
+      .hero-diagnostics strong {
+        margin-left: 4px;
+        color: var(--text);
+        font-size: 14px;
+      }
+
+      .hero-diagnostics .green,
+      .hero-diagnostics .green strong {
+        color: var(--green);
+      }
+
+      .hero-diagnostics .ahead,
+      .hero-diagnostics .ahead strong {
+        color: var(--ahead);
+      }
+
+      .hero-diagnostics .yellow,
+      .hero-diagnostics .yellow strong {
+        color: var(--yellow);
+      }
+
+      .hero-diagnostics .slow,
+      .hero-diagnostics .slow strong {
+        color: var(--slow);
+      }
+
+      .hero-diagnostics .red,
+      .hero-diagnostics .red strong {
+        color: var(--red);
+      }
+
+      .hero-diagnostics .behind,
+      .hero-diagnostics .behind strong {
+        color: var(--behind);
+      }
+
+      .module-toolbar {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+
+      .mode-tabs {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 9px;
+        background: #edf2f8;
+      }
+
+      .mode-tabs button {
+        min-height: 36px;
+        padding: 8px 13px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 780;
+        cursor: pointer;
+      }
+
+      .mode-tabs button:hover {
+        color: var(--text);
+      }
+
+      .mode-tabs button.active {
+        background: #ffffff;
+        color: var(--blue);
+        box-shadow: 0 2px 8px rgba(20, 32, 51, 0.1);
+      }
+
+      .table-wrap {
+        margin-top: 12px;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        min-width: 1050px;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      th,
+      td {
+        padding: 11px 9px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      th {
+        background: #f8fafc;
+        color: var(--muted);
+        font-weight: 780;
+      }
+
+      .table-group-head th {
+        background: #edf4fb;
+        color: var(--text);
+        text-align: center;
+      }
+
+      .table-group-head th:first-child {
+        text-align: left;
+      }
+
+      .table-group-head th:last-child,
+      thead tr:nth-child(2) th:nth-child(4),
+      tbody tr:not(.group-row) td:nth-child(5) {
+        border-left: 1px solid #d4deeb;
+      }
+
+      thead tr:nth-child(2) th:nth-child(3),
+      tbody tr:not(.group-row) td:nth-child(4) {
+        padding-right: 16px;
+      }
+
+      thead tr:nth-child(2) th:nth-child(4),
+      tbody tr:not(.group-row) td:nth-child(5) {
+        padding-left: 16px;
+      }
+
+      td > strong,
+      td > span {
+        display: block;
+      }
+
+      .subline {
+        margin-top: 4px;
+        color: var(--muted);
+      }
+
+      .remaining-number {
+        color: var(--muted);
+      }
+
+      .table-progress {
+        min-width: 190px;
+      }
+
+      .table-progress-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 7px;
+      }
+
+      .table-progress-meta span:first-child {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .table-progress-meta span:first-child strong {
+        margin-left: 4px;
+        color: var(--text);
+        font-size: 12px;
+      }
+
+      .pace-chip {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .pace-chip b {
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .pace-chip.green {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .pace-chip.ahead {
+        background: var(--ahead-soft);
+        color: var(--ahead);
+      }
+
+      .pace-chip.yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+      }
+
+      .pace-chip.slow {
+        background: var(--slow-soft);
+        color: var(--slow);
+      }
+
+      .pace-chip.red {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .pace-chip.behind {
+        background: var(--behind-soft);
+        color: var(--behind);
+      }
+
+      .table-progress .progress-track {
+        height: 6px;
+      }
+
+      .group-row td {
+        padding: 10px 12px;
+        background: #edf4ff;
+        border-top: 2px solid #cfe0fb;
+      }
+
+      .group-row td > div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .group-row span {
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 720;
+      }
+
+      .results-header {
+        margin-bottom: 18px;
+      }
+
+      .results-header .section-kicker {
+        margin-bottom: 7px;
+      }
+
+      .breakdown-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 42px;
+        padding: 10px 14px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--blue-soft);
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .breakdown-toggle i {
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg) translateY(-2px);
+        transition: transform 0.2s ease;
+      }
+
+      .breakdown-toggle.open i {
+        transform: rotate(225deg) translate(-1px, -1px);
+      }
+
+      .result-groups {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(250px, 1fr));
+        gap: 10px;
+      }
+
+      .result-group {
+        min-width: 0;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel-soft);
+      }
+
+      .result-pair {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .result-kpi {
+        min-width: 0;
+        padding: 12px;
+        border: 1px solid #e4eaf2;
+        border-radius: 9px;
+        background: #ffffff;
+      }
+
+      .result-kpi-label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 780;
+      }
+
+      .result-kpi-value {
+        display: block;
+        margin-top: 10px;
+        font-size: 24px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      .result-progress-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .result-progress-line > strong {
+        flex: 0 0 auto;
+        font-size: 12px;
+      }
+
+      .result-progress-line .progress-track {
+        flex: 1 1 auto;
+        min-width: 28px;
+        height: 6px;
+      }
+
+      .comparison {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 780;
+      }
+
+      .comparison.up {
+        color: var(--green);
+      }
+
+      .comparison.down {
+        color: var(--red);
+      }
+
+      .comparison.neutral {
+        color: var(--muted);
+      }
+
+      .result-detail {
+        margin: 20px -22px -22px;
+        padding: 20px 22px 22px;
+        border-top: 1px solid var(--line);
+        background: #f8fafc;
+      }
+
+      .result-detail[hidden] {
+        display: none;
+      }
+
+      .detail-heading h3 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .detail-heading .mode-tabs {
+        flex: 0 0 auto;
+      }
+
+      .breakdown-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .breakdown-card {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #ffffff;
+      }
+
+      .breakdown-card-head > div > strong,
+      .breakdown-card-head > div > span {
+        display: block;
+      }
+
+      .breakdown-card-head > div > span {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .breakdown-card .result-groups {
+        margin-top: 12px;
+      }
+
+      .breakdown-card .result-kpi {
+        padding: 10px;
+      }
+
+      .breakdown-card .result-kpi-value {
+        font-size: 20px;
+      }
+
+      .readout {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 12px 0 0;
+        padding-top: 11px;
+        border-top: 1px dashed var(--line);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .readout strong {
+        color: var(--text);
+      }
+
+      .matrix-section + .matrix-section {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .matrix-heading {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .matrix-heading span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .documentation {
+        margin-top: 24px;
+        padding: 28px;
+      }
+
+      .documentation > header {
+        max-width: 980px;
+      }
+
+      .documentation > header h2 {
+        margin: 8px 0 8px;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+
+      .documentation > header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.75;
+      }
+
+      .doc-nav {
+        display: flex;
+        gap: 8px;
+        margin: 18px 0 4px;
+        flex-wrap: wrap;
+      }
+
+      .doc-nav a {
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: var(--blue-soft);
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 760;
+        text-decoration: none;
+      }
+
+      .doc-section {
+        margin-top: 26px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+
+      .doc-section h3 {
+        margin: 0 0 12px;
+        font-size: 19px;
+      }
+
+      .doc-section > p,
+      .doc-section li {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .doc-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .doc-card {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel-soft);
+      }
+
+      .doc-card h4 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+
+      .doc-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .doc-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      .doc-table-wrap table {
+        min-width: 780px;
+      }
+
+      .doc-table-wrap th {
+        background: #edf4fb;
+        color: var(--text);
+      }
+
+      .doc-table-wrap td {
+        color: var(--muted);
+        line-height: 1.55;
+        white-space: normal;
+      }
+
+      code {
+        padding: 2px 5px;
+        border-radius: 5px;
+        background: #edf2f8;
+        color: #315277;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92em;
+      }
+
+      pre {
+        margin: 12px 0 0;
+        padding: 16px;
+        overflow-x: auto;
+        border-radius: 10px;
+        background: #142033;
+        color: #dce7f7;
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      pre code {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+      }
+
+      .status-legend {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .legend-card {
+        padding: 14px;
+        border-top: 4px solid var(--green);
+        border-radius: 9px;
+        background: var(--panel-soft);
+      }
+
+      .legend-card.yellow {
+        border-top-color: var(--yellow);
+      }
+
+      .legend-card.ahead {
+        border-top-color: var(--ahead);
+      }
+
+      .legend-card.slow {
+        border-top-color: var(--slow);
+      }
+
+      .legend-card.red {
+        border-top-color: var(--red);
+      }
+
+      .legend-card.behind {
+        border-top-color: var(--behind);
+      }
+
+      .legend-card strong,
+      .legend-card span {
+        display: block;
+      }
+
+      .legend-card span {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .checklist {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 18px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .checklist li {
+        position: relative;
+        padding: 10px 12px 10px 38px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #ffffff;
+      }
+
+      .checklist li::before {
+        content: "✓";
+        position: absolute;
+        top: 10px;
+        left: 13px;
+        display: grid;
+        width: 17px;
+        height: 17px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--green-soft);
+        color: var(--green);
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .callout {
+        margin-top: 12px;
+        padding: 14px 16px;
+        border-left: 4px solid var(--yellow);
+        border-radius: 8px;
+        background: var(--yellow-soft);
+        color: #755016;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      footer {
+        padding: 22px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+        text-align: center;
+      }
+
+      @media (max-width: 1180px) {
+        .result-groups,
+        .breakdown-card .result-groups {
+          grid-template-columns: 1fr;
+        }
+
+        .status-legend {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 820px) {
+        .page-shell {
+          width: min(100% - 20px, 1720px);
+          padding-top: 10px;
+        }
+
+        .handoff-header,
+        .hero-grid,
+        .doc-grid,
+        .checklist {
+          grid-template-columns: 1fr;
+        }
+
+        .header-actions {
+          justify-content: flex-start;
+        }
+
+        .module-panel,
+        .documentation {
+          padding: 16px;
+        }
+
+        .hero-stats {
+          gap: 14px;
+        }
+
+        .hero-remaining {
+          padding-left: 16px;
+        }
+
+        .mode-tabs {
+          display: grid;
+          grid-template-columns: 1fr;
+          width: 100%;
+        }
+
+        .result-pair {
+          grid-template-columns: 1fr;
+        }
+
+        .result-detail {
+          margin: 18px -16px -16px;
+          padding: 18px 16px;
+        }
+
+        .module-header,
+        .results-header,
+        .detail-heading,
+        .breakdown-card-head,
+        .matrix-heading,
+        .group-row td > div {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .detail-heading .mode-tabs {
+          width: 100%;
+        }
+
+        .status-legend {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media print {
+        body {
+          background: #ffffff;
+        }
+
+        .page-shell {
+          width: 100%;
+          padding: 0;
+        }
+
+        .handoff-header,
+        .module-panel,
+        .documentation {
+          box-shadow: none;
+          break-inside: avoid;
+        }
+
+        .header-actions,
+        .mode-tabs,
+        .breakdown-toggle {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="handoff-header">
+        <div>
+          <span class="page-eyebrow">Product & IT Handoff</span>
+          <h1>PIC Publishing Modules</h1>
+          <p>
+            本页面将 PIC Dashboard 中已确认的 Publishing Progress 与 Publishing Results
+            独立呈现，并补充统一口径、计算公式、状态规则、交互要求与接口建议。模块界面保持英文，说明文档使用中文，便于产品经理确认需求并由 IT 直接落地。
+          </p>
+        </div>
+        <div class="header-actions" aria-label="Page actions">
+          <a href="#publishing-progress">Publishing Progress</a>
+          <a href="#publishing-results">Publishing Results</a>
+          <a href="#handoff-notes">对接说明</a>
+          <button type="button" onclick="window.print()">Print / Save PDF</button>
+        </div>
+      </header>
+
+      <div class="module-stack">
+        <div id="publishing-progress"></div>
+        <div id="publishing-results"></div>
+      </div>
+
+      <section class="documentation" id="handoff-notes">
+        <header>
+          <span class="page-eyebrow">中文对接说明</span>
+          <h2>产品定义与实施口径</h2>
+          <p>
+            以下内容用于统一产品、业务与开发团队的理解。可见文案以页面中的英文为准；中文部分解释业务含义、计算方式和验收边界，不建议直接展示在正式 Dashboard 中。
+          </p>
+          <nav class="doc-nav" aria-label="文档目录">
+            <a href="#module-purpose">模块定位</a>
+            <a href="#terminology">关键词定义</a>
+            <a href="#formulas">计算公式</a>
+            <a href="#status-rules">状态规则</a>
+            <a href="#interaction-rules">交互要求</a>
+            <a href="#data-contract">数据接口</a>
+            <a href="#acceptance">验收标准</a>
+          </nav>
+        </header>
+
+        <section class="doc-section" id="module-purpose">
+          <h3>1. 模块定位</h3>
+          <div class="doc-grid">
+            <article class="doc-card">
+              <h4><code>Publishing Progress</code></h4>
+              <p>
+                回答“发布数量和预算执行是否跟上本月时间节奏、差距来自哪个产品或达人等级”。这是执行进度模块，核心是 MTD、Target、Remaining 与 Pace，不评价 GMV 等商业结果。
+              </p>
+            </article>
+            <article class="doc-card">
+              <h4><code>Publishing Results</code></h4>
+              <p>
+                回答“当前发布投入带来了什么业务结果、相对 Target 和上月同期表现如何”。这是结果模块，覆盖 Post、Budget、GMV、ROI、Views、CPM，不显示 Remaining 或 Pace。
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="terminology">
+          <h3>2. 关键词与统一定义</h3>
+          <div class="doc-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>English UI</th>
+                  <th>中文含义</th>
+                  <th>统一定义</th>
+                  <th>使用位置</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Post</code></td>
+                  <td>已发布内容数量</td>
+                  <td>在统计截止时间前满足“有效发布”规则的 TikTok Post 数量；不使用 Videos 作为前端文案。</td>
+                  <td>Progress、Results</td>
+                </tr>
+                <tr>
+                  <td><code>Budget</code></td>
+                  <td>预算花费</td>
+                  <td>MTD 已确认计入的发布相关花费。正式开发前需确认入账时点与撤稿、退款处理。</td>
+                  <td>Progress、Results</td>
+                </tr>
+                <tr>
+                  <td><code>Target</code></td>
+                  <td>月度目标</td>
+                  <td>当前月份、当前 PIC Scope 下的最终目标；统一使用 Target，不显示 Monthly Target 或 Monthly Budget。</td>
+                  <td>两模块</td>
+                </tr>
+                <tr>
+                  <td><code>MTD</code></td>
+                  <td>本月至今</td>
+                  <td>从当月 1 日 00:00 至数据截止时间的累计值，时区必须统一。</td>
+                  <td>两模块</td>
+                </tr>
+                <tr>
+                  <td><code>Remaining</code></td>
+                  <td>距目标剩余量</td>
+                  <td>Target 减 MTD，仅用于 Publishing Progress；明细表列内只显示数值。</td>
+                  <td>Progress</td>
+                </tr>
+                <tr>
+                  <td><code>Pace</code></td>
+                  <td>相对时间节奏差</td>
+                  <td>MTD 达成率减去本月时间进度，用于判断 Ahead、On Track、Slow 或 Behind。</td>
+                  <td>Progress</td>
+                </tr>
+                <tr>
+                  <td><code>vs Last Month</code></td>
+                  <td>对比上月同期</td>
+                  <td>当前 MTD 与上月相同已过天数的累计值比较，不是与上月整月比较。</td>
+                  <td>Results</td>
+                </tr>
+                <tr>
+                  <td><code>Creator Tier</code></td>
+                  <td>达人等级</td>
+                  <td>当前 Demo 为 S、A、B；等级定义与人员归属由主数据维护。</td>
+                  <td>Breakdown</td>
+                </tr>
+                <tr>
+                  <td><code>GMV</code></td>
+                  <td>成交金额</td>
+                  <td>归因到当前 Scope 中有效 Post 的 MTD GMV，归因窗口需由业务统一。</td>
+                  <td>Results</td>
+                </tr>
+                <tr>
+                  <td><code>ROI</code></td>
+                  <td>投入产出比</td>
+                  <td>GMV ÷ Budget。Target ROI 必须使用 Target GMV ÷ Target Budget 计算。</td>
+                  <td>Results</td>
+                </tr>
+                <tr>
+                  <td><code>Views</code></td>
+                  <td>播放量</td>
+                  <td>归因到当前 Scope 中有效 Post 的累计播放量，需明确数据更新时间和回补机制。</td>
+                  <td>Results</td>
+                </tr>
+                <tr>
+                  <td><code>CPM</code></td>
+                  <td>千次播放成本</td>
+                  <td>Budget ÷ Views × 1,000；数值越低越好。</td>
+                  <td>Results</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="formulas">
+          <h3>3. 核心计算公式</h3>
+          <div class="doc-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>指标</th>
+                  <th>公式</th>
+                  <th>显示规则</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>MTD Achievement</td>
+                  <td><code>MTD ÷ Target</code></td>
+                  <td>四舍五入为整数百分比；Target 为 0 时显示 <code>—</code>。</td>
+                </tr>
+                <tr>
+                  <td>Remaining</td>
+                  <td><code>Target − MTD</code></td>
+                  <td>正数显示 Remaining；超目标时建议显示 Over Target / Over Budget，而不是负数。</td>
+                </tr>
+                <tr>
+                  <td>Time Progress</td>
+                  <td><code>Elapsed Days ÷ Days in Month</code></td>
+                  <td>参与 Pace 计算但不在主卡重复显示。本 Demo 为 17 ÷ 30 = 57%。</td>
+                </tr>
+                <tr>
+                  <td>Pace</td>
+                  <td><code>MTD Achievement − Time Progress</code></td>
+                  <td>显示带正负号的整数百分比，如 <code>+16%</code>、<code>−3%</code>。</td>
+                </tr>
+                <tr>
+                  <td>vs Last Month</td>
+                  <td><code>(Current MTD − Last Month Same-period MTD) ÷ Last Month Same-period MTD</code></td>
+                  <td>使用 ↑ / ↓ 与整数百分比；对比基数为 0 时显示 <code>—</code>。</td>
+                </tr>
+                <tr>
+                  <td>ROI</td>
+                  <td><code>GMV ÷ Budget</code></td>
+                  <td>保留两位小数；Budget 为 0 时显示 <code>—</code>。</td>
+                </tr>
+                <tr>
+                  <td>CPM</td>
+                  <td><code>Budget ÷ Views × 1,000</code></td>
+                  <td>保留两位小数；Views 为 0 时显示 <code>—</code>。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="status-rules">
+          <h3>4. 状态与颜色规则</h3>
+          <p>
+            Publishing Progress 显示状态文字和颜色；Publishing Results 仅通过进度条颜色表达状态，不显示右上角颜色点，也不增加 Pace 文案。
+          </p>
+          <div class="status-legend">
+            <article class="legend-card ahead">
+              <strong>Ahead</strong>
+              <span>Pace &gt; +15%</span>
+            </article>
+            <article class="legend-card">
+              <strong>On Track</strong>
+              <span>−15% ≤ Pace ≤ +15%</span>
+            </article>
+            <article class="legend-card slow">
+              <strong>Slow</strong>
+              <span>−30% ≤ Pace &lt; −15%</span>
+            </article>
+            <article class="legend-card behind">
+              <strong>Behind</strong>
+              <span>Pace &lt; −30%</span>
+            </article>
+          </div>
+          <div class="doc-table-wrap" style="margin-top: 14px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Results KPI</th>
+                  <th>Green</th>
+                  <th>Yellow</th>
+                  <th>Red</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Post / GMV / Views</td>
+                  <td>Achievement ≥ Time Progress</td>
+                  <td>Achievement ≥ 85% × Time Progress</td>
+                  <td>低于 Yellow 门槛</td>
+                </tr>
+                <tr>
+                  <td>Budget</td>
+                  <td>Usage ≤ Time Progress + 8%，且 ROI ≥ 95% Target</td>
+                  <td>Usage ≤ Time Progress + 14%</td>
+                  <td>Usage &gt; Time Progress + 14%</td>
+                </tr>
+                <tr>
+                  <td>ROI</td>
+                  <td>≥ 100% Target</td>
+                  <td>90%–99% Target</td>
+                  <td>&lt; 90% Target</td>
+                </tr>
+                <tr>
+                  <td>CPM</td>
+                  <td>≤ Target</td>
+                  <td>&gt; Target 且 ≤ 112% Target</td>
+                  <td>&gt; 112% Target</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="interaction-rules">
+          <h3>5. Scope、透视与交互要求</h3>
+          <div class="doc-grid">
+            <article class="doc-card">
+              <h4>Scope</h4>
+              <p>
+                PIC 页面默认展示该 PIC 负责的全部产品与全部 Creator Tier，因此不提供额外产品或达人等级筛选器。Scope 标签仅说明当前范围。
+              </p>
+            </article>
+            <article class="doc-card">
+              <h4>Breakdown</h4>
+              <p>
+                两个模块均支持 Product、Creator Tier、Product × Creator Tier。切换透视只改变拆分方式，不改变顶部总数。
+              </p>
+            </article>
+            <article class="doc-card">
+              <h4>Publishing Results Toggle</h4>
+              <p>
+                默认只展示六项总览 KPI。点击 View Breakdown 展开明细，再次点击 Hide Breakdown 收起；切换透视时保持展开状态。
+              </p>
+            </article>
+            <article class="doc-card">
+              <h4>Aggregation</h4>
+              <p>
+                Product、Creator Tier 与交叉透视的所有子项必须严格汇总回顶部总数。ROI、CPM 必须用汇总后的原始指标重新计算，禁止对子项比率做平均。
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="data-contract">
+          <h3>6. 建议数据接口</h3>
+          <p>
+            后端建议返回原始可加总指标，由统一语义层计算 ROI、CPM、Achievement、Remaining、Pace 和 Last Month 对比，避免前后端口径漂移。以下为最小示意结构：
+          </p>
+          <pre><code>{
+  "asOfDate": "2026-06-17",
+  "timezone": "Asia/Jakarta",
+  "period": { "elapsedDays": 17, "daysInMonth": 30 },
+  "scope": {
+    "picId": "nadia",
+    "productIds": ["serum-spray", "day-cream"],
+    "creatorTiers": ["S", "A", "B"]
+  },
+  "summary": {
+    "post":   { "mtd": 45, "target": 84, "lastMonthSamePeriod": 41 },
+    "budget": { "mtd": 2900, "target": 7200, "lastMonthSamePeriod": 3900 },
+    "gmv":    { "mtd": 33300, "target": 64000, "lastMonthSamePeriod": 30200 },
+    "views":  { "mtd": 2190000, "target": 4200000, "lastMonthSamePeriod": 1980000 }
+  },
+  "breakdowns": {
+    "byProduct": [],
+    "byCreatorTier": [],
+    "byProductCreatorTier": []
+  }
+}</code></pre>
+          <div class="callout">
+            ROI 与 CPM 不建议作为独立事实字段长期存储；应基于同一响应中的 GMV、Budget、Views 动态计算。若接口必须返回派生值，也需要同时返回原始值以便校验。
+          </div>
+        </section>
+
+        <section class="doc-section" id="acceptance">
+          <h3>7. 验收标准</h3>
+          <ul class="checklist">
+            <li>所有可见模块文案为英文，且统一使用 Post、Budget、Target。</li>
+            <li>Progress 顶部总数与三种 Breakdown 汇总完全一致。</li>
+            <li>Results 顶部顺序固定为 Post、Budget、GMV、ROI、Views、CPM。</li>
+            <li>Results 每项 KPI 以 MTD 实际值为大数字，Target 作为下方灰色辅助信息。</li>
+            <li>Results 不显示 Remaining、Pace 或右上角状态颜色点。</li>
+            <li><code>vs Last Month</code> 使用上月相同截止日，而非上月整月。</li>
+            <li>Target 为 0、对比基数为 0、Views 或 Budget 为 0 时不出现 Infinity / NaN。</li>
+            <li>ROI、CPM 使用汇总后原始值重算，不允许平均子项比率。</li>
+            <li>桌面端无需横向滚动即可查看顶部 KPI；明细表在窄屏允许横向滚动。</li>
+          </ul>
+          <div class="callout">
+            上线前仍需业务确认四项口径：有效 Post 判定、Budget 入账时点、GMV / Views 归因窗口、每日数据截止时间。确认后应写入指标字典并由前后端共用。
+          </div>
+        </section>
+      </section>
+
+      <footer>Standalone demo · PIC Publishing Progress & Results · June 2026 sample data</footer>
+    </main>
+
+    <script>
+      const DAYS_IN_MONTH = 30;
+      const ELAPSED_DAYS = 17;
+      const TIME_PROGRESS = ELAPSED_DAYS / DAYS_IN_MONTH;
+
+      const gradeConfig = [
+        { key: "s", label: "S Tier", short: "S", costWeight: 4, gmvWeight: 5, viewWeight: 3.2 },
+        { key: "a", label: "A Tier", short: "A", costWeight: 2, gmvWeight: 2.4, viewWeight: 1.8 },
+        { key: "b", label: "B Tier", short: "B", costWeight: 1, gmvWeight: 1, viewWeight: 1 },
+      ];
+
+      const products = [
+        {
+          id: "serum-spray",
+          name: "Serum Spray",
+          priority: "Hero",
+          target: { post: 52, budget: 4300, gmv: 39000, views: 2600000, s: 6, a: 16, b: 30 },
+          mtd: { post: 38, budget: 1900, gmv: 21300, views: 1390000, s: 3, a: 11, b: 24 },
+          lastMonth: { post: 26, budget: 2400, gmv: 19000, views: 1250000, s: 2, a: 7, b: 17 },
+        },
+        {
+          id: "day-cream",
+          name: "Day Cream",
+          priority: "Growth",
+          target: { post: 32, budget: 2900, gmv: 25000, views: 1600000, s: 4, a: 9, b: 19 },
+          mtd: { post: 7, budget: 1000, gmv: 12000, views: 800000, s: 1, a: 2, b: 4 },
+          lastMonth: { post: 15, budget: 1500, gmv: 11200, views: 730000, s: 2, a: 4, b: 9 },
+        },
+      ];
+
+      const state = {
+        progressView: "product",
+        resultsOpen: false,
+        resultsView: "product",
+      };
+
+      function pct(value) {
+        return Number.isFinite(value) ? `${Math.round(value * 100)}%` : "—";
+      }
+
+      function signedPct(value) {
+        if (!Number.isFinite(value)) return "—";
+        if (Math.abs(value) < 0.005) return "0%";
+        return `${value > 0 ? "+" : "−"}${pct(Math.abs(value))}`;
+      }
+
+      function compact(value) {
+        const abs = Math.abs(value);
+        if (abs >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+        if (abs >= 1000) return `${(value / 1000).toFixed(1)}K`;
+        return Math.round(value).toLocaleString("en-US");
+      }
+
+      function fmt(value, type = "number") {
+        if (!Number.isFinite(value)) return "—";
+        if (type === "currency") return `$${compact(value)}`;
+        if (type === "currencySmall") return `$${value.toFixed(2)}`;
+        if (type === "compact") return compact(value);
+        if (type === "ratio") return value.toFixed(2);
+        return Math.round(value).toLocaleString("en-US");
+      }
+
+      function withDerived(metrics) {
+        const safe = { post: 0, budget: 0, gmv: 0, views: 0, s: 0, a: 0, b: 0, ...metrics };
+        return {
+          ...safe,
+          roi: safe.budget > 0 ? safe.gmv / safe.budget : NaN,
+          cpm: safe.views > 0 ? (safe.budget / safe.views) * 1000 : NaN,
+        };
+      }
+
+      function sumPeriod(rows, periodKey) {
+        return withDerived(
+          rows.reduce(
+            (sum, row) => {
+              const period = row[periodKey];
+              ["post", "budget", "gmv", "views", "s", "a", "b"].forEach((key) => {
+                sum[key] += period[key] || 0;
+              });
+              return sum;
+            },
+            { post: 0, budget: 0, gmv: 0, views: 0, s: 0, a: 0, b: 0 },
+          ),
+        );
+      }
+
+      function progressBar(rate, status) {
+        const width = Math.max(0, Math.min(rate, 1)) * 100;
+        return `<div class="progress-track ${status}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(rate * 100)}"><span style="width:${width}%"></span></div>`;
+      }
+
+      function getPaceState(rate) {
+        const gap = rate - TIME_PROGRESS;
+        if (gap > 0.15) return { status: "ahead", severity: "green", label: "Ahead" };
+        if (gap >= -0.15) return { status: "green", severity: "green", label: "On Track" };
+        if (gap >= -0.3) return { status: "slow", severity: "yellow", label: "Slow" };
+        return { status: "behind", severity: "red", label: "Behind" };
+      }
+
+      function overallProgressStatus(summary) {
+        const postRate = summary.mtdPost / summary.targetPost;
+        const budgetRate = summary.mtdBudget / summary.targetBudget;
+        const postState = getPaceState(postRate);
+        const budgetState = getPaceState(budgetRate);
+        const efficiencyGap = budgetRate - postRate;
+        if (postState.severity === "red" || budgetState.severity === "red" || efficiencyGap > 0.3) {
+          return { status: "red", label: "At Risk" };
+        }
+        if (postState.severity === "yellow" || budgetState.severity === "yellow" || efficiencyGap > 0.15) {
+          return { status: "yellow", label: "Watch" };
+        }
+        if (postRate > TIME_PROGRESS + 0.15 && budgetRate > TIME_PROGRESS + 0.15) {
+          return { status: "ahead", label: "Ahead" };
+        }
+        return { status: "green", label: "On Track" };
+      }
+
+      function pill(item) {
+        return `<span class="pill ${item.status}">${item.label}</span>`;
+      }
+
+      function allocateGradeBudget(product, periodKey) {
+        const period = product[periodKey];
+        const weights = gradeConfig.map((grade) => (period[grade.key] || 0) * grade.costWeight);
+        const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+        let remaining = Math.round(period.budget || 0);
+        return gradeConfig.reduce((result, grade, index) => {
+          const value =
+            index === gradeConfig.length - 1
+              ? remaining
+              : totalWeight > 0
+                ? Math.round((period.budget * weights[index]) / totalWeight)
+                : 0;
+          result[grade.key] = value;
+          remaining -= value;
+          return result;
+        }, {});
+      }
+
+      function buildProgressCells() {
+        return products.flatMap((product) => {
+          const targetBudget = allocateGradeBudget(product, "target");
+          const mtdBudget = allocateGradeBudget(product, "mtd");
+          return gradeConfig.map((grade) => ({
+            productId: product.id,
+            productName: product.name,
+            priority: product.priority,
+            grade: grade.key,
+            gradeLabel: grade.label,
+            targetPost: product.target[grade.key],
+            mtdPost: product.mtd[grade.key],
+            targetBudget: targetBudget[grade.key],
+            mtdBudget: mtdBudget[grade.key],
+          }));
+        });
+      }
+
+      function sumProgressCells(cells) {
+        return cells.reduce(
+          (sum, cell) => {
+            sum.targetPost += cell.targetPost;
+            sum.mtdPost += cell.mtdPost;
+            sum.targetBudget += cell.targetBudget;
+            sum.mtdBudget += cell.mtdBudget;
+            return sum;
+          },
+          { targetPost: 0, mtdPost: 0, targetBudget: 0, mtdBudget: 0 },
+        );
+      }
+
+      function renderHeroCard(label, actual, target, type) {
+        const rate = target ? actual / target : 0;
+        const paceState = getPaceState(rate);
+        const remaining = Math.max(target - actual, 0);
+        return `
+          <article class="hero-card ${paceState.status}">
+            <div class="hero-card-head">
+              <strong>${label}</strong>
+              ${pill(paceState)}
+            </div>
+            <div class="hero-stats">
+              <div class="hero-ratio">
+                <strong>
+                  <span class="actual">${fmt(actual, type)}</span>
+                  <span class="divider">/</span>
+                  <span class="target">${fmt(target, type)}</span>
+                </strong>
+                <span>MTD / Target</span>
+              </div>
+              <div class="hero-remaining">
+                <strong>${fmt(remaining, type)}</strong>
+                <span>Remaining</span>
+              </div>
+            </div>
+            ${progressBar(rate, paceState.status)}
+            <div class="hero-diagnostics">
+              <span>MTD <strong>${pct(rate)}</strong></span>
+              <span class="${paceState.status}">Pace <strong>${signedPct(rate - TIME_PROGRESS)}</strong></span>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderProgressCell(rate) {
+        const paceState = getPaceState(rate);
+        return `
+          <div class="table-progress">
+            <div class="table-progress-meta">
+              <span>MTD <strong>${pct(rate)}</strong></span>
+              <span class="pace-chip ${paceState.status}"><b>Pace</b>${signedPct(rate - TIME_PROGRESS)}</span>
+            </div>
+            ${progressBar(rate, paceState.status)}
+          </div>
+        `;
+      }
+
+      function renderProgressRow(row, label, subline) {
+        const postRate = row.targetPost ? row.mtdPost / row.targetPost : 0;
+        const budgetRate = row.targetBudget ? row.mtdBudget / row.targetBudget : 0;
+        return `
+          <tr>
+            <td><strong>${label}</strong><span class="subline">${subline}</span></td>
+            <td><strong>${row.mtdPost}/${row.targetPost}</strong></td>
+            <td><strong class="remaining-number">${Math.max(row.targetPost - row.mtdPost, 0)}</strong></td>
+            <td>${renderProgressCell(postRate)}</td>
+            <td><strong>${fmt(row.mtdBudget, "currency")}/${fmt(row.targetBudget, "currency")}</strong></td>
+            <td><strong class="remaining-number">${fmt(Math.max(row.targetBudget - row.mtdBudget, 0), "currency")}</strong></td>
+            <td>${renderProgressCell(budgetRate)}</td>
+          </tr>
+        `;
+      }
+
+      function renderProgressRows(cells) {
+        if (state.progressView === "tier") {
+          return gradeConfig
+            .map((grade) => {
+              const row = sumProgressCells(cells.filter((cell) => cell.grade === grade.key));
+              return renderProgressRow(row, grade.label, `${products.length} Products`);
+            })
+            .join("");
+        }
+
+        if (state.progressView === "matrix") {
+          return products
+            .map((product) => {
+              const productCells = cells.filter((cell) => cell.productId === product.id);
+              const total = sumProgressCells(productCells);
+              return `
+                <tr class="group-row">
+                  <td colspan="7">
+                    <div>
+                      <strong>${product.name}</strong>
+                      <span>${product.priority} · Total: ${total.mtdPost}/${total.targetPost} Post · ${fmt(total.mtdBudget, "currency")}/${fmt(total.targetBudget, "currency")} Budget</span>
+                    </div>
+                  </td>
+                </tr>
+                ${gradeConfig
+                  .map((grade) =>
+                    renderProgressRow(
+                      sumProgressCells(productCells.filter((cell) => cell.grade === grade.key)),
+                      grade.label,
+                      `${product.name} · ${grade.short} Tier`,
+                    ),
+                  )
+                  .join("")}
+              `;
+            })
+            .join("");
+        }
+
+        return products
+          .map((product) => {
+            const row = sumProgressCells(cells.filter((cell) => cell.productId === product.id));
+            return renderProgressRow(row, product.name, `${product.priority} · All Tiers`);
+          })
+          .join("");
+      }
+
+      function progressTabs() {
+        return [
+          ["product", "Product"],
+          ["tier", "Creator Tier"],
+          ["matrix", "Product × Creator Tier"],
+        ]
+          .map(
+            ([value, label]) =>
+              `<button type="button" class="${state.progressView === value ? "active" : ""}" data-progress-view="${value}">${label}</button>`,
+          )
+          .join("");
+      }
+
+      function renderProgressModule() {
+        const cells = buildProgressCells();
+        const summary = sumProgressCells(cells);
+        const status = overallProgressStatus(summary);
+        document.querySelector("#publishing-progress").innerHTML = `
+          <section class="module-panel" aria-labelledby="progress-title">
+            <header class="module-header">
+              <div>
+                <h2 id="progress-title">Publishing Progress</h2>
+                <p>Track post and budget progress by product and creator tier.</p>
+              </div>
+              ${pill(status)}
+            </header>
+            <div class="scope-row"><span>Scope</span><strong>All Products · All Creator Tiers</strong></div>
+            <div class="hero-grid">
+              ${renderHeroCard("Post", summary.mtdPost, summary.targetPost, "number")}
+              ${renderHeroCard("Budget", summary.mtdBudget, summary.targetBudget, "currency")}
+            </div>
+            <div class="module-toolbar">
+              <div class="mode-tabs" role="group" aria-label="Publishing progress breakdown">${progressTabs()}</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr class="table-group-head">
+                    <th rowspan="2">Breakdown</th>
+                    <th colspan="3">Post</th>
+                    <th colspan="3">Budget</th>
+                  </tr>
+                  <tr>
+                    <th>MTD / Target</th>
+                    <th>Remaining</th>
+                    <th>MTD / Pace</th>
+                    <th>MTD / Target</th>
+                    <th>Remaining</th>
+                    <th>MTD / Pace</th>
+                  </tr>
+                </thead>
+                <tbody>${renderProgressRows(cells)}</tbody>
+              </table>
+            </div>
+          </section>
+        `;
+
+        document.querySelectorAll("[data-progress-view]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.progressView = button.dataset.progressView;
+            renderProgressModule();
+          });
+        });
+      }
+
+      const resultMetrics = [
+        { key: "post", label: "Post", type: "number" },
+        { key: "budget", label: "Budget", type: "currency" },
+        { key: "gmv", label: "GMV", type: "currency" },
+        { key: "roi", label: "ROI", type: "ratio" },
+        { key: "views", label: "Views", type: "compact" },
+        { key: "cpm", label: "CPM", type: "currencySmall" },
+      ];
+
+      const resultGroups = [
+        ["post", "budget"],
+        ["gmv", "roi"],
+        ["views", "cpm"],
+      ];
+
+      function rawTargetRatio(actual, target, key) {
+        return target[key] ? actual[key] / target[key] : NaN;
+      }
+
+      function resultStatus(actual, target, key) {
+        if (key === "budget") {
+          const usage = actual.budget / target.budget;
+          const roiHealthy = actual.roi >= target.roi * 0.95;
+          if (usage <= TIME_PROGRESS + 0.08 && roiHealthy) return "green";
+          if (usage <= TIME_PROGRESS + 0.14) return "yellow";
+          return "red";
+        }
+        if (key === "cpm") {
+          const ratio = actual.cpm / target.cpm;
+          if (ratio <= 1) return "green";
+          if (ratio <= 1.12) return "yellow";
+          return "red";
+        }
+        if (key === "roi") {
+          const ratio = actual.roi / target.roi;
+          if (ratio >= 1) return "green";
+          if (ratio >= 0.9) return "yellow";
+          return "red";
+        }
+        const ratio = actual[key] / target[key];
+        if (ratio >= TIME_PROGRESS) return "green";
+        if (ratio >= TIME_PROGRESS * 0.85) return "yellow";
+        return "red";
+      }
+
+      function resultStatusLabel(status) {
+        if (status === "green") return "On Track";
+        if (status === "yellow") return "Watch";
+        return "At Risk";
+      }
+
+      function deltaPct(current, previous) {
+        return previous ? (current - previous) / previous : NaN;
+      }
+
+      function comparisonLabel(value) {
+        if (!Number.isFinite(value)) return "—";
+        if (Math.abs(value) < 0.005) return "→ 0% vs Last Month";
+        return `${value > 0 ? "↑" : "↓"} ${pct(Math.abs(value))} vs Last Month`;
+      }
+
+      function renderResultKpi(metric, actual, target, comparison = null) {
+        const key = metric.key;
+        const rate = rawTargetRatio(actual, target, key);
+        const status = resultStatus(actual, target, key);
+        const compareValue = comparison ? deltaPct(actual[key], comparison[key]) : NaN;
+        const comparisonIsGood =
+          key === "budget" || !Number.isFinite(compareValue)
+            ? null
+            : key === "cpm"
+              ? compareValue <= 0
+              : compareValue >= 0;
+        const comparisonClass =
+          !Number.isFinite(compareValue) || key === "budget" || Math.abs(compareValue) < 0.005
+            ? "neutral"
+            : comparisonIsGood
+              ? "up"
+              : "down";
+
+        return `
+          <article class="result-kpi" aria-label="${metric.label}: ${fmt(actual[key], metric.type)} of ${fmt(target[key], metric.type)} target; ${resultStatusLabel(status)}">
+            <span class="result-kpi-label">${metric.label}</span>
+            <strong class="result-kpi-value">${fmt(actual[key], metric.type)}</strong>
+            <span class="result-target-label">Target ${fmt(target[key], metric.type)}</span>
+            <div class="result-progress-line">
+              <strong>${pct(rate)}</strong>
+              ${progressBar(rate, status)}
+            </div>
+            ${comparison ? `<span class="comparison ${comparisonClass}">${comparisonLabel(compareValue)}</span>` : ""}
+          </article>
+        `;
+      }
+
+      function renderResultGroups(actual, target, comparison = null) {
+        return `
+          <div class="result-groups">
+            ${resultGroups
+              .map(
+                (keys) => `
+                  <section class="result-group" aria-label="${keys
+                    .map((key) => resultMetrics.find((metric) => metric.key === key).label)
+                    .join(" and ")}">
+                    <div class="result-pair">
+                      ${keys
+                        .map((key) =>
+                          renderResultKpi(
+                            resultMetrics.find((metric) => metric.key === key),
+                            actual,
+                            target,
+                            comparison,
+                          ),
+                        )
+                        .join("")}
+                    </div>
+                  </section>
+                `,
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
+      function allocateResultMetric(product, periodKey, metricKey) {
+        const period = product[periodKey];
+        const weightKey = metricKey === "budget" ? "costWeight" : metricKey === "gmv" ? "gmvWeight" : "viewWeight";
+        const weights = gradeConfig.map((grade) => (period[grade.key] || 0) * grade[weightKey]);
+        const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+        let remaining = Math.round(period[metricKey] || 0);
+        return gradeConfig.reduce((result, grade, index) => {
+          const value =
+            index === gradeConfig.length - 1
+              ? remaining
+              : totalWeight > 0
+                ? Math.round((period[metricKey] * weights[index]) / totalWeight)
+                : 0;
+          result[grade.key] = value;
+          remaining -= value;
+          return result;
+        }, {});
+      }
+
+      function buildResultCells() {
+        return products.flatMap((product) => {
+          const targetBudget = allocateResultMetric(product, "target", "budget");
+          const mtdBudget = allocateResultMetric(product, "mtd", "budget");
+          const targetGmv = allocateResultMetric(product, "target", "gmv");
+          const mtdGmv = allocateResultMetric(product, "mtd", "gmv");
+          const targetViews = allocateResultMetric(product, "target", "views");
+          const mtdViews = allocateResultMetric(product, "mtd", "views");
+          return gradeConfig.map((grade) => ({
+            productId: product.id,
+            productName: product.name,
+            priority: product.priority,
+            grade: grade.key,
+            gradeLabel: grade.label,
+            target: withDerived({
+              post: product.target[grade.key],
+              budget: targetBudget[grade.key],
+              gmv: targetGmv[grade.key],
+              views: targetViews[grade.key],
+            }),
+            actual: withDerived({
+              post: product.mtd[grade.key],
+              budget: mtdBudget[grade.key],
+              gmv: mtdGmv[grade.key],
+              views: mtdViews[grade.key],
+            }),
+          }));
+        });
+      }
+
+      function sumResultCells(cells, metricKey) {
+        return withDerived(
+          cells.reduce(
+            (sum, cell) => {
+              const metrics = cell[metricKey];
+              ["post", "budget", "gmv", "views"].forEach((key) => {
+                sum[key] += metrics[key] || 0;
+              });
+              return sum;
+            },
+            { post: 0, budget: 0, gmv: 0, views: 0 },
+          ),
+        );
+      }
+
+      function resultReadout(actual, target) {
+        if (actual.post / target.post < TIME_PROGRESS - 0.08) {
+          return "Post delivery is behind — close scheduling and content gaps first.";
+        }
+        if (actual.roi < target.roi * 0.9) {
+          return "ROI is below target — fix the content mix, offer, and CTA before scaling.";
+        }
+        if (actual.cpm > target.cpm * 1.1) {
+          return "CPM is high — reduce costly creators and reuse efficient content.";
+        }
+        return "Delivery and performance are aligned — continue the current winning mix.";
+      }
+
+      function overallResultStatus(actual, target) {
+        const checks = ["post", "gmv", "roi", "views", "cpm"].map((key) => resultStatus(actual, target, key));
+        if (checks.includes("red")) return { status: "red", label: "At Risk" };
+        if (checks.includes("yellow")) return { status: "yellow", label: "Watch" };
+        return { status: "green", label: "On Track" };
+      }
+
+      function resultTabs() {
+        return [
+          ["product", "Product"],
+          ["tier", "Creator Tier"],
+          ["matrix", "Product × Creator Tier"],
+        ]
+          .map(
+            ([value, label]) =>
+              `<button type="button" class="${state.resultsView === value ? "active" : ""}" data-results-view="${value}">${label}</button>`,
+          )
+          .join("");
+      }
+
+      function breakdownCard(row) {
+        return `
+          <article class="breakdown-card">
+            <div class="breakdown-card-head">
+              <div><strong>${row.label}</strong><span>${row.subline}</span></div>
+              ${pill(overallResultStatus(row.actual, row.target))}
+            </div>
+            ${renderResultGroups(row.actual, row.target)}
+            <p class="readout"><strong>Readout</strong><span>${resultReadout(row.actual, row.target)}</span></p>
+          </article>
+        `;
+      }
+
+      function renderResultBreakdown() {
+        const cells = buildResultCells();
+
+        if (state.resultsView === "tier") {
+          return `<div class="breakdown-list">${gradeConfig
+            .map((grade) => {
+              const gradeCells = cells.filter((cell) => cell.grade === grade.key);
+              return breakdownCard({
+                label: grade.label,
+                subline: `${products.length} Products`,
+                actual: sumResultCells(gradeCells, "actual"),
+                target: sumResultCells(gradeCells, "target"),
+              });
+            })
+            .join("")}</div>`;
+        }
+
+        if (state.resultsView === "matrix") {
+          return products
+            .map((product) => {
+              const productCells = cells.filter((cell) => cell.productId === product.id);
+              return `
+                <section class="matrix-section">
+                  <div class="matrix-heading"><strong>${product.name}</strong><span>${product.priority} · ${gradeConfig.length} Creator Tiers</span></div>
+                  <div class="breakdown-list">
+                    ${gradeConfig
+                      .map((grade) => {
+                        const cell = productCells.find((item) => item.grade === grade.key);
+                        return breakdownCard({
+                          label: grade.label,
+                          subline: `${product.name} · ${grade.short} Tier`,
+                          actual: cell.actual,
+                          target: cell.target,
+                        });
+                      })
+                      .join("")}
+                  </div>
+                </section>
+              `;
+            })
+            .join("");
+        }
+
+        return `<div class="breakdown-list">${products
+          .map((product) =>
+            breakdownCard({
+              label: product.name,
+              subline: `${product.priority} · All Tiers`,
+              actual: withDerived(product.mtd),
+              target: withDerived(product.target),
+            }),
+          )
+          .join("")}</div>`;
+      }
+
+      function renderResultsModule() {
+        const actual = sumPeriod(products, "mtd");
+        const target = sumPeriod(products, "target");
+        const lastMonth = sumPeriod(products, "lastMonth");
+        document.querySelector("#publishing-results").innerHTML = `
+          <section class="module-panel" aria-labelledby="results-title">
+            <header class="results-header">
+              <div>
+                <span class="section-kicker">Publishing Results</span>
+                <h2 id="results-title">Publishing Results</h2>
+                <p>Nadia owns Serum Spray, Day Cream. Review the total, then compare product and creator-tier results.</p>
+              </div>
+              <button type="button" class="breakdown-toggle ${state.resultsOpen ? "open" : ""}" aria-expanded="${state.resultsOpen}" aria-controls="results-detail">
+                <span>${state.resultsOpen ? "Hide Breakdown" : "View Breakdown"}</span><i aria-hidden="true"></i>
+              </button>
+            </header>
+            ${renderResultGroups(actual, target, lastMonth)}
+            <div class="result-detail" id="results-detail" ${state.resultsOpen ? "" : "hidden"}>
+              <div class="detail-heading">
+                <div><h3>Results Breakdown</h3><p>Six core KPIs: Post, Budget, GMV, ROI, Views, and CPM.</p></div>
+                <div class="mode-tabs" role="group" aria-label="Publishing results breakdown">${resultTabs()}</div>
+              </div>
+              ${renderResultBreakdown()}
+            </div>
+          </section>
+        `;
+
+        document.querySelector(".breakdown-toggle").addEventListener("click", () => {
+          state.resultsOpen = !state.resultsOpen;
+          renderResultsModule();
+        });
+
+        document.querySelectorAll("[data-results-view]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.resultsView = button.dataset.resultsView;
+            state.resultsOpen = true;
+            renderResultsModule();
+          });
+        });
+      }
+
+      renderProgressModule();
+      renderResultsModule();
+    </script>
+  </body>
+</html>

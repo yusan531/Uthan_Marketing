@@ -14,6 +14,7 @@ const nav = [
   ["Payment 付款", "￥"],
   ["Report 报表", "▥"],
   ["基础配置", "⚙"],
+  ["Marketing 3.0", "M"],
 ];
 
 const campaigns = [
@@ -38,7 +39,7 @@ export default function Home() {
         <div className="brand"><span className="brand-mark">M</span><span>Marketing<span className="brand-dot">.</span></span></div>
         <div className="workspace-switch"><span className="workspace-avatar">L</span><span><b>LOreal China</b><small>增长营销团队</small></span><span className="chevron">⌄</span></div>
         <div className="nav-label">WORKSPACE</div>
-        <nav>{nav.map(([label, icon]) => <button key={label} className={active === label ? "nav-item active" : "nav-item"} onClick={() => setActive(label)}><span className="nav-icon">{icon}</span><span>{label}</span>{label === "总览" && <span className="nav-pip" />}</button>)}</nav>
+        <nav>{nav.map(([label, icon]) => <button key={label} className={active === label ? "nav-item active" : "nav-item"} onClick={() => label === "Marketing 3.0" ? (window.location.href = "/marketing-3-demo/") : setActive(label)}><span className="nav-icon">{icon}</span><span>{label}</span>{label === "总览" && <span className="nav-pip" />}</button>)}</nav>
         <div className="sidebar-bottom"><button className="help"><span>?</span> 帮助中心</button><div className="user-card"><span className="user-avatar">M</span><span><b>Mia Chen</b><small>管理员</small></span><span className="more">···</span></div></div>
       </aside>
       <section className="main-area">

@@ -1138,6 +1138,7 @@ function TargetDashboard({
     { name: "Views", value: "2.2M", target: "4.2M", rate: 52, trend: "+11%" },
     { name: "CPM", value: "IDR 9.7K", target: "IDR 17.1K", rate: 77, trend: "-33%" },
   ];
+  const metricTone = (rate: number) => rate >= 100 ? "excellent" : rate >= 60 ? "on-track" : rate >= 40 ? "watch" : "risk";
   const breakdownRows = rowsByDimension[resultTab];
   const breakdownMetrics = (row: DashboardBreakdown) => {
     const postRate = percent(row.postMtd, row.postTarget);
@@ -1310,12 +1311,12 @@ function TargetDashboard({
 
       <div className="dashboard-section-row">
       <section className="panel results-panel">
-        <div className="panel-title">
-          <div><h2>{label("发布结果", "Publishing Results", language)}</h2></div>
-          <button className="button soft" onClick={() => setResultOpen((value) => !value)}>{resultOpen ? label("收起明细", "Hide Breakdown", language) : label("展开明细", "Show Breakdown", language)}<ChevronDown size={14} className={resultOpen ? "rotate" : ""} /></button>
+        <div className="section-caption results-caption">
+          <span />{label("发布结果", "Publishing Results", language)}
+          <button className="section-collapse-button" onClick={() => setResultOpen((value) => !value)}>{resultOpen ? label("收起明细", "Hide Breakdown", language) : label("展开明细", "Show Breakdown", language)}<ChevronDown size={14} className={resultOpen ? "rotate" : ""} /></button>
         </div>
-        <div className="result-metric-groups">
-          {[summaryMetrics.slice(0, 2), summaryMetrics.slice(2, 4), summaryMetrics.slice(4, 6)].map((group, groupIndex) => <div className="result-metric-group" key={groupIndex}>{group.map((metric) => <article key={metric.name}><span>{metric.name}</span><strong>{metric.value}</strong><small>Target {metric.target}</small><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div><em className={metric.trend.startsWith("+") || metric.name === "CPM" ? "good" : "warn"}>{metric.trend} {label("较上月", "vs last month", language)}</em></article>)}</div>)}
+        <div className="result-metric-grid">
+          {summaryMetrics.map((metric) => <article className={`result-metric-card ${metricTone(metric.rate)}`} key={metric.name}><span>{metric.name}</span><strong>{metric.value}</strong><small>Target {metric.target}</small><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div><em className={metric.trend.startsWith("+") || metric.name === "CPM" ? "good" : "warn"}>{metric.trend} {label("较上月", "vs last month", language)}</em></article>)}
         </div>
         {resultOpen && (
           <div className="results-breakdown">
@@ -1327,7 +1328,7 @@ function TargetDashboard({
               const isExpanded = expandedResults.has(resultKey);
               return <article className="breakdown-result-card" key={resultKey}>
                 <header><h4>{row.name}</h4><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(resultKey) ? next.delete(resultKey) : next.add(resultKey); return next; })}>{isExpanded ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={isExpanded ? "rotate" : ""} /></button></header>
-                <div className="breakdown-metric-groups">{[breakdownMetrics(row).slice(0, 2), breakdownMetrics(row).slice(2, 4), breakdownMetrics(row).slice(4, 6)].map((group, index) => <div className="breakdown-metric-group" key={index}>{group.map((metric) => <div className="breakdown-metric" key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>)}</div>
+                <div className="breakdown-metrics">{breakdownMetrics(row).map((metric) => <div className={`breakdown-metric ${metricTone(metric.rate)}`} key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>
                 {isExpanded && <div className="result-child-list">{childrenFor(resultTab, row).map((child) => <div className="result-child-row" key={`${resultKey}-${child.name}`}><div><strong>{child.name}</strong><small>{child.sub}</small></div>{breakdownMetrics(child).map((metric) => <span key={metric.name}><small>{metric.name}</small><b>{metric.value}</b></span>)}</div>)}</div>}
               </article>;
             })}</div>

@@ -1037,7 +1037,6 @@ function TargetDashboard({
   notify: (message: string) => void;
 }) {
   const [tab, setTab] = useState("product");
-  const [expandedBreakdowns, setExpandedBreakdowns] = useState<Set<string>>(new Set());
   const [resultTab, setResultTab] = useState("productTier");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
   const [analysis, setAnalysis] = useState("");
@@ -1061,11 +1060,11 @@ function TargetDashboard({
     { name: "A Tier", sub: "16 Creators", postMtd: 18, postTarget: 30, budgetMtd: 12100000, budgetTarget: 28000000 },
     { name: "B Tier", sub: "32 Creators", postMtd: 23, postTarget: 46, budgetMtd: 6200000, budgetTarget: 28000000 },
   ];
-  const picRows: DashboardBreakdown[] = [
-    { name: "Nadia", sub: "Tone Up Sunscreen · Body Scrub", postMtd: 28, postTarget: 48, budgetMtd: 16200000, budgetTarget: 39000000 },
-    { name: "Delvi", sub: "Day Cream · Hair Oil", postMtd: 17, postTarget: 36, budgetMtd: 9900000, budgetTarget: 33000000 },
-  ];
-  const rows = tab === "tier" ? tierRows : tab === "strategist" ? picRows : productRows;
+  const productTierRows: DashboardBreakdown[] = productRows.flatMap((row) => [
+    { ...row, name: `${row.name} · A Tier`, sub: row.sub, postMtd: Math.round(row.postMtd * .65), postTarget: Math.round(row.postTarget * .65), budgetMtd: row.budgetMtd * .65, budgetTarget: row.budgetTarget * .65 },
+    { ...row, name: `${row.name} · B Tier`, sub: row.sub, postMtd: Math.round(row.postMtd * .35), postTarget: Math.round(row.postTarget * .35), budgetMtd: row.budgetMtd * .35, budgetTarget: row.budgetTarget * .35 },
+  ]);
+  const rows = tab === "tier" ? tierRows : tab === "productTier" ? productTierRows : productRows;
   const postMtd = productRows.reduce((sum, row) => sum + row.postMtd, 0);
   const postTarget = productRows.reduce((sum, row) => sum + row.postTarget, 0);
   const budgetMtd = productRows.reduce((sum, row) => sum + row.budgetMtd, 0);
@@ -1073,7 +1072,7 @@ function TargetDashboard({
   const tabs = [
     ["product", "产品", "Product"],
     ["tier", "达人等级", "Creator Tier"],
-    ["strategist", "KOL Strategist", "KOL Strategist"],
+    ["productTier", "产品 × 达人等级", "Product × Creator Tier"],
   ];
 
   return (
@@ -1093,7 +1092,7 @@ function TargetDashboard({
         </div>
       </section>
 
-      <div className="dashboard-grid">
+      <div className="dashboard-grid reference-dashboard-grid">
         <section className="panel progress-panel">
           <div className="section-caption"><span />{label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
@@ -1106,25 +1105,24 @@ function TargetDashboard({
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
               <thead>
-                <tr><th>{label("拆分维度", "Breakdown", language)}</th><th>Post MTD / Target</th><th>Budget MTD / Target</th></tr>
+                <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
+                <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  return (
-                    <>
-                    <tr className="expandable-row">
-                      <td><button className="expand-row-button" onClick={() => setExpandedBreakdowns((current) => { const next = new Set(current); next.has(row.name) ? next.delete(row.name) : next.add(row.name); return next; })}><ChevronRight size={13} className={expandedBreakdowns.has(row.name) ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td>
-                      <td><b>{row.postMtd}/{row.postTarget}</b></td>
-                      <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
-                    </tr>
-                    {expandedBreakdowns.has(row.name) && (tab === "product"
-                      ? [["A Tier", .65], ["B Tier", .35]]
-                      : tab === "tier"
-                        ? [["Tone Up Sunscreen", .65], ["Day Cream", .35]]
-                        : [["Tone Up Sunscreen", .65], ["Body Scrub", .35]]
-                    ).map(([childName, share]) => <tr key={String(childName)} className="nested-breakdown"><td>{String(childName)}</td><td>{Math.round(row.postMtd * Number(share))}/{Math.round(row.postTarget * Number(share))}</td><td>IDR {compactNumber(row.budgetMtd * Number(share))}/{compactNumber(row.budgetTarget * Number(share))}</td></tr>)}
-                    </>
-                  );
+                  const postRate = percent(row.postMtd, row.postTarget);
+                  const budgetRate = percent(row.budgetMtd, row.budgetTarget);
+                  const postPace = postRate - 57;
+                  const budgetPace = budgetRate - 57;
+                  return <tr key={`${tab}-${row.name}`}>
+                    <td><strong>{row.name}</strong><small>{row.sub}</small></td>
+                    <td><b>{row.postMtd}/{row.postTarget}</b></td>
+                    <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
+                    <td><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td>
+                    <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
+                    <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
+                    <td><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td>
+                  </tr>;
                 })}
               </tbody>
             </table>

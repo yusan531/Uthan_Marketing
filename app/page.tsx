@@ -1264,7 +1264,7 @@ function TargetDashboard({
       <div className="dashboard-section-row">
       <section className="panel results-panel">
         <div className="panel-title">
-          <div><span className="eyebrow">PUBLISHING RESULTS</span><h2>{label("发布结果", "Publishing Results", language)}</h2><p>{label("对比投入、商业结果和流量效率。", "Compare investment, business outcomes and traffic efficiency.", language)}</p></div>
+          <div><h2>{label("发布结果", "Publishing Results", language)}</h2></div>
           <button className="button soft" onClick={() => setResultOpen((value) => !value)}>{resultOpen ? label("收起明细", "Hide Breakdown", language) : label("展开明细", "Show Breakdown", language)}<ChevronDown size={14} className={resultOpen ? "rotate" : ""} /></button>
         </div>
         <div className="result-metric-groups">
@@ -1272,15 +1272,14 @@ function TargetDashboard({
         </div>
         {resultOpen && (
           <div className="results-breakdown">
-            <div className="breakdown-heading">
-              <div><h3>{label("结果明细", "Results Breakdown", language)}</h3><p>{label("按维度查看六项核心结果指标。", "Review six core result metrics by dimension.", language)}</p></div>
+            <div className="breakdown-heading tabs-only">
               <div className="dashboard-tabs">{tabs.map(([key, zh, en]) => <button key={key} className={resultTab === key ? "active" : ""} onClick={() => setResultTab(key)}>{label(zh, en, language)}</button>)}</div>
             </div>
             <div className="breakdown-card-list">{breakdownRows.map((row) => {
               const resultKey = `${resultTab}-${row.name}`;
               const isExpanded = expandedResults.has(resultKey);
               return <article className="breakdown-result-card" key={resultKey}>
-                <header><div><h4>{row.name}</h4><small>{row.sub}</small></div><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(resultKey) ? next.delete(resultKey) : next.add(resultKey); return next; })}>{isExpanded ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={isExpanded ? "rotate" : ""} /></button></header>
+                <header><h4>{row.name}</h4><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(resultKey) ? next.delete(resultKey) : next.add(resultKey); return next; })}>{isExpanded ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={isExpanded ? "rotate" : ""} /></button></header>
                 <div className="breakdown-metric-groups">{[breakdownMetrics(row).slice(0, 2), breakdownMetrics(row).slice(2, 4), breakdownMetrics(row).slice(4, 6)].map((group, index) => <div className="breakdown-metric-group" key={index}>{group.map((metric) => <div className="breakdown-metric" key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>)}</div>
                 {isExpanded && <div className="result-child-list">{childrenFor(resultTab, row).map((child) => <div className="result-child-row" key={`${resultKey}-${child.name}`}><div><strong>{child.name}</strong><small>{child.sub}</small></div>{breakdownMetrics(child).map((metric) => <span key={metric.name}><small>{metric.name}</small><b>{metric.value}</b></span>)}</div>)}</div>}
               </article>;

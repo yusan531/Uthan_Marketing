@@ -1803,6 +1803,10 @@ thead .operation-column {
   gap: 12px;
 }
 
+.breakdown-heading.tabs-only {
+  justify-content: flex-start;
+}
+
 .breakdown-heading h3,
 .breakdown-heading p {
   margin: 0;

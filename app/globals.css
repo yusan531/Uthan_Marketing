@@ -1614,8 +1614,32 @@ thead .operation-column {
 .reference-dashboard-grid .analysis-panel { min-height: 180px; }
 .reference-dashboard-grid .analysis-panel .section-caption { min-height: 48px; padding: 0 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
 .reference-dashboard-grid .analysis-panel .section-caption > span:first-child { display: block; }
-.target-dashboard .result-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; border-top: 1px solid var(--line); }
-.target-dashboard .result-metrics article { min-height: 120px; padding: 16px; border-radius: 7px; }
+.result-metric-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px; border-top: 1px solid var(--line); }
+.result-metric-group, .breakdown-metric-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); }
+.result-metric-group article { min-width: 0; min-height: 130px; padding: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.result-metric-group article > span, .result-metric-group article > strong, .result-metric-group article > small, .result-metric-group article > em { display: block; }
+.result-metric-group article > span { color: var(--muted); font-size: 9px; font-weight: 700; }
+.result-metric-group article > strong { margin: 8px 0 5px; font-size: 20px; white-space: nowrap; }
+.result-metric-group article > small { color: var(--muted); font-size: 8px; font-weight: 600; }
+.result-metric-group article > div { margin: 9px 0 7px; display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 6px; font-size: 8px; }
+.result-metric-group article > em { font-size: 8px; font-style: normal; font-weight: 700; }
+.result-metric-group article > em.good { color: var(--green); }
+.result-metric-group article > em.warn { color: var(--amber); }
+.breakdown-card-list { display: grid; gap: 10px; margin-top: 12px; }
+.breakdown-result-card { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.breakdown-result-card > header { min-height: 58px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.breakdown-result-card h4 { margin: 0; font-size: 14px; }
+.breakdown-result-card header small { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; }
+.breakdown-result-card header button { border: 0; display: inline-flex; align-items: center; gap: 4px; color: var(--blue); background: transparent; font-weight: 700; }
+.breakdown-metric-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 12px 12px; }
+.breakdown-metric { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.breakdown-metric small, .breakdown-metric strong, .breakdown-metric > span { display: block; }
+.breakdown-metric small { color: var(--muted); font-size: 8px; font-weight: 700; }
+.breakdown-metric strong { margin: 7px 0 5px; font-size: 17px; white-space: nowrap; }
+.breakdown-metric > span { color: var(--muted); font-size: 8px; font-weight: 600; }
+.breakdown-metric > div { margin-top: 8px; display: grid; grid-template-columns: 28px 1fr; align-items: center; gap: 6px; font-size: 8px; }
+.breakdown-extra { padding: 10px 14px; display: grid; grid-template-columns: 100px 1fr 1fr; gap: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+.breakdown-extra b { color: var(--blue); }
 .ai-button { margin-left: auto; min-width: 34px; height: 30px !important; padding: 0 9px !important; border-radius: 5px !important; color: #fff !important; background: var(--purple) !important; font-size: 11px !important; }
 .analysis-prompt { align-items: flex-start; justify-content: flex-start; min-height: 245px; padding: 24px 18px; color: var(--text); text-align: left; font-size: 12px; }
 .expand-row-button { width: 100%; padding: 0; border: 0; display: flex; align-items: center; gap: 6px; color: inherit; background: transparent; text-align: left; }
@@ -1973,6 +1997,11 @@ thead .operation-column {
   .tier-kpis {
     grid-template-columns: repeat(3, 1fr);
   }
+
+  .result-metric-groups,
+  .breakdown-metric-groups {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -2026,6 +2055,11 @@ thead .operation-column {
 
   .tier-kpis {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .result-metric-group,
+  .breakdown-metric-group {
+    grid-template-columns: 1fr;
   }
 
   .home-progress-row {

@@ -1041,6 +1041,7 @@ function TargetDashboard({
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
   const [analysis, setAnalysis] = useState("");
   const [resultOpen, setResultOpen] = useState(true);
+  const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const sourceRows = targetRows.length
     ? targetRows
     : [
@@ -1074,6 +1075,29 @@ function TargetDashboard({
     ["tier", "达人等级", "Creator Tier"],
     ["productTier", "产品 × 达人等级", "Product × Creator Tier"],
   ];
+  const summaryMetrics = [
+    { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
+    { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
+    { name: "GMV", value: "IDR 333M", target: "IDR 640M", rate: 52, trend: "+10%" },
+    { name: "ROI", value: "11.48", target: "8.89", rate: 129, trend: "+48%" },
+    { name: "Views", value: "2.2M", target: "4.2M", rate: 52, trend: "+11%" },
+    { name: "CPM", value: "IDR 9.7K", target: "IDR 17.1K", rate: 77, trend: "-33%" },
+  ];
+  const breakdownRows = resultTab === "tier" ? tierRows : resultTab === "productTier" ? productTierRows : productRows;
+  const breakdownMetrics = (row: DashboardBreakdown) => {
+    const postRate = percent(row.postMtd, row.postTarget);
+    const budgetRate = percent(row.budgetMtd, row.budgetTarget);
+    const views = row.postMtd * 60000;
+    const viewTarget = row.postTarget * 50000;
+    return [
+      { name: "Post", value: String(row.postMtd), target: String(row.postTarget), rate: postRate },
+      { name: "Budget", value: `IDR ${compactNumber(row.budgetMtd)}`, target: `IDR ${compactNumber(row.budgetTarget)}`, rate: budgetRate },
+      { name: "GMV", value: `IDR ${compactNumber(row.budgetMtd * 12.1)}`, target: `IDR ${compactNumber(row.budgetTarget * 9)}`, rate: Math.min(100, Math.round(budgetRate * 1.2)) },
+      { name: "ROI", value: (10.6 + postRate / 100).toFixed(2), target: "8.89", rate: Math.round(118 + postRate / 10) },
+      { name: "Views", value: compactNumber(views), target: compactNumber(viewTarget), rate: percent(views, viewTarget) },
+      { name: "CPM", value: `IDR ${compactNumber((row.budgetMtd / Math.max(views, 1)) * 1000)}`, target: "IDR 17.1K", rate: Math.min(100, Math.round(70 + budgetRate / 3)) },
+    ];
+  };
 
   return (
     <div className="page-stack target-dashboard">
@@ -1139,22 +1163,13 @@ function TargetDashboard({
           <div><span className="eyebrow">PUBLISHING RESULTS</span><h2>{label("发布结果", "Publishing Results", language)}</h2><p>{label("对比投入、商业结果和流量效率。", "Compare investment, business outcomes and traffic efficiency.", language)}</p></div>
           <button className="button soft" onClick={() => setResultOpen((value) => !value)}>{resultOpen ? label("收起明细", "Hide Breakdown", language) : label("展开明细", "Show Breakdown", language)}<ChevronDown size={14} className={resultOpen ? "rotate" : ""} /></button>
         </div>
-        <div className="result-metrics">
-          {[
-            ["Post", String(postMtd), String(postTarget), percent(postMtd, postTarget), "+10%"],
-            ["Budget", `IDR ${compactNumber(budgetMtd)}`, `IDR ${compactNumber(budgetTarget)}`, percent(budgetMtd, budgetTarget), "-6%"],
-            ["GMV", "IDR 333M", "IDR 640M", 52, "+10%"],
-            ["ROI", "11.48", "8.89", 129, "+48%"],
-            ["Views", "2.7M", "4.2M", 64, "+11%"],
-            ["CPM", "9.7K", "17.1K", 77, "-33%"],
-          ].map(([name, value, target, rate, trend]) => (
-            <article key={String(name)}><span>{name}</span><strong>{value}</strong><small>Target {target}</small><div><b>{rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(Number(rate), 100)}%` }} /></div></div><em className={String(trend).startsWith("+") || name === "CPM" ? "good" : "warn"}>{trend} {label("较上月", "vs last month", language)}</em></article>
-          ))}
+        <div className="result-metric-groups">
+          {[summaryMetrics.slice(0, 2), summaryMetrics.slice(2, 4), summaryMetrics.slice(4, 6)].map((group, groupIndex) => <div className="result-metric-group" key={groupIndex}>{group.map((metric) => <article key={metric.name}><span>{metric.name}</span><strong>{metric.value}</strong><small>Target {metric.target}</small><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div><em className={metric.trend.startsWith("+") || metric.name === "CPM" ? "good" : "warn"}>{metric.trend} {label("较上月", "vs last month", language)}</em></article>)}</div>)}
         </div>
         {resultOpen && (
           <div className="results-breakdown">
-            <div className="breakdown-heading"><div><h3>{label("结果明细", "Results Breakdown", language)}</h3><p>{label("六项核心指标：Post、Budget、GMV、ROI、Views、CPM。", "Six core KPIs: Post, Budget, GMV, ROI, Views and CPM.", language)}</p></div><div className="dashboard-tabs">{[["product", "产品", "Product"], ["tier", "达人等级", "Creator Tier"], ["productTier", "产品 × 达人等级", "Product × Creator Tier"]].map(([key, zh, en]) => <button key={key} className={resultTab === key ? "active" : ""} onClick={() => setResultTab(key)}>{label(zh, en, language)}</button>)}</div></div>
-            <div className="tier-result-card"><div><strong>{resultTab === "tier" ? "A Tier" : "Tone Up Sunscreen · A Tier"}</strong><span className="status-pill good">{label("正常", "On Track", language)}</span></div><div className="tier-kpis"><span><small>Post</small><b>28 / 48</b></span><span><small>Budget</small><b>IDR 16.2M</b></span><span><small>GMV</small><b>IDR 218M</b></span><span><small>ROI</small><b>13.46</b></span><span><small>Views</small><b>1.9M</b></span><span><small>CPM</small><b>8.5K</b></span></div></div>
+            <div className="breakdown-heading"><div><h3>{label("结果明细", "Results Breakdown", language)}</h3><p>{label("按维度查看六项核心结果指标。", "Review six core result metrics by dimension.", language)}</p></div><div className="dashboard-tabs">{[["product", "产品", "Product"], ["tier", "达人等级", "Creator Tier"], ["productTier", "产品 × 达人等级", "Product × Creator Tier"]].map(([key, zh, en]) => <button key={key} className={resultTab === key ? "active" : ""} onClick={() => setResultTab(key)}>{label(zh, en, language)}</button>)}</div></div>
+            <div className="breakdown-card-list">{breakdownRows.map((row) => <article className="breakdown-result-card" key={`${resultTab}-${row.name}`}><header><div><h4>{row.name}</h4><small>{row.sub}</small></div><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(row.name) ? next.delete(row.name) : next.add(row.name); return next; })}>{expandedResults.has(row.name) ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={expandedResults.has(row.name) ? "rotate" : ""} /></button></header><div className="breakdown-metric-groups">{[breakdownMetrics(row).slice(0, 2), breakdownMetrics(row).slice(2, 4), breakdownMetrics(row).slice(4, 6)].map((group, index) => <div className="breakdown-metric-group" key={index}>{group.map((metric) => <div className="breakdown-metric" key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>)}</div>{expandedResults.has(row.name) && <div className="breakdown-extra"><span>{label("视频明细", "Video details", language)}</span><b>VID-260801-912 · @parasceria</b><span>{row.name} · Vlog · Nadia</span></div>}</article>)}</div>
           </div>
         )}
       </section>

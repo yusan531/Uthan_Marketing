@@ -1068,6 +1068,7 @@ function TargetDashboard({
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [videoPeriod, setVideoPeriod] = useState("MTD");
   const [videoTab, setVideoTab] = useState("video");
+  const [expandedVideoGroups, setExpandedVideoGroups] = useState<Set<string>>(new Set());
   const sourceRows = targetRows.length
     ? targetRows
     : [
@@ -1168,15 +1169,61 @@ function TargetDashboard({
     ["strategist", "KOL Strategist", "KOL Strategist"],
   ];
   const videoRows = [
-    ["7659407006515612946", "sharonatas…", "Tone Up Body Spray", "Unknown", "2026-07-06", "4.0M", "262.5M", "65.63", "2.5M", "1.6K"],
-    ["7661222224417852693", "zizaakarr", "Tone Up Body Spray", "Unknown", "2026-07-11", "160.0K", "80.0M", "499.79", "1.4M", "118.422"],
-    ["7664441132256120085", "reyhansyphtg", "Peel Off Mask", "Unknown", "2026-07-20", "350.0K", "79.1M", "226.14", "1.8M", "191.685"],
-    ["7660395992457448720", "amndafabi…", "Peel Off Mask", "Unknown", "2026-07-09", "150.0K", "79.1M", "527.02", "1.3M", "113.597"],
-    ["7662610624253349140", "bidanwind…", "Hair Removal", "Unknown", "2026-07-15", "10.5M", "45.7M", "4.35", "1.0M", "10.4K"],
-    ["7660898621247835413", "uduskrete9", "Hair Removal", "Unknown", "2026-07-10", "400.0K", "39.0M", "97.41", "862.9K", "463.571"],
-    ["7666797864944700680", "fujiian", "Body Scrub", "Unknown", "2026-07-26", "146.7M", "34.8M", "0.24", "2.6M", "56.4K"],
-    ["7657494007991307538", "dianaarta…", "Soft Flush Powder", "Unknown", "2026-07-01", "1.5M", "34.6M", "23.06", "1.1M", "1.4K"],
+    ["7659407006515612946", "sharonatas…", "Tone Up Body Spray", "Vlog", "2026-07-06", "4.0M", "262.5M", "65.63", "2.5M", "1.6K"],
+    ["7661222224417852693", "zizaakarr", "Tone Up Body Spray", "Tutorial", "2026-07-11", "160.0K", "80.0M", "499.79", "1.4M", "118.422"],
+    ["7664441132256120085", "reyhansyphtg", "Peel Off Mask", "Review", "2026-07-20", "350.0K", "79.1M", "226.14", "1.8M", "191.685"],
+    ["7660395992457448720", "amndafabi…", "Peel Off Mask", "Vlog", "2026-07-09", "150.0K", "79.1M", "527.02", "1.3M", "113.597"],
+    ["7662610624253349140", "bidanwind…", "Hair Removal", "Tutorial", "2026-07-15", "10.5M", "45.7M", "4.35", "1.0M", "10.4K"],
+    ["7660898621247835413", "uduskrete9", "Hair Removal", "Review", "2026-07-10", "400.0K", "39.0M", "97.41", "862.9K", "463.571"],
+    ["7666797864944700680", "fujiian", "Body Scrub", "Vlog", "2026-07-26", "146.7M", "34.8M", "0.24", "2.6M", "56.4K"],
+    ["7657494007991307538", "dianaarta…", "Soft Flush Powder", "Demo", "2026-07-01", "1.5M", "34.6M", "23.06", "1.1M", "1.4K"],
   ];
+  const videoMetadata = [
+    ["A Tier", "Nadia"],
+    ["A Tier", "Nadia"],
+    ["B Tier", "Delvi"],
+    ["A Tier", "Shafi"],
+    ["S Tier", "Nadia"],
+    ["B Tier", "Delvi"],
+    ["B Tier", "Shafi"],
+    ["A Tier", "Nadia"],
+  ];
+  const parseVideoMetric = (value: string) => {
+    const normalized = value.replace(/,/g, "").trim();
+    const multiplier = normalized.endsWith("M") ? 1_000_000 : normalized.endsWith("K") ? 1_000 : 1;
+    return (Number.parseFloat(normalized) || 0) * multiplier;
+  };
+  const videoRecords = videoRows.map((cells, index) => ({
+    cells,
+    product: cells[2],
+    tier: videoMetadata[index][0],
+    content: cells[3],
+    strategist: videoMetadata[index][1],
+    cost: parseVideoMetric(cells[5]),
+    gmv: parseVideoMetric(cells[6]),
+    views: parseVideoMetric(cells[8]),
+  }));
+  const videoGroupValue = (record: (typeof videoRecords)[number]) => {
+    if (videoTab === "tier") return record.tier;
+    if (videoTab === "content") return record.content;
+    if (videoTab === "strategist") return record.strategist;
+    return record.product;
+  };
+  const groupedVideoRows = videoTab === "video" ? [] : Array.from(new Set(videoRecords.map(videoGroupValue))).map((name) => {
+    const items = videoRecords.filter((record) => videoGroupValue(record) === name);
+    const cost = items.reduce((sum, record) => sum + record.cost, 0);
+    const gmv = items.reduce((sum, record) => sum + record.gmv, 0);
+    const views = items.reduce((sum, record) => sum + record.views, 0);
+    return { name, items, cost, gmv, views, roi: gmv / Math.max(cost, 1), cpm: (cost / Math.max(views, 1)) * 1000 };
+  });
+  const videoGroupHeading = videoTab === "tier"
+    ? label("达人等级", "Creator Tier", language)
+    : videoTab === "content"
+      ? label("内容类型", "Content Type", language)
+      : videoTab === "strategist"
+        ? "KOL Strategist"
+        : label("产品名称", "Product Name", language);
+  const renderVideoDetailRows = (records: typeof videoRecords) => records.map((record) => <tr key={record.cells[0]}>{record.cells.map((value, index) => <td key={`${record.cells[0]}-${index}`}>{index < 2 ? <button className="video-data-link">{value}</button> : value}</td>)}</tr>);
 
   return (
     <div className="page-stack target-dashboard">
@@ -1297,11 +1344,25 @@ function TargetDashboard({
           <div className="video-kpi-strip">{videoMetrics.map(([name, value]) => <div key={name}><span>{name}</span><strong>{value}</strong></div>)}</div>
           <div className="video-dimension-tabs">{videoTabs.map(([key, zh, en]) => <button key={key} className={videoTab === key ? "active" : ""} onClick={() => setVideoTab(key)}>{label(zh, en, language)}</button>)}</div>
           <div className="data-table-wrap video-list-wrap">
-            <table className="data-table video-publishing-table">
+            {videoTab === "video" ? <table className="data-table video-publishing-table">
               <colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup>
               <thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead>
-              <tbody>{videoRows.map((row) => <tr key={row[0]}>{row.map((value, index) => <td key={`${row[0]}-${index}`}>{index < 2 ? <button className="video-data-link">{value}</button> : value}</td>)}</tr>)}</tbody>
-            </table>
+              <tbody>{renderVideoDetailRows(videoRecords)}</tbody>
+            </table> : <table className="data-table video-group-table">
+              <colgroup><col /><col /><col /><col /><col /><col /><col /></colgroup>
+              <thead><tr><th aria-label={label("展开", "Expand", language)} /><th>{videoGroupHeading}</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead>
+              <tbody>{groupedVideoRows.map((group) => {
+                const groupKey = `${videoTab}:${group.name}`;
+                const isExpanded = expandedVideoGroups.has(groupKey);
+                return <Fragment key={groupKey}>
+                  <tr className="video-group-row">
+                    <td><button className="video-group-toggle" aria-label={label(`展开 ${group.name}`, `Expand ${group.name}`, language)} aria-expanded={isExpanded} onClick={() => setExpandedVideoGroups((current) => { const next = new Set(current); next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey); return next; })}><ChevronRight size={14} className={isExpanded ? "rotate-90" : ""} /></button></td>
+                    <td><strong>{group.name}</strong></td><td>{compactNumber(group.cost)}</td><td>{compactNumber(group.gmv)}</td><td>{group.roi.toFixed(2)}</td><td>{compactNumber(group.views)}</td><td>{compactNumber(group.cpm)}</td>
+                  </tr>
+                  {isExpanded && <tr className="video-group-detail-row"><td colSpan={7}><div className="video-group-detail"><table className="data-table video-publishing-table"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead><tbody>{renderVideoDetailRows(group.items)}</tbody></table></div></td></tr>}
+                </Fragment>;
+              })}</tbody>
+            </table>}
           </div>
         </section>
         <DashboardAnalysis language={language} copy={[`${videoPeriod} 视频发布节奏稳定。建议优先跟进 Tone Up Sunscreen 的待发布视频，并核对高成本内容的归属。`, `${videoPeriod} video publishing is steady. Prioritize pending Tone Up Sunscreen videos and verify ownership of high-cost content.`]} />

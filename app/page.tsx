@@ -6,6 +6,7 @@ import {
   type ReactNode,
   type SetStateAction,
   type Dispatch,
+  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -994,6 +995,19 @@ type DashboardBreakdown = {
   budgetTarget: number;
 };
 
+type DashboardDimension = "product" | "tier" | "strategist";
+
+function scaleBreakdown(row: DashboardBreakdown, name: string, sub: string, share: number): DashboardBreakdown {
+  return {
+    name,
+    sub,
+    postMtd: Math.max(0, Math.round(row.postMtd * share)),
+    postTarget: Math.max(1, Math.round(row.postTarget * share)),
+    budgetMtd: Math.round(row.budgetMtd * share),
+    budgetTarget: Math.round(row.budgetTarget * share),
+  };
+}
+
 function ProgressSummary({
   title,
   actual,
@@ -1046,9 +1060,10 @@ function TargetDashboard({
   targetRows: Row[];
   notify: (message: string) => void;
 }) {
-  const [tab, setTab] = useState("product");
-  const [resultTab, setResultTab] = useState("productTier");
+  const [tab, setTab] = useState<DashboardDimension>("product");
+  const [resultTab, setResultTab] = useState<DashboardDimension>("product");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
+  const [expandedProgress, setExpandedProgress] = useState<Set<string>>(new Set());
   const [resultOpen, setResultOpen] = useState(true);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [videoPeriod, setVideoPeriod] = useState("MTD");
@@ -1072,11 +1087,39 @@ function TargetDashboard({
     { name: "A Tier", sub: "16 Creators", postMtd: 18, postTarget: 30, budgetMtd: 12100000, budgetTarget: 28000000 },
     { name: "B Tier", sub: "32 Creators", postMtd: 23, postTarget: 46, budgetMtd: 6200000, budgetTarget: 28000000 },
   ];
-  const productTierRows: DashboardBreakdown[] = productRows.flatMap((row) => [
-    { ...row, name: `${row.name} · A Tier`, sub: row.sub, postMtd: Math.round(row.postMtd * .65), postTarget: Math.round(row.postTarget * .65), budgetMtd: row.budgetMtd * .65, budgetTarget: row.budgetTarget * .65 },
-    { ...row, name: `${row.name} · B Tier`, sub: row.sub, postMtd: Math.round(row.postMtd * .35), postTarget: Math.round(row.postTarget * .35), budgetMtd: row.budgetMtd * .35, budgetTarget: row.budgetTarget * .35 },
-  ]);
-  const rows = tab === "tier" ? tierRows : tab === "productTier" ? productTierRows : productRows;
+  const strategistRows: DashboardBreakdown[] = ["Nadia", "Delvi", "Shafi"].map((name, index) => {
+    const owned = productRows.filter((row) => row.sub.includes(name));
+    const fallback = productRows.filter((_, rowIndex) => rowIndex % 3 === index);
+    const items = owned.length ? owned : fallback;
+    return {
+      name,
+      sub: `${items.length} Products`,
+      postMtd: items.reduce((sum, row) => sum + row.postMtd, 0),
+      postTarget: items.reduce((sum, row) => sum + row.postTarget, 0),
+      budgetMtd: items.reduce((sum, row) => sum + row.budgetMtd, 0),
+      budgetTarget: items.reduce((sum, row) => sum + row.budgetTarget, 0),
+    };
+  }).filter((row) => row.postTarget > 0);
+  const rowsByDimension: Record<DashboardDimension, DashboardBreakdown[]> = {
+    product: productRows,
+    tier: tierRows,
+    strategist: strategistRows,
+  };
+  const rows = rowsByDimension[tab];
+  const childrenFor = (dimension: DashboardDimension, row: DashboardBreakdown): DashboardBreakdown[] => {
+    if (dimension === "product") {
+      return [
+        scaleBreakdown(row, "A Tier", row.name, .65),
+        scaleBreakdown(row, "B Tier", row.name, .35),
+      ];
+    }
+    if (dimension === "tier") {
+      const totalTarget = Math.max(productRows.reduce((sum, item) => sum + item.postTarget, 0), 1);
+      return productRows.map((product) => scaleBreakdown(row, product.name, row.name, product.postTarget / totalTarget));
+    }
+    const owned = productRows.filter((product) => product.sub.includes(row.name));
+    return (owned.length ? owned : productRows.slice(0, 2)).map((product) => ({ ...product, sub: row.name }));
+  };
   const postMtd = productRows.reduce((sum, row) => sum + row.postMtd, 0);
   const postTarget = productRows.reduce((sum, row) => sum + row.postTarget, 0);
   const budgetMtd = productRows.reduce((sum, row) => sum + row.budgetMtd, 0);
@@ -1084,8 +1127,8 @@ function TargetDashboard({
   const tabs = [
     ["product", "产品", "Product"],
     ["tier", "达人等级", "Creator Tier"],
-    ["productTier", "产品 × 达人等级", "Product × Creator Tier"],
-  ];
+    ["strategist", "KOL Strategist", "KOL Strategist"],
+  ] as const;
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -1094,7 +1137,7 @@ function TargetDashboard({
     { name: "Views", value: "2.2M", target: "4.2M", rate: 52, trend: "+11%" },
     { name: "CPM", value: "IDR 9.7K", target: "IDR 17.1K", rate: 77, trend: "-33%" },
   ];
-  const breakdownRows = resultTab === "tier" ? tierRows : resultTab === "productTier" ? productTierRows : productRows;
+  const breakdownRows = rowsByDimension[resultTab];
   const breakdownMetrics = (row: DashboardBreakdown) => {
     const postRate = percent(row.postMtd, row.postTarget);
     const budgetRate = percent(row.budgetMtd, row.budgetTarget);
@@ -1140,8 +1183,7 @@ function TargetDashboard({
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
               <thead>
-                <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
-                <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
+                <tr><th>{label("拆分维度", "Breakdown", language)}</th><th>Post</th><th>Budget</th></tr>
               </thead>
               <tbody>
                 {rows.map((row) => {
@@ -1149,15 +1191,25 @@ function TargetDashboard({
                   const budgetRate = percent(row.budgetMtd, row.budgetTarget);
                   const postPace = postRate - 57;
                   const budgetPace = budgetRate - 57;
-                  return <tr key={`${tab}-${row.name}`}>
-                    <td><strong>{row.name}</strong><small>{row.sub}</small></td>
-                    <td><b>{row.postMtd}/{row.postTarget}</b></td>
-                    <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
-                    <td><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td>
-                    <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
-                    <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
-                    <td><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td>
-                  </tr>;
+                  const rowKey = `${tab}-${row.name}`;
+                  const isOpen = expandedProgress.has(rowKey);
+                  const children = childrenFor(tab, row);
+                  return <Fragment key={rowKey}>
+                    <tr className="dashboard-parent-row">
+                      <td><button className="expand-row-button" onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td>
+                      <td><div className="compact-progress-cell"><div><b>{row.postMtd}/{row.postTarget}</b><span>{label("剩余", "Remaining", language)} {Math.max(row.postTarget - row.postMtd, 0)}</span></div><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></div></td>
+                      <td><div className="compact-progress-cell"><div><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b><span>{label("剩余", "Remaining", language)} IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</span></div><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></div></td>
+                    </tr>
+                    {isOpen && children.map((child) => {
+                      const childPostRate = percent(child.postMtd, child.postTarget);
+                      const childBudgetRate = percent(child.budgetMtd, child.budgetTarget);
+                      return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}>
+                        <td><strong>{child.name}</strong><small>{child.sub}</small></td>
+                        <td><div className="compact-progress-cell"><div><b>{child.postMtd}/{child.postTarget}</b><span>{label("剩余", "Remaining", language)} {Math.max(child.postTarget - child.postMtd, 0)}</span></div><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></div></td>
+                        <td><div className="compact-progress-cell"><div><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b><span>{label("剩余", "Remaining", language)} IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</span></div><div className="dashboard-rate"><span>MTD <b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></div></td>
+                      </tr>;
+                    })}
+                  </Fragment>;
                 })}
               </tbody>
             </table>
@@ -1177,8 +1229,19 @@ function TargetDashboard({
         </div>
         {resultOpen && (
           <div className="results-breakdown">
-            <div className="breakdown-heading"><div><h3>{label("结果明细", "Results Breakdown", language)}</h3><p>{label("按维度查看六项核心结果指标。", "Review six core result metrics by dimension.", language)}</p></div><div className="dashboard-tabs">{[["product", "产品", "Product"], ["tier", "达人等级", "Creator Tier"], ["productTier", "产品 × 达人等级", "Product × Creator Tier"]].map(([key, zh, en]) => <button key={key} className={resultTab === key ? "active" : ""} onClick={() => setResultTab(key)}>{label(zh, en, language)}</button>)}</div></div>
-            <div className="breakdown-card-list">{breakdownRows.map((row) => <article className="breakdown-result-card" key={`${resultTab}-${row.name}`}><header><div><h4>{row.name}</h4><small>{row.sub}</small></div><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(row.name) ? next.delete(row.name) : next.add(row.name); return next; })}>{expandedResults.has(row.name) ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={expandedResults.has(row.name) ? "rotate" : ""} /></button></header><div className="breakdown-metric-groups">{[breakdownMetrics(row).slice(0, 2), breakdownMetrics(row).slice(2, 4), breakdownMetrics(row).slice(4, 6)].map((group, index) => <div className="breakdown-metric-group" key={index}>{group.map((metric) => <div className="breakdown-metric" key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>)}</div>{expandedResults.has(row.name) && <div className="breakdown-extra"><span>{label("视频明细", "Video details", language)}</span><b>VID-260801-912 · @parasceria</b><span>{row.name} · Vlog · Nadia</span></div>}</article>)}</div>
+            <div className="breakdown-heading">
+              <div><h3>{label("结果明细", "Results Breakdown", language)}</h3><p>{label("按维度查看六项核心结果指标。", "Review six core result metrics by dimension.", language)}</p></div>
+              <div className="dashboard-tabs">{tabs.map(([key, zh, en]) => <button key={key} className={resultTab === key ? "active" : ""} onClick={() => setResultTab(key)}>{label(zh, en, language)}</button>)}</div>
+            </div>
+            <div className="breakdown-card-list">{breakdownRows.map((row) => {
+              const resultKey = `${resultTab}-${row.name}`;
+              const isExpanded = expandedResults.has(resultKey);
+              return <article className="breakdown-result-card" key={resultKey}>
+                <header><div><h4>{row.name}</h4><small>{row.sub}</small></div><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(resultKey) ? next.delete(resultKey) : next.add(resultKey); return next; })}>{isExpanded ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={isExpanded ? "rotate" : ""} /></button></header>
+                <div className="breakdown-metric-groups">{[breakdownMetrics(row).slice(0, 2), breakdownMetrics(row).slice(2, 4), breakdownMetrics(row).slice(4, 6)].map((group, index) => <div className="breakdown-metric-group" key={index}>{group.map((metric) => <div className="breakdown-metric" key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>)}</div>
+                {isExpanded && <div className="result-child-list">{childrenFor(resultTab, row).map((child) => <div className="result-child-row" key={`${resultKey}-${child.name}`}><div><strong>{child.name}</strong><small>{child.sub}</small></div>{breakdownMetrics(child).map((metric) => <span key={metric.name}><small>{metric.name}</small><b>{metric.value}</b></span>)}</div>)}</div>}
+              </article>;
+            })}</div>
           </div>
         )}
       </section>
@@ -1189,7 +1252,7 @@ function TargetDashboard({
         <section className="panel video-publishing-panel">
           <div className="section-caption"><span />{label("视频发布清单", "Video Publishing List", language)}</div>
           <div className="meeting-period"><strong>{label("会议周期", "Meeting Period", language)}</strong>{[["MTD", "7/1–7/31"], ["Week 1", "6/29–7/5"], ["Week 2", "7/6–7/12"], ["Week 3", "7/13–7/19"], ["Week 4", "7/20–7/26"], ["Week 5", "7/27–8/2 MTD"]].map(([name, date]) => <button key={name} className={videoPeriod === name ? "active" : ""} onClick={() => setVideoPeriod(name)}><b>{name}</b><span>{date}</span></button>)}</div>
-          <div className="data-table-wrap video-list-wrap"><table className="data-table video-publishing-table"><thead><tr><th>{label("维度", "Dimension", language)}</th><th>{label("分组", "Group", language)}</th><th>Videos</th><th>Cost</th></tr></thead><tbody>{[["Product", "Tone Up Sunscreen", "38", "IDR 17.6M"], ["Creator Tier", "A Tier", "18", "IDR 12.1M"], ["Content Type", "Vlog", "24", "IDR 10.8M"], ["KOL Strategist", "Nadia", "28", "IDR 16.2M"]].map(([dimension, group, videos, cost]) => { const key = `${dimension}-${group}`; return <><tr key={key}><td><button className="expand-row-button" onClick={() => setExpandedVideoGroup((current) => current === key ? null : key)}><ChevronRight size={13} className={expandedVideoGroup === key ? "rotate-90" : ""} />{dimension}</button></td><td>{group}</td><td>{videos}</td><td>{cost}</td></tr>{expandedVideoGroup === key && <tr className="video-detail-row"><td colSpan={4}><div className="video-detail-grid"><b>VID-260801-912 · @parasceria</b><span>{group} · Vlog · Nadia</span><span>IDR 850K · 2026-08-01</span></div></td></tr>}</>; })}</tbody></table></div>
+          <div className="data-table-wrap video-list-wrap"><table className="data-table video-publishing-table"><thead><tr><th>{label("维度", "Dimension", language)}</th><th>{label("分组", "Group", language)}</th><th>Videos</th><th>Cost</th></tr></thead><tbody>{[["Product", "Tone Up Sunscreen", "38", "IDR 17.6M"], ["Creator Tier", "A Tier", "18", "IDR 12.1M"], ["Content Type", "Vlog", "24", "IDR 10.8M"], ["KOL Strategist", "Nadia", "28", "IDR 16.2M"]].map(([dimension, group, videos, cost]) => { const key = `${dimension}-${group}`; return <Fragment key={key}><tr><td><button className="expand-row-button" onClick={() => setExpandedVideoGroup((current) => current === key ? null : key)}><ChevronRight size={13} className={expandedVideoGroup === key ? "rotate-90" : ""} />{dimension}</button></td><td>{group}</td><td>{videos}</td><td>{cost}</td></tr>{expandedVideoGroup === key && <tr className="video-detail-row"><td colSpan={4}><div className="video-detail-grid"><b>VID-260801-912 · @parasceria</b><span>{group} · Vlog · Nadia</span><span>IDR 850K · 2026-08-01</span></div></td></tr>}</Fragment>; })}</tbody></table></div>
         </section>
         <DashboardAnalysis language={language} copy={[`${videoPeriod} 视频发布节奏稳定。建议优先跟进 Tone Up Sunscreen 的待发布视频，并核对高成本内容的归属。`, `${videoPeriod} video publishing is steady. Prioritize pending Tone Up Sunscreen videos and verify ownership of high-cost content.`]} />
       </div>

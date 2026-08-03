@@ -1067,7 +1067,7 @@ function TargetDashboard({
   const [resultOpen, setResultOpen] = useState(true);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [videoPeriod, setVideoPeriod] = useState("MTD");
-  const [expandedVideoGroup, setExpandedVideoGroup] = useState<string | null>(null);
+  const [videoTab, setVideoTab] = useState("video");
   const sourceRows = targetRows.length
     ? targetRows
     : [
@@ -1152,6 +1152,31 @@ function TargetDashboard({
       { name: "CPM", value: `IDR ${compactNumber((row.budgetMtd / Math.max(views, 1)) * 1000)}`, target: "IDR 17.1K", rate: Math.min(100, Math.round(70 + budgetRate / 3)) },
     ];
   };
+  const videoMetrics = [
+    ["Videos", "5,672"],
+    ["Video Cost", "4,171.4M"],
+    ["GMV", "1,964.1M"],
+    ["ROI", "0.47"],
+    ["Views", "86.1M"],
+    ["CPM", "48.5K"],
+  ];
+  const videoTabs = [
+    ["video", "视频", "Video"],
+    ["product", "产品", "Product"],
+    ["tier", "达人等级", "Creator Tier"],
+    ["content", "内容类型", "Content Type"],
+    ["strategist", "KOL Strategist", "KOL Strategist"],
+  ];
+  const videoRows = [
+    ["7659407006515612946", "sharonatas…", "Tone Up Body Spray", "Unknown", "2026-07-06", "4.0M", "262.5M", "65.63", "2.5M", "1.6K"],
+    ["7661222224417852693", "zizaakarr", "Tone Up Body Spray", "Unknown", "2026-07-11", "160.0K", "80.0M", "499.79", "1.4M", "118.422"],
+    ["7664441132256120085", "reyhansyphtg", "Peel Off Mask", "Unknown", "2026-07-20", "350.0K", "79.1M", "226.14", "1.8M", "191.685"],
+    ["7660395992457448720", "amndafabi…", "Peel Off Mask", "Unknown", "2026-07-09", "150.0K", "79.1M", "527.02", "1.3M", "113.597"],
+    ["7662610624253349140", "bidanwind…", "Hair Removal", "Unknown", "2026-07-15", "10.5M", "45.7M", "4.35", "1.0M", "10.4K"],
+    ["7660898621247835413", "uduskrete9", "Hair Removal", "Unknown", "2026-07-10", "400.0K", "39.0M", "97.41", "862.9K", "463.571"],
+    ["7666797864944700680", "fujiian", "Body Scrub", "Unknown", "2026-07-26", "146.7M", "34.8M", "0.24", "2.6M", "56.4K"],
+    ["7657494007991307538", "dianaarta…", "Soft Flush Powder", "Unknown", "2026-07-01", "1.5M", "34.6M", "23.06", "1.1M", "1.4K"],
+  ];
 
   return (
     <div className="page-stack target-dashboard">
@@ -1182,8 +1207,18 @@ function TargetDashboard({
           </div>
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
+              <colgroup>
+                <col className="breakdown-col" />
+                <col className="post-target-col" />
+                <col className="post-remaining-col" />
+                <col className="post-pace-col" />
+                <col className="budget-target-col" />
+                <col className="budget-remaining-col" />
+                <col className="budget-pace-col" />
+              </colgroup>
               <thead>
-                <tr><th>{label("拆分维度", "Breakdown", language)}</th><th>Post</th><th>Budget</th></tr>
+                <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
+                <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
               </thead>
               <tbody>
                 {rows.map((row) => {
@@ -1197,16 +1232,24 @@ function TargetDashboard({
                   return <Fragment key={rowKey}>
                     <tr className="dashboard-parent-row">
                       <td><button className="expand-row-button" onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td>
-                      <td><div className="compact-progress-cell"><div><b>{row.postMtd}/{row.postTarget}</b><span>{label("剩余", "Remaining", language)} {Math.max(row.postTarget - row.postMtd, 0)}</span></div><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></div></td>
-                      <td><div className="compact-progress-cell"><div><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b><span>{label("剩余", "Remaining", language)} IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</span></div><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></div></td>
+                      <td><b>{row.postMtd}/{row.postTarget}</b></td>
+                      <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
+                      <td><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td>
+                      <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
+                      <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
+                      <td><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td>
                     </tr>
                     {isOpen && children.map((child) => {
                       const childPostRate = percent(child.postMtd, child.postTarget);
                       const childBudgetRate = percent(child.budgetMtd, child.budgetTarget);
                       return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}>
                         <td><strong>{child.name}</strong><small>{child.sub}</small></td>
-                        <td><div className="compact-progress-cell"><div><b>{child.postMtd}/{child.postTarget}</b><span>{label("剩余", "Remaining", language)} {Math.max(child.postTarget - child.postMtd, 0)}</span></div><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></div></td>
-                        <td><div className="compact-progress-cell"><div><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b><span>{label("剩余", "Remaining", language)} IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</span></div><div className="dashboard-rate"><span>MTD <b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></div></td>
+                        <td><b>{child.postMtd}/{child.postTarget}</b></td>
+                        <td>{Math.max(child.postTarget - child.postMtd, 0)}</td>
+                        <td><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td>
+                        <td><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b></td>
+                        <td>IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</td>
+                        <td><div className="dashboard-rate"><span>MTD <b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></td>
                       </tr>;
                     })}
                   </Fragment>;
@@ -1252,7 +1295,15 @@ function TargetDashboard({
         <section className="panel video-publishing-panel">
           <div className="section-caption"><span />{label("视频发布清单", "Video Publishing List", language)}</div>
           <div className="meeting-period"><strong>{label("会议周期", "Meeting Period", language)}</strong>{[["MTD", "7/1–7/31"], ["Week 1", "6/29–7/5"], ["Week 2", "7/6–7/12"], ["Week 3", "7/13–7/19"], ["Week 4", "7/20–7/26"], ["Week 5", "7/27–8/2 MTD"]].map(([name, date]) => <button key={name} className={videoPeriod === name ? "active" : ""} onClick={() => setVideoPeriod(name)}><b>{name}</b><span>{date}</span></button>)}</div>
-          <div className="data-table-wrap video-list-wrap"><table className="data-table video-publishing-table"><thead><tr><th>{label("维度", "Dimension", language)}</th><th>{label("分组", "Group", language)}</th><th>Videos</th><th>Cost</th></tr></thead><tbody>{[["Product", "Tone Up Sunscreen", "38", "IDR 17.6M"], ["Creator Tier", "A Tier", "18", "IDR 12.1M"], ["Content Type", "Vlog", "24", "IDR 10.8M"], ["KOL Strategist", "Nadia", "28", "IDR 16.2M"]].map(([dimension, group, videos, cost]) => { const key = `${dimension}-${group}`; return <Fragment key={key}><tr><td><button className="expand-row-button" onClick={() => setExpandedVideoGroup((current) => current === key ? null : key)}><ChevronRight size={13} className={expandedVideoGroup === key ? "rotate-90" : ""} />{dimension}</button></td><td>{group}</td><td>{videos}</td><td>{cost}</td></tr>{expandedVideoGroup === key && <tr className="video-detail-row"><td colSpan={4}><div className="video-detail-grid"><b>VID-260801-912 · @parasceria</b><span>{group} · Vlog · Nadia</span><span>IDR 850K · 2026-08-01</span></div></td></tr>}</Fragment>; })}</tbody></table></div>
+          <div className="video-kpi-strip">{videoMetrics.map(([name, value]) => <div key={name}><span>{name}</span><strong>{value}</strong></div>)}</div>
+          <div className="video-dimension-tabs">{videoTabs.map(([key, zh, en]) => <button key={key} className={videoTab === key ? "active" : ""} onClick={() => setVideoTab(key)}>{label(zh, en, language)}</button>)}</div>
+          <div className="data-table-wrap video-list-wrap">
+            <table className="data-table video-publishing-table">
+              <colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup>
+              <thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead>
+              <tbody>{videoRows.map((row) => <tr key={row[0]}>{row.map((value, index) => <td key={`${row[0]}-${index}`}>{index < 2 ? <button className="video-data-link">{value}</button> : value}</td>)}</tr>)}</tbody>
+            </table>
+          </div>
         </section>
         <DashboardAnalysis language={language} copy={[`${videoPeriod} 视频发布节奏稳定。建议优先跟进 Tone Up Sunscreen 的待发布视频，并核对高成本内容的归属。`, `${videoPeriod} video publishing is steady. Prioritize pending Tone Up Sunscreen videos and verify ownership of high-cost content.`]} />
       </div>

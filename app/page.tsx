@@ -1027,6 +1027,16 @@ function ProgressSummary({
   );
 }
 
+function DashboardAnalysis({ language, copy }: { language: Language; copy: [string, string] }) {
+  const [analysis, setAnalysis] = useState("");
+  return (
+    <aside className="panel analysis-panel section-analysis">
+      <div className="section-caption"><span />{label("分析说明", "Analysis", language)}<button className="ai-button" onClick={() => setAnalysis(label(copy[0], copy[1], language))}>AI</button></div>
+      {analysis ? <p className="analysis-copy">{analysis}</p> : <div className="analysis-empty analysis-prompt"><span>{label("点击右上角 AI 生成分析", "Click AI in the top-right to generate analysis", language)}</span></div>}
+    </aside>
+  );
+}
+
 function TargetDashboard({
   language,
   targetRows,
@@ -1039,9 +1049,10 @@ function TargetDashboard({
   const [tab, setTab] = useState("product");
   const [resultTab, setResultTab] = useState("productTier");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
-  const [analysis, setAnalysis] = useState("");
   const [resultOpen, setResultOpen] = useState(true);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+  const [videoPeriod, setVideoPeriod] = useState("MTD");
+  const [expandedVideoGroup, setExpandedVideoGroup] = useState<string | null>(null);
   const sourceRows = targetRows.length
     ? targetRows
     : [
@@ -1116,7 +1127,7 @@ function TargetDashboard({
         </div>
       </section>
 
-      <div className="dashboard-grid reference-dashboard-grid">
+      <div className="dashboard-section-row reference-dashboard-grid">
         <section className="panel progress-panel">
           <div className="section-caption"><span />{label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
@@ -1152,12 +1163,10 @@ function TargetDashboard({
             </table>
           </div>
         </section>
-        <aside className="panel analysis-panel">
-          <div className="section-caption"><span />{label("分析说明", "Analysis", language)}<button className="ai-button" onClick={() => setAnalysis(label("发布数量接近本月节奏；Day Cream 仍需重点推动。建议本周优先跟进已收样的 A/B 级达人，并检查高成本视频的产品归属。", "Publishing is close to the monthly pace. Day Cream needs focused follow-up; prioritize sampled A/B-tier creators and review high-cost videos by product.", language))}>AI</button></div>
-          {analysis ? <p className="analysis-copy">{analysis}</p> : <div className="analysis-empty analysis-prompt"><span>{label("点击右上角 AI 生成分析", "Click AI in the top-right to generate analysis", language)}</span></div>}
-        </aside>
+        <DashboardAnalysis language={language} copy={["发布数量接近本月节奏；Day Cream 仍需重点推动。建议本周优先跟进已收样的 A/B 级达人。", "Publishing is close to the monthly pace. Day Cream needs focused follow-up; prioritize sampled A/B-tier creators."]} />
       </div>
 
+      <div className="dashboard-section-row">
       <section className="panel results-panel">
         <div className="panel-title">
           <div><span className="eyebrow">PUBLISHING RESULTS</span><h2>{label("发布结果", "Publishing Results", language)}</h2><p>{label("对比投入、商业结果和流量效率。", "Compare investment, business outcomes and traffic efficiency.", language)}</p></div>
@@ -1173,6 +1182,17 @@ function TargetDashboard({
           </div>
         )}
       </section>
+      <DashboardAnalysis language={language} copy={["ROI 高于目标，但预算使用率仍偏低。建议扩大高转化产品的达人投放，并控制低效视频 CPM。", "ROI is above target while budget utilization remains low. Scale creator investment for high-converting products and control CPM on inefficient videos."]} />
+      </div>
+
+      <div className="dashboard-section-row">
+        <section className="panel video-publishing-panel">
+          <div className="section-caption"><span />{label("视频发布清单", "Video Publishing List", language)}</div>
+          <div className="meeting-period"><strong>{label("会议周期", "Meeting Period", language)}</strong>{[["MTD", "7/1–7/31"], ["Week 1", "6/29–7/5"], ["Week 2", "7/6–7/12"], ["Week 3", "7/13–7/19"], ["Week 4", "7/20–7/26"], ["Week 5", "7/27–8/2 MTD"]].map(([name, date]) => <button key={name} className={videoPeriod === name ? "active" : ""} onClick={() => setVideoPeriod(name)}><b>{name}</b><span>{date}</span></button>)}</div>
+          <div className="data-table-wrap video-list-wrap"><table className="data-table video-publishing-table"><thead><tr><th>{label("维度", "Dimension", language)}</th><th>{label("分组", "Group", language)}</th><th>Videos</th><th>Cost</th></tr></thead><tbody>{[["Product", "Tone Up Sunscreen", "38", "IDR 17.6M"], ["Creator Tier", "A Tier", "18", "IDR 12.1M"], ["Content Type", "Vlog", "24", "IDR 10.8M"], ["KOL Strategist", "Nadia", "28", "IDR 16.2M"]].map(([dimension, group, videos, cost]) => { const key = `${dimension}-${group}`; return <><tr key={key}><td><button className="expand-row-button" onClick={() => setExpandedVideoGroup((current) => current === key ? null : key)}><ChevronRight size={13} className={expandedVideoGroup === key ? "rotate-90" : ""} />{dimension}</button></td><td>{group}</td><td>{videos}</td><td>{cost}</td></tr>{expandedVideoGroup === key && <tr className="video-detail-row"><td colSpan={4}><div className="video-detail-grid"><b>VID-260801-912 · @parasceria</b><span>{group} · Vlog · Nadia</span><span>IDR 850K · 2026-08-01</span></div></td></tr>}</>; })}</tbody></table></div>
+        </section>
+        <DashboardAnalysis language={language} copy={[`${videoPeriod} 视频发布节奏稳定。建议优先跟进 Tone Up Sunscreen 的待发布视频，并核对高成本内容的归属。`, `${videoPeriod} video publishing is steady. Prioritize pending Tone Up Sunscreen videos and verify ownership of high-cost content.`]} />
+      </div>
     </div>
   );
 }

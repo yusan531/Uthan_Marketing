@@ -425,6 +425,13 @@ function RecordModal({
         return [field.key, value];
       }),
     );
+    if (["reviews", "lsaReviews", "lsaKocReviews", "ownMediaReview"].includes(config.key)) {
+      const products = String(normalized.product || "").split(/[,，]/).map((item) => item.trim()).filter(Boolean);
+      if (products.length > 1) {
+        const allocated = numeric(normalized.unitPrice) / products.length;
+        normalized.productCostSplit = products.map((product) => `${product}: ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(allocated)}`).join(" · ");
+      }
+    }
     onSave({
       ...(row || {}),
       ...normalized,
@@ -500,9 +507,15 @@ function TablePage({
   const [editing, setEditing] = useState<Row | null | undefined>(undefined);
   const [activeView, setActiveView] = useState(config.views?.[0]?.key || "");
   const [page, setPage] = useState(1);
+  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+  const [hiddenColumns, setHiddenColumns] = useStored<string[]>(`marketing-columns-${config.key}`, []);
   const importRef = useRef<HTMLInputElement>(null);
 
-  const columns = config.views?.find((view) => view.key === activeView)?.columns || config.columns;
+  const baseColumns = config.views?.find((view) => view.key === activeView)?.columns || config.columns;
+  const allColumns = ["reviews", "lsaReviews", "lsaKocReviews", "ownMediaReview"].includes(config.key)
+    ? [...baseColumns, { key: "productCostSplit", zh: "产品成本拆分", en: "Product Cost Split" }]
+    : baseColumns;
+  const columns = allColumns.filter((column) => !hiddenColumns.includes(column.key));
   const filteredRows = useMemo(
     () =>
       rows.filter((row) =>
@@ -754,6 +767,22 @@ function TablePage({
               ? label(`已选 ${selected.size} 条`, `${selected.size} selected`, language)
               : label("请选择要操作的记录", "Select records to take action", language)}
           </span>
+          <div className="column-manager">
+            <button className="icon-button" aria-label="Manage columns" title={label("管理表头", "Manage columns", language)} onClick={() => setColumnMenuOpen((open) => !open)}>
+              <Settings size={15} />
+            </button>
+            {columnMenuOpen && (
+              <div className="column-menu">
+                <strong>{label("显示字段", "Visible columns", language)}</strong>
+                {allColumns.map((column) => (
+                  <label key={column.key}>
+                    <input type="checkbox" checked={!hiddenColumns.includes(column.key)} onChange={(event) => setHiddenColumns((current) => event.target.checked ? current.filter((key) => key !== column.key) : [...current, column.key])} />
+                    <span>{label(column.zh, column.en, language)}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {config.views && config.views.length > 0 && (
@@ -767,7 +796,7 @@ function TablePage({
         )}
 
         <div className="data-table-wrap">
-          <table className="data-table">
+          <table className={`data-table ${["target1", "productTarget", "ownTarget"].includes(config.key) ? "target-table" : ""}`}>
             <thead>
               <tr>
                 <th className="select-column">
@@ -1008,10 +1037,14 @@ function TargetDashboard({
   notify: (message: string) => void;
 }) {
   const [tab, setTab] = useState("product");
+  const [expandedBreakdowns, setExpandedBreakdowns] = useState<Set<string>>(new Set());
   const [resultTab, setResultTab] = useState("productTier");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
-  const [analysis, setAnalysis] = useState("");
+  const analysis = label("发布数量接近本月节奏；Day Cream 仍需重点推动。建议本周优先跟进已收样的 A/B 级达人，并检查高成本视频的产品归属。", "Publishing is close to the monthly pace. Day Cream needs focused follow-up; prioritize sampled A/B-tier creators and review high-cost videos by product.", language);
+  const analysisGeneratedAt = "2026-08-03 00:00 GMT+8";
   const [resultOpen, setResultOpen] = useState(true);
+  const [publishingOpen, setPublishingOpen] = useState<string | null>(null);
+  const [publishingFilters, setPublishingFilters] = useState({ product: "", strategist: "" });
   const sourceRows = targetRows.length
     ? targetRows
     : [
@@ -1020,7 +1053,7 @@ function TargetDashboard({
       ];
   const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
     name: String(row.product || "Product"),
-    sub: `Glowsicha · ${String(row.owner || "All PICs")}`,
+    sub: `Glowsicha · ${String(row.owner || "All KOL Strategists")}`,
     postMtd: numeric(row.qty),
     postTarget: numeric(row.qtyTarget),
     budgetMtd: numeric(row.actualCost),
@@ -1035,7 +1068,7 @@ function TargetDashboard({
     { name: "Nadia", sub: "Tone Up Sunscreen · Body Scrub", postMtd: 28, postTarget: 48, budgetMtd: 16200000, budgetTarget: 39000000 },
     { name: "Delvi", sub: "Day Cream · Hair Oil", postMtd: 17, postTarget: 36, budgetMtd: 9900000, budgetTarget: 33000000 },
   ];
-  const rows = tab === "tier" ? tierRows : tab === "pic" ? picRows : tab === "productTier" ? [...productRows, ...tierRows.slice(0, 2)] : productRows;
+  const rows = tab === "tier" ? tierRows : tab === "strategist" ? picRows : productRows;
   const postMtd = productRows.reduce((sum, row) => sum + row.postMtd, 0);
   const postTarget = productRows.reduce((sum, row) => sum + row.postTarget, 0);
   const budgetMtd = productRows.reduce((sum, row) => sum + row.budgetMtd, 0);
@@ -1043,9 +1076,7 @@ function TargetDashboard({
   const tabs = [
     ["product", "产品", "Product"],
     ["tier", "达人等级", "Creator Tier"],
-    ["productTier", "产品 & 达人等级", "Product × Creator Tier"],
-    ["tierProduct", "达人等级 & 产品", "Creator Tier × Product"],
-    ["pic", "PIC", "PIC"],
+    ["strategist", "KOL Strategist", "KOL Strategist"],
   ];
 
   return (
@@ -1055,7 +1086,7 @@ function TargetDashboard({
           ["country", "国家", "Country", ["ID", "MY", "VN", "TH", "PH"]],
           ["month", "月份", "Month", ["2026-08", "2026-07", "2026-06"]],
           ["brand", "品牌", "Brand", ["", "Glowsicha", "Glad2Glow", "Skintific"]],
-          ["owner", "负责人", "PIC", ["", "Nadia", "Delvi", "Shafi", "Cilla"]],
+          ["owner", "负责人", "KOL Strategist", ["", "Nadia", "Delvi", "Shafi", "Cilla"]],
         ].map(([key, zh, en, options]) => (
           <label key={String(key)}><span>{label(String(zh), String(en), language)}</span><select value={filters[String(key) as keyof typeof filters]} onChange={(event) => setFilters((current) => ({ ...current, [String(key)]: event.target.value }))}>{(options as string[]).map((option) => <option key={option || "all"} value={option}>{option || label("多选", "Multiple", language)}</option>)}</select></label>
         ))}
@@ -1078,23 +1109,19 @@ function TargetDashboard({
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
               <thead>
-                <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
-                <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
+                <tr><th>{label("拆分维度", "Breakdown", language)}</th><th>Post MTD / Target</th><th>Budget MTD / Target</th></tr>
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  const postRate = percent(row.postMtd, row.postTarget);
-                  const budgetRate = percent(row.budgetMtd, row.budgetTarget);
                   return (
-                    <tr key={`${row.name}-${row.sub}`}>
-                      <td><strong>{row.name}</strong><small>{row.sub}</small></td>
+                    <>
+                    <tr className="expandable-row">
+                      <td><button className="expand-row-button" onClick={() => setExpandedBreakdowns((current) => { const next = new Set(current); next.has(row.name) ? next.delete(row.name) : next.add(row.name); return next; })}><ChevronRight size={13} className={expandedBreakdowns.has(row.name) ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td>
                       <td><b>{row.postMtd}/{row.postTarget}</b></td>
-                      <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
-                      <td><span className={`pace-copy ${postRate < 45 ? "bad" : "good"}`}>MTD {postRate}%</span><div className="micro-progress"><i style={{ width: `${postRate}%` }} /></div></td>
                       <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
-                      <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
-                      <td><span className={`pace-copy ${budgetRate < 40 ? "warn" : "good"}`}>MTD {budgetRate}%</span><div className="micro-progress amber"><i style={{ width: `${budgetRate}%` }} /></div></td>
                     </tr>
+                    {expandedBreakdowns.has(row.name) && <tr className="nested-breakdown"><td>{tab === "product" ? "A Tier · B Tier" : tab === "tier" ? "Tone Up Sunscreen · Day Cream" : "Tone Up Sunscreen · Body Scrub"}</td><td>{Math.round(row.postMtd * .65)}/{Math.round(row.postTarget * .65)}</td><td>IDR {compactNumber(row.budgetMtd * .65)}/{compactNumber(row.budgetTarget * .65)}</td></tr>}
+                    </>
                   );
                 })}
               </tbody>
@@ -1102,10 +1129,17 @@ function TargetDashboard({
           </div>
         </section>
         <aside className="panel analysis-panel">
-          <div className="section-caption"><span />{label("分析说明", "Analysis Notes", language)}<button onClick={() => setAnalysis(label("发布数量达成 54%，接近时间节奏；Day Cream 仍有 25 条缺口。预算花费达成 36%，建议本周优先推动已收样的 A/B 级达人发布。", "Publishing reached 54%, close to elapsed-time pace. Day Cream still has a 25-post gap. Budget is at 36%; prioritize sampled A/B-tier creators this week.", language))}><Sparkles size={13} />AI</button></div>
-          {analysis ? <p className="analysis-copy">{analysis}</p> : <div className="analysis-empty"><Sparkles size={25} /><span>{label("点击右上角 AI 生成分析说明", "Use AI to generate an analysis note", language)}</span></div>}
+          <div className="section-caption"><span />{label("分析说明", "Analysis Notes", language)}<span className="auto-badge"><Sparkles size={12} />{label("每周自动生成", "Weekly auto-generated", language)}</span></div>
+          <p className="analysis-copy">{analysis}<small className="analysis-time">{label("生成时间", "Generated", language)}: {analysisGeneratedAt}</small></p>
         </aside>
       </div>
+
+      <section className="panel publishing-list-panel">
+        <div className="panel-title"><div><span className="eyebrow">VIDEO LIST</span><h2>{label("发布清单", "Publishing List", language)}</h2><p>{label("点击任一维度展开对应视频明细。", "Expand any dimension to view its videos.", language)}</p></div><div className="publishing-filters"><select value={publishingFilters.product} onChange={(event) => setPublishingFilters((current) => ({ ...current, product: event.target.value }))}><option value="">{label("全部产品", "All products", language)}</option><option>Tone Up Sunscreen</option><option>Day Cream</option></select><select value={publishingFilters.strategist} onChange={(event) => setPublishingFilters((current) => ({ ...current, strategist: event.target.value }))}><option value="">{label("全部 KOL Strategist", "All KOL Strategists", language)}</option><option>Nadia</option><option>Delvi</option></select></div></div>
+        <div className="data-table-wrap"><table className="data-table publishing-table"><thead><tr><th>{label("维度", "Dimension", language)}</th><th>{label("分组", "Group", language)}</th><th>Videos</th><th>Cost</th></tr></thead><tbody>{[
+          ["Product", "Tone Up Sunscreen", "38", "IDR 17.6M"], ["Tier", "A Tier", "18", "IDR 12.1M"], ["Content Type", "Vlog", "24", "IDR 10.8M"], ["KOL Strategist", "Nadia", "28", "IDR 16.2M"],
+        ].map(([dimension, group, videos, cost]) => <><tr key={`${dimension}-${group}`}><td><button className="expand-row-button" onClick={() => setPublishingOpen((current) => current === `${dimension}-${group}` ? null : `${dimension}-${group}`)}><ChevronRight size={13} className={publishingOpen === `${dimension}-${group}` ? "rotate-90" : ""} />{dimension}</button></td><td>{group}</td><td>{videos}</td><td>{cost}</td></tr>{publishingOpen === `${dimension}-${group}` && <tr className="video-detail-row"><td colSpan={4}><div className="video-list"><span><b>VID-260801-912</b> · @parasceria</span><span>Tone Up Sunscreen · A Tier · Vlog · Nadia</span><span>IDR 850K · 2026-08-01</span></div></td></tr>}</>)}</tbody></table></div>
+      </section>
 
       <section className="panel results-panel">
         <div className="panel-title">

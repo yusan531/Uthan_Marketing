@@ -1120,7 +1120,12 @@ function TargetDashboard({
                       <td><b>{row.postMtd}/{row.postTarget}</b></td>
                       <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
                     </tr>
-                    {expandedBreakdowns.has(row.name) && <tr className="nested-breakdown"><td>{tab === "product" ? "A Tier · B Tier" : tab === "tier" ? "Tone Up Sunscreen · Day Cream" : "Tone Up Sunscreen · Body Scrub"}</td><td>{Math.round(row.postMtd * .65)}/{Math.round(row.postTarget * .65)}</td><td>IDR {compactNumber(row.budgetMtd * .65)}/{compactNumber(row.budgetTarget * .65)}</td></tr>}
+                    {expandedBreakdowns.has(row.name) && (tab === "product"
+                      ? [["A Tier", .65], ["B Tier", .35]]
+                      : tab === "tier"
+                        ? [["Tone Up Sunscreen", .65], ["Day Cream", .35]]
+                        : [["Tone Up Sunscreen", .65], ["Body Scrub", .35]]
+                    ).map(([childName, share]) => <tr key={String(childName)} className="nested-breakdown"><td>{String(childName)}</td><td>{Math.round(row.postMtd * Number(share))}/{Math.round(row.postTarget * Number(share))}</td><td>IDR {compactNumber(row.budgetMtd * Number(share))}/{compactNumber(row.budgetTarget * Number(share))}</td></tr>)}
                     </>
                   );
                 })}
@@ -1129,7 +1134,7 @@ function TargetDashboard({
           </div>
         </section>
         <aside className="panel analysis-panel">
-          <div className="section-caption"><span />{label("分析说明", "Analysis Notes", language)}<span className="auto-badge"><Sparkles size={12} />{label("每周自动生成", "Weekly auto-generated", language)}</span></div>
+          <div className="section-caption"><span />{label("分析说明", "Analysis Notes", language)}<span className="auto-badge"><Sparkles size={12} />AI</span></div>
           <p className="analysis-copy">{analysis}<small className="analysis-time">{label("生成时间", "Generated", language)}: {analysisGeneratedAt}</small></p>
         </aside>
       </div>

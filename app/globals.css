@@ -1588,8 +1588,8 @@ thead .operation-column {
   font-size: 10px;
   line-height: 1.75;
 }
-.analysis-time { display: block; margin-top: 14px; color: var(--soft); font-size: 8px; }
-.auto-badge { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--purple); font-size: 9px; font-weight: 700; white-space: nowrap; }
+.ai-button { margin-left: auto; min-width: 34px; height: 30px !important; padding: 0 9px !important; border-radius: 5px !important; color: #fff !important; background: var(--purple) !important; font-size: 11px !important; }
+.analysis-prompt { align-items: flex-start; justify-content: flex-start; min-height: 245px; padding: 24px 18px; color: var(--text); text-align: left; font-size: 12px; }
 .expand-row-button { width: 100%; padding: 0; border: 0; display: flex; align-items: center; gap: 6px; color: inherit; background: transparent; text-align: left; }
 .expand-row-button span, .expand-row-button strong, .expand-row-button small { display: block; }
 .rotate-90 { transform: rotate(90deg); }
@@ -1599,13 +1599,6 @@ thead .operation-column {
 .results-panel {
   overflow: hidden;
 }
-.publishing-list-panel { overflow: hidden; }
-.publishing-filters { display: flex; gap: 7px; }
-.publishing-filters select { min-width: 150px; }
-.publishing-table { min-width: 720px; }
-.video-detail-row td { padding: 0 !important; background: var(--surface-2); }
-.video-list { padding: 10px 32px; display: grid; grid-template-columns: 1.1fr 1.6fr 1fr; gap: 12px; color: var(--muted); font-size: 9px; }
-.video-list b { color: var(--blue); }
 
 .results-panel .panel-title {
   align-items: center;

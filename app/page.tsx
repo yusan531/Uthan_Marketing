@@ -1040,11 +1040,8 @@ function TargetDashboard({
   const [expandedBreakdowns, setExpandedBreakdowns] = useState<Set<string>>(new Set());
   const [resultTab, setResultTab] = useState("productTier");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
-  const analysis = label("发布数量接近本月节奏；Day Cream 仍需重点推动。建议本周优先跟进已收样的 A/B 级达人，并检查高成本视频的产品归属。", "Publishing is close to the monthly pace. Day Cream needs focused follow-up; prioritize sampled A/B-tier creators and review high-cost videos by product.", language);
-  const analysisGeneratedAt = "2026-08-03 00:00 GMT+8";
+  const [analysis, setAnalysis] = useState("");
   const [resultOpen, setResultOpen] = useState(true);
-  const [publishingOpen, setPublishingOpen] = useState<string | null>(null);
-  const [publishingFilters, setPublishingFilters] = useState({ product: "", strategist: "" });
   const sourceRows = targetRows.length
     ? targetRows
     : [
@@ -1134,17 +1131,10 @@ function TargetDashboard({
           </div>
         </section>
         <aside className="panel analysis-panel">
-          <div className="section-caption"><span />{label("分析说明", "Analysis Notes", language)}<span className="auto-badge"><Sparkles size={12} />AI</span></div>
-          <p className="analysis-copy">{analysis}<small className="analysis-time">{label("生成时间", "Generated", language)}: {analysisGeneratedAt}</small></p>
+          <div className="section-caption"><span />{label("分析说明", "Analysis", language)}<button className="ai-button" onClick={() => setAnalysis(label("发布数量接近本月节奏；Day Cream 仍需重点推动。建议本周优先跟进已收样的 A/B 级达人，并检查高成本视频的产品归属。", "Publishing is close to the monthly pace. Day Cream needs focused follow-up; prioritize sampled A/B-tier creators and review high-cost videos by product.", language))}>AI</button></div>
+          {analysis ? <p className="analysis-copy">{analysis}</p> : <div className="analysis-empty analysis-prompt"><span>{label("点击右上角 AI 生成分析", "Click AI in the top-right to generate analysis", language)}</span></div>}
         </aside>
       </div>
-
-      <section className="panel publishing-list-panel">
-        <div className="panel-title"><div><span className="eyebrow">VIDEO LIST</span><h2>{label("发布清单", "Publishing List", language)}</h2><p>{label("点击任一维度展开对应视频明细。", "Expand any dimension to view its videos.", language)}</p></div><div className="publishing-filters"><select value={publishingFilters.product} onChange={(event) => setPublishingFilters((current) => ({ ...current, product: event.target.value }))}><option value="">{label("全部产品", "All products", language)}</option><option>Tone Up Sunscreen</option><option>Day Cream</option></select><select value={publishingFilters.strategist} onChange={(event) => setPublishingFilters((current) => ({ ...current, strategist: event.target.value }))}><option value="">{label("全部 KOL Strategist", "All KOL Strategists", language)}</option><option>Nadia</option><option>Delvi</option></select></div></div>
-        <div className="data-table-wrap"><table className="data-table publishing-table"><thead><tr><th>{label("维度", "Dimension", language)}</th><th>{label("分组", "Group", language)}</th><th>Videos</th><th>Cost</th></tr></thead><tbody>{[
-          ["Product", "Tone Up Sunscreen", "38", "IDR 17.6M"], ["Tier", "A Tier", "18", "IDR 12.1M"], ["Content Type", "Vlog", "24", "IDR 10.8M"], ["KOL Strategist", "Nadia", "28", "IDR 16.2M"],
-        ].map(([dimension, group, videos, cost]) => <><tr key={`${dimension}-${group}`}><td><button className="expand-row-button" onClick={() => setPublishingOpen((current) => current === `${dimension}-${group}` ? null : `${dimension}-${group}`)}><ChevronRight size={13} className={publishingOpen === `${dimension}-${group}` ? "rotate-90" : ""} />{dimension}</button></td><td>{group}</td><td>{videos}</td><td>{cost}</td></tr>{publishingOpen === `${dimension}-${group}` && <tr className="video-detail-row"><td colSpan={4}><div className="video-list"><span><b>VID-260801-912</b> · @parasceria</span><span>Tone Up Sunscreen · A Tier · Vlog · Nadia</span><span>IDR 850K · 2026-08-01</span></div></td></tr>}</>)}</tbody></table></div>
-      </section>
 
       <section className="panel results-panel">
         <div className="panel-title">

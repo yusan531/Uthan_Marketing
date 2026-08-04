@@ -1532,13 +1532,13 @@ thead .operation-column {
   width: auto;
 }
 
-.dashboard-table col.breakdown-col { width: 20%; }
+.dashboard-table col.breakdown-col { width: 18%; }
 .dashboard-table col.post-target-col { width: 12%; }
-.dashboard-table col.post-remaining-col { width: 9%; }
+.dashboard-table col.post-remaining-col { width: 8%; }
 .dashboard-table col.post-pace-col { width: 18%; }
 .dashboard-table col.budget-target-col { width: 14%; }
-.dashboard-table col.budget-remaining-col { width: 11%; }
-.dashboard-table col.budget-pace-col { width: 16%; }
+.dashboard-table col.budget-remaining-col { width: 10%; }
+.dashboard-table col.budget-pace-col { width: 20%; }
 
 .dashboard-table td strong,
 .dashboard-table td small {
@@ -2054,6 +2054,24 @@ thead .operation-column {
 
 .target-dashboard .dashboard-table td {
   height: 56px;
+}
+
+.target-dashboard .dashboard-table th:last-child,
+.target-dashboard .dashboard-table td:last-child {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.target-dashboard .dashboard-table td:last-child .dashboard-rate {
+  width: 100%;
+  min-width: 0;
+  gap: 4px;
+  padding-right: 4px;
+}
+
+.target-dashboard .dashboard-table td:last-child .dashboard-rate em {
+  padding: 3px 5px;
+  font-size: 7px;
 }
 
 .target-dashboard .dashboard-parent-row:hover > td {

@@ -1029,7 +1029,6 @@ function ProgressSummary({
     <article className={`progress-summary ${tone}`}>
       <div className="summary-top">
         <strong>{title}</strong>
-        <span className={`status-pill ${pace >= -5 ? "good" : "warn"}`}>{pace >= -5 ? label("正常", "On Track", language) : label("偏慢", "Slow", language)}</span>
       </div>
       <div className="summary-values">
         <div><b>{suffix}{compactNumber(actual)}</b><em>/ {suffix}{compactNumber(target)}</em><small>MTD / {label("月度目标", "Target", language)}</small></div>
@@ -1279,7 +1278,7 @@ function TargetDashboard({
                   const children = childrenFor(tab, row);
                   return <Fragment key={rowKey}>
                     <tr className="dashboard-parent-row">
-                      <td><button className="expand-row-button" onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td>
+                      <td><button className="expand-row-button" onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong></span></button></td>
                       <td><b>{row.postMtd}/{row.postTarget}</b></td>
                       <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
                       <td><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td>
@@ -1291,7 +1290,7 @@ function TargetDashboard({
                       const childPostRate = percent(child.postMtd, child.postTarget);
                       const childBudgetRate = percent(child.budgetMtd, child.budgetTarget);
                       return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}>
-                        <td><strong>{child.name}</strong><small>{child.sub}</small></td>
+                        <td><strong>{child.name}</strong></td>
                         <td><b>{child.postMtd}/{child.postTarget}</b></td>
                         <td>{Math.max(child.postTarget - child.postMtd, 0)}</td>
                         <td><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td>

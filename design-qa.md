@@ -1,53 +1,50 @@
-# Target Dashboard Design QA
+# Target Dashboard Annotation QA
 
-## Reference visuals
+## Source visual truth
 
-- Publishing Progress: `C:\Users\GST\AppData\Local\Temp\codex-clipboard-2903b401-219e-475f-b181-a0fa628a8edd.png` (2124 × 1170)
-- Publishing Results: `C:\Users\GST\AppData\Local\Temp\codex-clipboard-9e053c51-ae8f-4fd1-94a2-81bc73a6698e.png` (1901 × 1313)
-- Video Publishing List: `C:\Users\GST\AppData\Local\Temp\codex-clipboard-65b77bbc-4115-4e3a-b011-83b7f6f3a1aa.png` (1901 × 758)
+- `C:\Users\GST\AppData\Local\Temp\codex-clipboard-ea781475-0827-47e6-b646-53587bc510cc.png`
+- Source pixels: 2048 × 1139
+- Requested state: light theme, Product progress dimension, first Product row expanded
+- Requested corrections: remove the two summary status badges, remove secondary copy beneath parent and child row names, and keep the rightmost Budget MTD/Pace column fully inside the main panel.
 
 ## Implementation evidence
 
-- Publishing Progress: `design-qa-top-v19.png` (1265 × 712)
-- Publishing Results: `design-qa-results-v19.png` (1265 × 712)
-- Video Publishing List, Product group expanded: `design-qa-video-grouped-fixed-v19.jpg` (1265 × 712)
-- Side-by-side comparison: `design-qa-comparison-v19.jpg`
-
-## Viewport and state
-
+- Browser-rendered screenshot: `design-qa-fix-top-v20.jpg`
+- Focused expanded-state screenshot: `design-qa-fix-v20.jpg`
+- Combined source/implementation comparison: `design-qa-comparison-v20.jpg`
+- Implementation pixels: 1265 × 712
 - Browser viewport: 1280 × 720 CSS px
 - Device pixel ratio: 1.5
-- Language: Chinese
-- Theme: light
-- Route: Dashboard
-- Progress dimension: Product
-- Results dimension: Product
-- Video dimension: Product, with the first group expanded
-- Page width check: document scroll width 1265 px at a 1280 px viewport; no horizontal page overflow
+- State: Chinese, light theme, Dashboard route, Product dimension, Tone Up Sunscreen expanded
 
-## Visual comparison
+## Findings
 
-- The three major sections preserve the reference hierarchy: Publishing Progress, Publishing Results, and Video Publishing List.
-- Each section keeps a narrow Analysis panel on the right at desktop widths.
-- The Progress section uses a two-card summary, pill dimension tabs, and a compact no-scroll breakdown table.
-- The Results section keeps six KPIs and per-dimension breakdowns. At this 1280 px viewport the KPI grid intentionally wraps to 3 × 2 for legibility; wider screens retain the single-row layout.
-- The Video section keeps the meeting-period selector, six KPIs, the five dimension tabs, grouped summaries, and nested video detail rows.
-- Blue is reserved for navigation and structure, green for healthy/on-track values, amber for watch states, and red for risk states.
-- Source visuals are wireframes without image assets; image fidelity is not applicable. Existing product icons and typography were retained.
+- No actionable P0/P1/P2 differences remain for the annotated areas.
+- Summary status badges are absent (`statusPills: 0`).
+- Parent and child row secondary copy is absent (`tableSubcopy: 0`).
+- The rightmost pace pill ends at 1035.33 px while the table wrapper ends at 1048.00 px, so it remains fully inside the main panel and does not sit beneath the Analysis column.
+- The page document width is 1265 px at a 1280 px viewport; there is no horizontal page overflow.
 
-## Interaction checks
+## Fidelity surfaces
 
-- Product, Creator Tier, Content Type, and KOL Strategist video tabs all switch to grouped data.
-- Group row expand/collapse works and reveals the corresponding video-detail table.
-- The main dashboard has no horizontal page scrolling at the validated viewport.
-- Browser console and runtime logs: no warnings or errors.
+- Fonts and typography: existing product font family, hierarchy, weights, and compact table sizing retained; removed copy does not leave stray spacing.
+- Spacing and layout rhythm: the main/Analysis column proportions remain unchanged; the final progress column was widened and its pill inset tightened without changing section spacing.
+- Colors and tokens: existing blue structure, green success, amber watch, and purple AI tokens retained.
+- Image quality and assets: not applicable to this data-dashboard correction; no image assets were replaced.
+- Copy and content: only the explicitly marked status labels and secondary row descriptions were removed.
+
+## Interaction and runtime checks
+
+- Product row expand/collapse tested successfully after the changes.
+- Expanded Tier rows render without the removed secondary descriptions.
+- Browser console warnings/errors: none.
 
 ## Comparison history
 
-1. Initial comparison found the first grouped-table arrow cell truncating with an ellipsis at 1280 px.
-2. Increased the disclosure column width and exempted the first cell from ellipsis.
-3. Rebuilt and rechecked all four grouped dimensions plus the expanded Product state.
+1. Initial implementation still placed the rightmost pace pill flush against the clipped panel boundary at the 1280 px validation viewport.
+2. Rebalanced the seven table columns, reduced the final pace-pill padding, and added a 4 px right inset.
+3. Rebuilt and captured the same expanded Product state. Bounding-box verification confirms the pace pill now remains inside the table wrapper.
 
 ## Final result
 
-Passed.
+final result: passed

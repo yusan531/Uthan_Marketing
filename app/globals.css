@@ -2032,6 +2032,8 @@ thead .operation-column {
 }
 
 .target-dashboard .progress-panel .dashboard-table-wrap {
+  width: auto;
+  max-width: calc(100% - 36px);
   margin: 0 18px;
   overflow: hidden;
   border: 1px solid var(--line);

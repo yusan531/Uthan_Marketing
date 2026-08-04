@@ -1,49 +1,45 @@
-# Target Dashboard Annotation QA
+# Target Dashboard Overflow QA
 
 ## Source visual truth
 
-- `C:\Users\GST\AppData\Local\Temp\codex-clipboard-ea781475-0827-47e6-b646-53587bc510cc.png`
-- Source pixels: 2048 × 1139
-- Requested state: light theme, Product progress dimension, first Product row expanded
-- Requested corrections: remove the two summary status badges, remove secondary copy beneath parent and child row names, and keep the rightmost Budget MTD/Pace column fully inside the main panel.
+- `C:\Users\GST\AppData\Local\Temp\codex-clipboard-e391842d-b0d7-458d-a0ae-1dc03a79c2fd.png`
+- Source pixels: 2492 × 1415
+- Requested correction: the Publishing Progress table must not extend beyond the main panel or into the gap before the Analysis panel.
 
 ## Implementation evidence
 
-- Browser-rendered screenshot: `design-qa-fix-top-v20.jpg`
-- Focused expanded-state screenshot: `design-qa-fix-v20.jpg`
-- Combined source/implementation comparison: `design-qa-comparison-v20.jpg`
-- Implementation pixels: 1265 × 712
-- Browser viewport: 1280 × 720 CSS px
-- Device pixel ratio: 1.5
-- State: Chinese, light theme, Dashboard route, Product dimension, Tone Up Sunscreen expanded
+- Browser-rendered screenshot: `design-qa-wide-v21.jpg`
+- Side-by-side full and focused comparison: `design-qa-comparison-v21.jpg`
+- Implementation screenshot pixels: 1946 × 1131
+- Browser CSS viewport override: 2048 × 1139
+- State: Chinese, light theme, Dashboard route, Product dimension, rows collapsed
 
 ## Findings
 
-- No actionable P0/P1/P2 differences remain for the annotated areas.
-- Summary status badges are absent (`statusPills: 0`).
-- Parent and child row secondary copy is absent (`tableSubcopy: 0`).
-- The rightmost pace pill ends at 1035.33 px while the table wrapper ends at 1048.00 px, so it remains fully inside the main panel and does not sit beneath the Analysis column.
-- The page document width is 1265 px at a 1280 px viewport; there is no horizontal page overflow.
+- No actionable P0/P1/P2 differences remain in the annotated area.
+- The table wrapper now ends 18.67 px before the main panel's right edge.
+- The pace pill and progress bar remain inside the wrapper and main panel.
+- The table no longer occupies the inter-panel gap or sits beneath the Analysis panel.
 
 ## Fidelity surfaces
 
-- Fonts and typography: existing product font family, hierarchy, weights, and compact table sizing retained; removed copy does not leave stray spacing.
-- Spacing and layout rhythm: the main/Analysis column proportions remain unchanged; the final progress column was widened and its pill inset tightened without changing section spacing.
-- Colors and tokens: existing blue structure, green success, amber watch, and purple AI tokens retained.
-- Image quality and assets: not applicable to this data-dashboard correction; no image assets were replaced.
-- Copy and content: only the explicitly marked status labels and secondary row descriptions were removed.
+- Fonts and typography: unchanged from the approved product design; no new wrapping or truncation was introduced.
+- Spacing and layout rhythm: corrected the wrapper sizing while retaining the existing 18 px horizontal inset and main/Analysis column proportions.
+- Colors and tokens: unchanged.
+- Image quality and assets: not applicable; no visual assets were changed.
+- Copy and content: unchanged.
 
 ## Interaction and runtime checks
 
-- Product row expand/collapse tested successfully after the changes.
-- Expanded Tier rows render without the removed secondary descriptions.
+- Publishing Progress tabs and row disclosure controls remain present.
+- Wide-screen layout checked at the user's annotated viewport scale.
 - Browser console warnings/errors: none.
 
 ## Comparison history
 
-1. Initial implementation still placed the rightmost pace pill flush against the clipped panel boundary at the 1280 px validation viewport.
-2. Rebalanced the seven table columns, reduced the final pace-pill padding, and added a 4 px right inset.
-3. Rebuilt and captured the same expanded Product state. Bounding-box verification confirms the pace pill now remains inside the table wrapper.
+1. The inherited `width: 100%` combined with 18 px horizontal margins made the table wrapper wider than its parent, so the panel's overflow clipping cut into the last column.
+2. Overrode the wrapper to `width: auto` with `max-width: calc(100% - 36px)` while retaining the 18 px margins.
+3. Rebuilt and recaptured the wide-screen state. The wrapper and all final-column content now remain inside the panel with an 18.67 px right inset.
 
 ## Final result
 

@@ -323,7 +323,7 @@ function Modal({
   }, [onClose]);
 
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className={`modal-backdrop ${variant ? "drawer-backdrop" : ""}`} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className={`modal ${wide ? "modal-wide" : ""} ${variant || ""}`} role="dialog" aria-modal="true">
         <header className="modal-header">
           <h3>{title}</h3>
@@ -421,7 +421,22 @@ function RecordModal({
 }) {
   const activeFields = row ? (config.editFields || config.fields) : (config.modalFields || config.fields);
   const [form, setForm] = useState<Record<string, unknown>>(() =>
-    Object.fromEntries(activeFields.map((field) => [field.key, row?.[field.key] ?? ""])),
+    Object.fromEntries(activeFields.map((field) => {
+      const existing = row?.[field.key];
+      if (existing !== undefined && existing !== null && existing !== "") return [field.key, existing];
+      if (config.key === "reviews" && row) {
+        if (field.key === "postLink") return [field.key, `https://www.tiktok.com/@${row.creatorName}/video/${row.postId}`];
+        if (field.key === "submitter") return [field.key, row.owner || ""];
+        if (field.key === "rateTier") return [field.key, "B"];
+        if (field.key === "slideProject") return [field.key, "No"];
+        if (field.key === "yellowBasket") return [field.key, "Yes"];
+        if (field.key === "hasSparkCode") return [field.key, "Yes"];
+        if (field.key === "videoType") return [field.key, "Review"];
+        if (field.key === "contentAngle") return [field.key, "Review"];
+        if (field.key === "sparkAdsStatus") return [field.key, "None"];
+      }
+      return [field.key, ""];
+    })),
   );
 
   function submit(event: FormEvent) {
@@ -466,9 +481,9 @@ function RecordModal({
   return (
     <Modal
       title={config.key === "reviews"
-        ? <span className="review-dialog-heading"><b>{row ? label("修改帖子记录", "Edit Post Record", language) : label("添加帖子记录", "Add Post Record", language)}</b><strong>{String(row?.reviewNo || "RID20260824000024")}</strong><em><span className="flag-id">🇮🇩</span> ID</em></span>
+        ? <span className="review-dialog-heading"><b>{row ? label("修改帖子记录", "Edit Post Record", language) : label("添加帖子记录", "Add Post Record", language)}</b><strong>{String(row?.reviewNo || "RID20260824000024")}</strong><em><span className="fi fi-id flag-id" /> ID</em></span>
         : config.key === "payment"
-          ? <span className="review-dialog-heading"><b>{row ? label("修改支付记录", "Edit Payment Record", language) : label("添加支付记录", "Add Payment Record", language)}</b><strong>{String(row?.paymentNo || "PID20260824000028")}</strong><em><span className="flag-id">🇮🇩</span> ID</em></span>
+          ? <span className="review-dialog-heading"><b>{row ? label("修改支付记录", "Edit Payment Record", language) : label("添加支付记录", "Add Payment Record", language)}</b><strong>{String(row?.paymentNo || "PID20260824000028")}</strong><em><span className="fi fi-id flag-id" /> ID</em></span>
         : row
         ? label("修改记录", "Edit Record", language)
         : config.key === "reviews"
@@ -505,13 +520,24 @@ function RecordModal({
                 {row && <div className="rg three">{["sparkAdsStatus","adDate","adsOwner"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>}
               </div>
             </div>
+          ) : config.key === "payment" ? (
+            <div className="payment-exact-body">
+              <div className="rg three">{["creatorName","brand","platform"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg three">{["contentType","ownContent","rateTier"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg three">{["unitPrice","qty","totalPrice"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg three">{["followersK","owner","supervisor"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg two">{["expectedPostDate","actualPostDate"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg one notes-row">{renderField(activeFields.find(f=>f.key==="notes")!)}</div>
+              {row && <div className="quantity-check"><strong>{label("数量是否一致", "Quantity Consistency", language)}</strong><span className={row.qtyConsistent === "Yes" ? "ok" : "bad"}>{row.qtyConsistent === "Yes" ? label("一致", "Consistent", language) : label("不一致", "Inconsistent", language)}</span></div>}
+              <div className="form-section-title"><i />{label("财务信息", "Financial Information", language)}</div>
+              <div className="rg three">{["paymentBank","bankName","accountName"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg three">{["bankAccount","idNumber","idName"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg three">{["paid", ...(row ? ["paymentDate","invoiceVerified"] : [])].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              <div className="rg two file-row">{["invoiceFiles", ...(row ? ["paymentProof"] : [])].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+              {row && <div className="rg one notes-row">{renderField(activeFields.find(f=>f.key==="financeNotes")!)}</div>}
+              {row && <><div className="form-section-title"><i />{label("审批", "Approval", language)}</div><div className="rg two approval-row">{["supervisorApproval","ceoApproval"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div></>}
+            </div>
           ) : <div className="form-grid">{activeFields.slice(0, sectionBreak).map(renderField)}</div>}
-          {config.key === "payment" && (
-            <>
-              <div className="form-section-title">{label("财务信息", "Financial Information", language)}</div>
-              <div className="form-grid">{activeFields.slice(sectionBreak).map(renderField)}</div>
-            </>
-          )}
           {config.key === "reviews" && false && (
             <div className="review-modal-extras">
               <section><div className="extra-title"><strong>*{label("支付单列表", "Payment Records", language)}</strong><button type="button" className="button primary small"><Plus size={13}/>{label("新增", "Add", language)}</button></div><div className="empty-mini-table">{label("暂无关联支付单", "No linked payment records", language)}</div></section>
@@ -521,6 +547,7 @@ function RecordModal({
           )}
         </div>
         <footer className="modal-footer">
+          {config.key === "payment" && row && <button type="button" className="button price-change">{label("改价", "Change Price", language)}</button>}
           <button type="submit" className="button primary">
             <Check size={14} />
             {isRealSystemModal ? label("确定", "Confirm", language) : label("保存", "Save", language)}

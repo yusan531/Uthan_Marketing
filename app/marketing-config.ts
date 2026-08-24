@@ -337,7 +337,7 @@ pageConfigs.payment11 = {
   filters: [country(), text("paymentNo", "Payment ID", "Payment ID"), text("creatorName", "达人名称", "Creator Name"), brand(), owner(), select("planStatus", "Post Plan 状态", "Post Plan Status", [option("Planning"), option("Partially Posted"), option("Completed")])],
   fields: paymentFields, modalFields: paymentModalFields,
   columns: [column("paymentNo", "Payment ID", "Payment ID"), column("creatorName", "达人", "Creator"), column("brand", "品牌", "Brand"), column("owner", "负责人", "PIC"), column("unitPrice", "单价", "Each Price"), column("qty", "数量", "Quantity"), column("totalPrice", "总价", "Total Price"), column("expectedPostDate", "预计全部完成", "Expected Finish All Post Date"), column("reviewQty", "已关联 Review", "Linked Reviews"), column("planStatus", "计划状态", "Plan Status")],
-  actions: ["add", "edit", "delete", "export"],
+  actions: ["add", "edit", "export"],
   seed: [
     { id: 1101, paymentNo: "PID20260824000028", creatorName: "alkkna", brand: "Glowsicha", owner: "Ajeng Salma Nadhifa Fitriani", followersK: 82.6, unitPrice: 350000, qty: 3, totalPrice: 1050000, expectedPostDate: "2026-09-18", reviewQty: 1, planStatus: "Partially Posted" },
     { id: 1102, paymentNo: "PID20260824000029", creatorName: "micizuby", brand: "Glowsicha", owner: "Delvi", followersK: 156.2, unitPrice: 250000, qty: 2, totalPrice: 500000, expectedPostDate: "2026-09-25", reviewQty: 0, planStatus: "Planning" },
@@ -350,7 +350,7 @@ pageConfigs.reviews11 = {
   filters: [country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), text("postNo", "Post No.", "Post No."), text("creatorName", "达人", "Creator"), brand(), select("platform", "平台", "Platform", platformOptions), text("postId", "Post ID / Video ID", "Post ID / Video ID"), select("expiredStatus", "过期状态", "Expired Status", [option("Normal"), option("Expiring Soon"), option("Expired")]), select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", [option("None"), option("Active"), option("Expired")])],
   fields: reviewBaseFields, modalFields: reviewModalFields,
   columns: [column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("postNo", "Post No.", "Post No."), column("creatorName", "达人", "Creator"), column("platform", "平台", "Platform"), column("contentType", "内容类型", "Content Type"), column("planningPostDate", "计划发布日期", "Planning Post Date"), column("postId", "Post ID / Video ID", "Post ID / Video ID"), column("postLink", "Post Link", "Post Link"), column("boostCode", "Boost Code / Spark Ads", "Boost Code / Spark Ads"), column("expiredDate", "Expired Date", "Expired Date"), column("expiredStatus", "Expired Status", "Expired Status")],
-  actions: ["add", "edit", "delete", "export"],
+  actions: ["add", "edit", "export"],
   seed: [
     { id: 2101, reviewNo: "RID20260824000024", paymentNo: "PID20260824000028", postNo: "1", creatorName: "alkkna", platform: "TikTok", contentType: "Vlog", planningPostDate: "2026-09-05", postId: "7677446455979724040", postLink: "https://www.tiktok.com/@alkkna/video/7677446455979724040", boostCode: "SPK-8G41F", expiredDate: "2026-10-24", expiredStatus: "Normal", sparkAdsStatus: "Active" },
   ],

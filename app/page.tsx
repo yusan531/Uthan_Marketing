@@ -453,7 +453,7 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
       {isPayment ? <>
         <div className="v11-summary"><div><span>Quantity</span><b>{qty}</b><small>{label("由明细行数自动统计", "Auto-counted from rows", language)}</small></div><div><span>Total Price</span><b>IDR {total.toLocaleString()}</b><small>Each Price × Quantity</small></div><div><span>Expected Finish All Post Date</span><b>{expected}</b><small>{label("取最晚计划日期", "Latest planned date", language)}</small></div></div>
         <div className="post-plan-title"><div><strong>Post Plan</strong><span>{label("Payment 内明细，不是独立单据", "Details inside Payment, not a separate record", language)}</span></div><button type="button" className="button primary" onClick={() => setPlans(current => [...current, { postNo: current.length + 1, platform: "TikTok", contentType: "Vlog", contentAngle: "", planningPostDate: "", yellowCart: "No", boostCode: "No", owning: "Creator" }])}><Plus size={14}/>{label("新增行", "Add Row", language)}</button></div>
-        <div className="plan-table-wrap"><table className="plan-table"><thead><tr><th>Post No.</th><th>Platform</th><th>Content Type</th><th>Content Angle</th><th>Planning Post Date</th><th>YC</th><th>Boost Code</th><th>Owning</th><th /></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo}><td><b>{index + 1}</b></td>{(["platform","contentType","contentAngle","planningPostDate","yellowCart","boostCode","owning"] as const).map(key => <td key={key}><input type={key === "planningPostDate" ? "date" : "text"} value={item[key]} onChange={event => setPlans(current => current.map((planItem, itemIndex) => itemIndex === index ? { ...planItem, [key]: event.target.value } : planItem))} /></td>)}<td><button type="button" className="row-action danger" onClick={() => setPlans(current => current.filter((_, itemIndex) => itemIndex !== index).map((planItem, itemIndex) => ({ ...planItem, postNo: itemIndex + 1 })))}><Trash2 size={14}/></button></td></tr>)}</tbody></table></div>
+        <div className="plan-table-wrap"><table className="plan-table"><thead><tr><th>Post No.</th><th>Platform</th><th>Content Type</th><th>Content Angle</th><th>Planning Post Date</th><th>YC</th><th>Boost Code</th><th>Owning</th></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo}><td><b>{index + 1}</b></td>{(["platform","contentType","contentAngle","planningPostDate","yellowCart","boostCode","owning"] as const).map(key => <td key={key}><input type={key === "planningPostDate" ? "date" : "text"} value={item[key]} onChange={event => setPlans(current => current.map((planItem, itemIndex) => itemIndex === index ? { ...planItem, [key]: event.target.value } : planItem))} /></td>)}</tr>)}</tbody></table></div>
       </> : <>
         <div className="form-section-title"><i />{label("自动带出的 Payment / Post Plan 信息", "Auto-filled Payment / Post Plan Information", language)}</div>
         <div className="v11-grid auto-filled">{input("platform", "Platform", "text", true)}{input("contentType", "Content Type", "text", true)}{input("contentAngle", "Content Angle", "text", true)}{input("planningPostDate", "Planning Post Date", "date", true)}{input("yellowCart", "Yellow Cart / YC", "text", true)}{input("owning", "Owning", "text", true)}</div>
@@ -990,17 +990,19 @@ function TablePage({
                       <button className="row-action" onClick={() => setEditing(row)} aria-label="Edit">
                         <Edit3 size={14} />
                       </button>
-                      <button
-                        className="row-action danger"
-                        onClick={() => {
-                          if (!window.confirm(label("确认删除这条记录？", "Delete this record?", language))) return;
-                          setRows(rows.filter((item) => String(item.id) !== String(row.id)));
-                          notify(label("记录已删除", "Record deleted", language));
-                        }}
-                        aria-label="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {config.actions.includes("delete") && (
+                        <button
+                          className="row-action danger"
+                          onClick={() => {
+                            if (!window.confirm(label("确认删除这条记录？", "Delete this record?", language))) return;
+                            setRows(rows.filter((item) => String(item.id) !== String(row.id)));
+                            notify(label("记录已删除", "Record deleted", language));
+                          }}
+                          aria-label="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </td>
                   )}
                 </tr>

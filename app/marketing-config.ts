@@ -3,8 +3,8 @@ export type RoleKey = "country" | "brand" | "kolPic" | "ads" | "finance" | "anal
 export type PageKey =
   | "home" | "targetDashboard" | "target1" | "productTarget" | "ownTarget"
   | "creator" | "campaign" | "sample"
-  | "reviews" | "lsaReviews" | "lsaKocReviews" | "ownMediaReview" | "inhouseContent"
-  | "payment" | "paymentPriceChange"
+  | "reviews" | "reviews11" | "lsaReviews" | "lsaKocReviews" | "ownMediaReview" | "inhouseContent"
+  | "payment" | "payment11" | "paymentPriceChange"
   | "paymentAnalytics" | "paymentReview" | "yellowBasket" | "topRankVideo"
   | "targetAnalytics" | "productAnalytics" | "reviewLevelAnalytics" | "videoAnalytics"
   | "kolTargetReport" | "missingPid"
@@ -331,12 +331,37 @@ Object.assign(pageConfigs, {
   onlineUsers: logConfig("onlineUsers", "在线用户", "Online Users", [text("address", "登录地址", "Login Address"), text("username", "用户名称", "Username")], [column("sequence", "序号", "No."), column("sessionNo", "会话编号", "Session No."), column("username", "登录名称", "Username"), column("client", "客户端", "Client"), column("deviceType", "设备类型", "Device Type"), column("department", "所属部门", "Department"), column("host", "主机", "Host"), column("location", "登录地点", "Location"), column("os", "操作系统", "OS"), column("browser", "浏览器", "Browser"), column("loginTime", "登录时间", "Login Time")], [{ id: 1, sequence: 1, sessionNo: "S-918273645", username: "uthan@goodsale.tech", client: "Web", deviceType: "Desktop", department: "IT", host: "10.20.1.18", location: "Jakarta", os: "macOS", browser: "Chrome", loginTime: "2026-08-02 09:11" }], ["delete", "export"]),
 } satisfies Partial<Record<PageKey, PageConfig>>);
 
+pageConfigs.payment11 = {
+  key: "payment11", titleZh: "Payment1.1", titleEn: "Payment1.1",
+  descZh: "在 Payment 内维护多行 Post Plan，并自动计算数量、总价和预计完成日期。", descEn: "Maintain multi-row Post Plans inside Payment with automatic totals and completion date.",
+  filters: [country(), text("paymentNo", "Payment ID", "Payment ID"), text("creatorName", "达人名称", "Creator Name"), brand(), owner(), select("planStatus", "Post Plan 状态", "Post Plan Status", [option("Planning"), option("Partially Posted"), option("Completed")])],
+  fields: paymentFields, modalFields: paymentModalFields,
+  columns: [column("paymentNo", "Payment ID", "Payment ID"), column("creatorName", "达人", "Creator"), column("brand", "品牌", "Brand"), column("owner", "负责人", "PIC"), column("unitPrice", "单价", "Each Price"), column("qty", "数量", "Quantity"), column("totalPrice", "总价", "Total Price"), column("expectedPostDate", "预计全部完成", "Expected Finish All Post Date"), column("reviewQty", "已关联 Review", "Linked Reviews"), column("planStatus", "计划状态", "Plan Status")],
+  actions: ["add", "edit", "delete", "export"],
+  seed: [
+    { id: 1101, paymentNo: "PID20260824000028", creatorName: "alkkna", brand: "Glowsicha", owner: "Ajeng Salma Nadhifa Fitriani", followersK: 82.6, unitPrice: 350000, qty: 3, totalPrice: 1050000, expectedPostDate: "2026-09-18", reviewQty: 1, planStatus: "Partially Posted" },
+    { id: 1102, paymentNo: "PID20260824000029", creatorName: "micizuby", brand: "Glowsicha", owner: "Delvi", followersK: 156.2, unitPrice: 250000, qty: 2, totalPrice: 500000, expectedPostDate: "2026-09-25", reviewQty: 0, planStatus: "Planning" },
+  ],
+};
+
+pageConfigs.reviews11 = {
+  key: "reviews11", titleZh: "Reviews1.1", titleEn: "Reviews1.1",
+  descZh: "通过 Payment ID + Post No. 关联计划内容并记录实际发布结果。", descEn: "Link planned content by Payment ID + Post No. and capture actual publishing results.",
+  filters: [country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), text("postNo", "Post No.", "Post No."), text("creatorName", "达人", "Creator"), brand(), select("platform", "平台", "Platform", platformOptions), text("postId", "Post ID / Video ID", "Post ID / Video ID"), select("expiredStatus", "过期状态", "Expired Status", [option("Normal"), option("Expiring Soon"), option("Expired")]), select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", [option("None"), option("Active"), option("Expired")])],
+  fields: reviewBaseFields, modalFields: reviewModalFields,
+  columns: [column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("postNo", "Post No.", "Post No."), column("creatorName", "达人", "Creator"), column("platform", "平台", "Platform"), column("contentType", "内容类型", "Content Type"), column("planningPostDate", "计划发布日期", "Planning Post Date"), column("postId", "Post ID / Video ID", "Post ID / Video ID"), column("postLink", "Post Link", "Post Link"), column("boostCode", "Boost Code / Spark Ads", "Boost Code / Spark Ads"), column("expiredDate", "Expired Date", "Expired Date"), column("expiredStatus", "Expired Status", "Expired Status")],
+  actions: ["add", "edit", "delete", "export"],
+  seed: [
+    { id: 2101, reviewNo: "RID20260824000024", paymentNo: "PID20260824000028", postNo: "1", creatorName: "alkkna", platform: "TikTok", contentType: "Vlog", planningPostDate: "2026-09-05", postId: "7677446455979724040", postLink: "https://www.tiktok.com/@alkkna/video/7677446455979724040", boostCode: "SPK-8G41F", expiredDate: "2026-10-24", expiredStatus: "Normal", sparkAdsStatus: "Active" },
+  ],
+};
+
 export const menuGroups: { key: string; zh: string; en: string; pages: { key: PageKey; zh: string; en: string }[] }[] = [
   { key: "home", zh: "Home", en: "Home", pages: [{ key: "home", zh: "Home", en: "Home" }] },
   { key: "target", zh: "Target", en: "Target", pages: [{ key: "targetDashboard", zh: "Dashboard", en: "Dashboard" }, { key: "productTarget", zh: "Target", en: "Target" }, { key: "ownTarget", zh: "Own Target", en: "Own Target" }] },
   { key: "creator", zh: "Creator", en: "Creator", pages: [{ key: "creator", zh: "Creator", en: "Creator" }] },
-  { key: "content", zh: "Content", en: "Content", pages: [{ key: "reviews", zh: "Reviews", en: "Reviews" }, { key: "ownMediaReview", zh: "Own Media Review", en: "Own Media Review" }] },
-  { key: "finance", zh: "Finance", en: "Finance", pages: [{ key: "payment", zh: "Payment", en: "Payment" }, { key: "paymentPriceChange", zh: "Payment Change Price", en: "Payment Change Price" }] },
+  { key: "content", zh: "Content", en: "Content", pages: [{ key: "reviews", zh: "Reviews", en: "Reviews" }, { key: "reviews11", zh: "Reviews1.1", en: "Reviews1.1" }, { key: "ownMediaReview", zh: "Own Media Review", en: "Own Media Review" }] },
+  { key: "finance", zh: "Finance", en: "Finance", pages: [{ key: "payment", zh: "Payment", en: "Payment" }, { key: "payment11", zh: "Payment1.1", en: "Payment1.1" }, { key: "paymentPriceChange", zh: "Payment Change Price", en: "Payment Change Price" }] },
   { key: "analysis", zh: "Analysis", en: "Analysis", pages: [{ key: "paymentAnalytics", zh: "Payment Analytics", en: "Payment Analytics" }, { key: "paymentReview", zh: "Payment and Review Post", en: "Payment and Review Post" }, { key: "yellowBasket", zh: "Yellow Basket Analytics", en: "Yellow Basket Analytics" }, { key: "topRankVideo", zh: "Top Rank Video", en: "Top Rank Video" }, { key: "targetAnalytics", zh: "Target Analytics", en: "Target Analytics" }, { key: "productAnalytics", zh: "Product Analytics", en: "Product Analytics" }, { key: "reviewLevelAnalytics", zh: "Review Level Analytics", en: "Review Level Analytics" }, { key: "videoAnalytics", zh: "Video Analytics", en: "Video Analytics" }, { key: "kolTargetReport", zh: "KOL Target Analytics", en: "KOL Target Analytics" }, { key: "missingPid", zh: "Missing PID", en: "Missing PID" }] },
   { key: "basic", zh: "Basic Data", en: "Basic Data", pages: [{ key: "brandData", zh: "Brand", en: "Brand" }, { key: "productData", zh: "Product", en: "Product" }, { key: "budgetRule", zh: "Budget Rule Config", en: "Budget Rule Config" }] },
   { key: "system", zh: "系统管理", en: "System Management", pages: [{ key: "users", zh: "用户管理", en: "Users" }, { key: "roles", zh: "角色管理", en: "Roles" }, { key: "menus", zh: "菜单管理", en: "Menus" }, { key: "notices", zh: "通知公告", en: "Notices" }, { key: "operLogs", zh: "操作日志", en: "Operation Logs" }, { key: "loginLogs", zh: "登录日志", en: "Login Logs" }] },

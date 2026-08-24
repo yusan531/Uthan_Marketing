@@ -106,11 +106,13 @@ const pageIcons: Partial<Record<PageKey, LucideIcon>> = {
   sample: Package,
   campaign: FolderKanban,
   reviews: FileText,
+  reviews11: FileText,
   lsaReviews: FileText,
   lsaKocReviews: FileText,
   ownMediaReview: BookOpen,
   inhouseContent: Box,
   payment: WalletCards,
+  payment11: WalletCards,
   paymentPriceChange: RefreshCcw,
   paymentAnalytics: FileBarChart,
   paymentReview: FileBarChart,
@@ -406,6 +408,62 @@ function FieldControl({
   return field.key === "unitPrice" ? <div className="currency-control"><span>IDR</span>{control}</div> : control;
 }
 
+type PostPlan = { postNo: number; platform: string; contentType: string; contentAngle: string; planningPostDate: string; yellowCart: string; boostCode: string; owning: string };
+const linkedPlans: Record<string, PostPlan[]> = {
+  PID20260824000028: [
+    { postNo: 1, platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", yellowCart: "Yes", boostCode: "Required", owning: "Brand" },
+    { postNo: 2, platform: "TikTok", contentType: "TTS", contentAngle: "Tutorial", planningPostDate: "2026-09-12", yellowCart: "Yes", boostCode: "No", owning: "Creator" },
+    { postNo: 3, platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", yellowCart: "No", boostCode: "No", owning: "Creator" },
+  ],
+  PID20260824000029: [
+    { postNo: 1, platform: "TikTok", contentType: "Vlog", contentAngle: "Before & After", planningPostDate: "2026-09-20", yellowCart: "Yes", boostCode: "Required", owning: "Brand" },
+    { postNo: 2, platform: "YouTube", contentType: "Livetalk", contentAngle: "Product Demo", planningPostDate: "2026-09-25", yellowCart: "No", boostCode: "No", owning: "Creator" },
+  ],
+};
+
+function Version11Modal({ config, row, language, onSave, onClose }: { config: PageConfig; row: Row | null; language: Language; onSave: (row: Row) => void; onClose: () => void }) {
+  const isPayment = config.key === "payment11";
+  const [form, setForm] = useState<Record<string, unknown>>(() => ({
+    paymentNo: row?.paymentNo || (isPayment ? `PID${new Date().toISOString().slice(0, 10).replaceAll("-", "")}0030` : "PID20260824000028"),
+    reviewNo: row?.reviewNo || "RID20260824000025", postNo: row?.postNo || "", creatorName: row?.creatorName || "", brand: row?.brand || "Glowsicha",
+    owner: row?.owner || "Ajeng Salma Nadhifa Fitriani", followersK: row?.followersK || "", unitPrice: row?.unitPrice || 350000,
+    platform: row?.platform || "", contentType: row?.contentType || "", contentAngle: row?.contentAngle || "", planningPostDate: row?.planningPostDate || "",
+    yellowCart: row?.yellowCart || "", owning: row?.owning || "", postId: row?.postId || "", postLink: row?.postLink || "", boostCode: row?.boostCode || "",
+    actualPostDate: row?.actualPostDate || "", expiredDate: row?.expiredDate || "", sparkAdsStatus: row?.sparkAdsStatus || "None", notes: row?.notes || "",
+  }));
+  const [plans, setPlans] = useState<PostPlan[]>(() => isPayment ? (linkedPlans[String(row?.paymentNo)] || linkedPlans.PID20260824000028).map(item => ({ ...item })) : []);
+  const set = (key: string, value: unknown) => setForm(current => ({ ...current, [key]: value }));
+  const qty = plans.length;
+  const total = numeric(form.unitPrice) * qty;
+  const expected = plans.map(plan => plan.planningPostDate).filter(Boolean).sort().at(-1) || "—";
+  const plan = linkedPlans[String(form.paymentNo)]?.find(item => String(item.postNo) === String(form.postNo));
+
+  useEffect(() => {
+    if (!isPayment && plan) setForm(current => ({ ...current, platform: plan.platform, contentType: plan.contentType, contentAngle: plan.contentAngle, planningPostDate: plan.planningPostDate, yellowCart: plan.yellowCart, owning: plan.owning }));
+  }, [isPayment, plan]);
+
+  const input = (key: string, labelText: string, type = "text", readOnly = false) => <label className="form-field"><span>{labelText}</span><input type={type} value={String(form[key] ?? "")} readOnly={readOnly} onChange={event => set(key, event.target.value)} /></label>;
+  const selectBox = (key: string, labelText: string, values: string[], disabled = false) => <label className="form-field"><span>{labelText}</span><select value={String(form[key] ?? "")} disabled={disabled} onChange={event => set(key, event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{values.map(value => <option key={value}>{value}</option>)}</select></label>;
+  const save = (event: FormEvent) => { event.preventDefault(); onSave({ ...(row || {}), ...form, id: row?.id || Date.now(), qty, totalPrice: total, expectedPostDate: expected, expiredStatus: form.expiredDate && String(form.expiredDate) < new Date().toISOString().slice(0, 10) ? "Expired" : "Normal", planStatus: "Planning" }); };
+
+  return <Modal title={<span className="review-dialog-heading"><b>{isPayment ? label("Payment1.1 付款计划", "Payment1.1 Payment Plan", language) : label("Reviews1.1 发布结果", "Reviews1.1 Publishing Result", language)}</b><strong>{String(isPayment ? form.paymentNo : form.reviewNo)}</strong></span>} onClose={onClose} wide variant="v11-modal">
+    <form onSubmit={save} className="v11-form"><div className="modal-scroll-area">
+      <div className="form-section-title"><i />{label("基础信息", "Basic Information", language)}</div>
+      <div className="v11-grid">{input("paymentNo", "Payment ID", "text", isPayment)}{!isPayment && selectBox("postNo", "Post No.", (linkedPlans[String(form.paymentNo)] || []).map(item => String(item.postNo)))}{input("creatorName", label("达人名称", "Creator Name", language), "text", !isPayment)}{selectBox("brand", label("品牌", "Brand", language), ["Glowsicha", "Glad2Glow", "Skintific"])}{input("owner", "PIC")}{isPayment && input("followersK", "Followers (K)")}{isPayment && input("unitPrice", "Each Price", "number")}</div>
+      {isPayment ? <>
+        <div className="v11-summary"><div><span>Quantity</span><b>{qty}</b><small>{label("由明细行数自动统计", "Auto-counted from rows", language)}</small></div><div><span>Total Price</span><b>IDR {total.toLocaleString()}</b><small>Each Price × Quantity</small></div><div><span>Expected Finish All Post Date</span><b>{expected}</b><small>{label("取最晚计划日期", "Latest planned date", language)}</small></div></div>
+        <div className="post-plan-title"><div><strong>Post Plan</strong><span>{label("Payment 内明细，不是独立单据", "Details inside Payment, not a separate record", language)}</span></div><button type="button" className="button primary" onClick={() => setPlans(current => [...current, { postNo: current.length + 1, platform: "TikTok", contentType: "Vlog", contentAngle: "", planningPostDate: "", yellowCart: "No", boostCode: "No", owning: "Creator" }])}><Plus size={14}/>{label("新增行", "Add Row", language)}</button></div>
+        <div className="plan-table-wrap"><table className="plan-table"><thead><tr><th>Post No.</th><th>Platform</th><th>Content Type</th><th>Content Angle</th><th>Planning Post Date</th><th>YC</th><th>Boost Code</th><th>Owning</th><th /></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo}><td><b>{index + 1}</b></td>{(["platform","contentType","contentAngle","planningPostDate","yellowCart","boostCode","owning"] as const).map(key => <td key={key}><input type={key === "planningPostDate" ? "date" : "text"} value={item[key]} onChange={event => setPlans(current => current.map((planItem, itemIndex) => itemIndex === index ? { ...planItem, [key]: event.target.value } : planItem))} /></td>)}<td><button type="button" className="row-action danger" onClick={() => setPlans(current => current.filter((_, itemIndex) => itemIndex !== index).map((planItem, itemIndex) => ({ ...planItem, postNo: itemIndex + 1 })))}><Trash2 size={14}/></button></td></tr>)}</tbody></table></div>
+      </> : <>
+        <div className="form-section-title"><i />{label("自动带出的 Payment / Post Plan 信息", "Auto-filled Payment / Post Plan Information", language)}</div>
+        <div className="v11-grid auto-filled">{input("platform", "Platform", "text", true)}{input("contentType", "Content Type", "text", true)}{input("contentAngle", "Content Angle", "text", true)}{input("planningPostDate", "Planning Post Date", "date", true)}{input("yellowCart", "Yellow Cart / YC", "text", true)}{input("owning", "Owning", "text", true)}</div>
+        <div className="form-section-title"><i />{label("实际发布信息", "Actual Publishing Information", language)}</div>
+        <div className="v11-grid">{input("postId", "Post ID / Video ID")}{input("actualPostDate", "Actual Post Date", "date")}{input("postLink", "Post Link")}{input("boostCode", "Boost Code / Spark Ads")}{input("expiredDate", "Expired Date", "date")}{selectBox("sparkAdsStatus", "Spark Ads Status", ["None", "Active", "Expired", "Code Deleted"])}</div>
+      </>}
+    </div><footer className="modal-footer"><button type="button" className="button ghost" onClick={onClose}>{label("取消", "Cancel", language)}</button><button className="button primary" type="submit"><Check size={14}/>{label("保存", "Save", language)}</button></footer></form>
+  </Modal>;
+}
+
 function RecordModal({
   config,
   row,
@@ -440,6 +498,8 @@ function RecordModal({
       return [field.key, ""];
     })),
   );
+
+  if (["payment11", "reviews11"].includes(String(config.key))) return <Version11Modal config={config} row={row} language={language} onSave={onSave} onClose={onClose} />;
 
   function submit(event: FormEvent) {
     event.preventDefault();

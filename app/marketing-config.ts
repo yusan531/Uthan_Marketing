@@ -169,9 +169,15 @@ const reviewModalFields: FieldDef[] = [
 
 const reviewEditFields: FieldDef[] = [
   ...reviewModalFields,
-  select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", statusOptions),
+  select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", [
+    option("None", "无", "None"),
+    option("Done", "完成", "Done"),
+    option("CodeDeleted", "代码已删除", "CodeDeleted"),
+    option("Expired", "已过期", "Expired"),
+    option("Code Incorrect", "代码错误", "Code Incorrect"),
+  ]),
   date("adDate", "广告日期", "Ad Date"),
-  text("adsOwner", "广告负责人", "Ads Owner"),
+  text("adsOwner", "广告 KOL Strategist", "Ads KOL Strategist"),
 ];
 
 Object.assign(pageConfigs, {

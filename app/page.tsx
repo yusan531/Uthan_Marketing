@@ -434,6 +434,8 @@ function RecordModal({
         if (field.key === "videoType") return [field.key, "Review"];
         if (field.key === "contentAngle") return [field.key, "Review"];
         if (field.key === "sparkAdsStatus") return [field.key, "None"];
+        if (field.key === "sparkExpiry") return [field.key, "2027-08-17"];
+        if (field.key === "sparkCode") return [field.key, "#wIKSR5BMEEMwiPWdRVUJgv8eWdnc0HoFFUWSFZN0wA+QwOtBqPqtn/Fp+MHS0fc="];
       }
       return [field.key, ""];
     })),
@@ -481,7 +483,7 @@ function RecordModal({
   return (
     <Modal
       title={config.key === "reviews"
-        ? <span className="review-dialog-heading"><b>{row ? label("修改帖子记录", "Edit Post Record", language) : label("添加帖子记录", "Add Post Record", language)}</b><strong>{String(row?.reviewNo || "RID20260824000024")}</strong><em><span className="fi fi-id flag-id" /> ID</em></span>
+        ? <span className="review-dialog-heading"><b>{row ? label("修改帖子记录", "Edit Post", language) : label("添加帖子记录", "Add Post", language)}</b><strong>{String(row?.reviewNo || "RID20260824000024")}</strong><em><span className="fi fi-id flag-id" /> ID</em></span>
         : config.key === "payment"
           ? <span className="review-dialog-heading"><b>{row ? label("修改支付记录", "Edit Payment Record", language) : label("添加支付记录", "Add Payment Record", language)}</b><strong>{String(row?.paymentNo || "PID20260824000028")}</strong><em><span className="fi fi-id flag-id" /> ID</em></span>
         : row
@@ -514,10 +516,25 @@ function RecordModal({
                 <div className="rg three">{["slideProject","yellowBasket","ranking"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
                 <div className="rg three blank-last">{["videoType","contentAngle"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
                 <div className="rg one">{renderField(activeFields.find(f=>f.key==="contentTag")!)}</div>
-                <div className="rg spark-row">{["hasSparkCode","sparkExpiry"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg spark-status-row">
+                  {renderField(activeFields.find(f=>f.key==="hasSparkCode")!)}
+                  {renderField(activeFields.find(f=>f.key==="sparkExpiry")!)}
+                  {row && <div className="inline-readonly"><strong>{label("过期状态", "Expired status", language)}</strong><span>Normal</span></div>}
+                </div>
                 <div className="rg one">{renderField(activeFields.find(f=>f.key==="sparkCode")!)}</div>
                 <div className="rg one notes-row">{renderField(activeFields.find(f=>f.key==="notes")!)}</div>
                 {row && <div className="rg three">{["sparkAdsStatus","adDate","adsOwner"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>}
+                {row && <section className="review-edit-section">
+                  <div className="extra-title"><strong><i />*{label("支付记录", "Payments", language)}</strong><button type="button" className="button small"><Plus size={13}/>{label("新增", "Add", language)}</button></div>
+                  <div className="linked-payment-table">
+                    <table><thead><tr><th>Payment ID</th><th>{label("达人", "Creator", language)}</th><th>{label("品牌", "Brand", language)}</th><th>{label("平台", "Platform", language)}</th><th>{label("内容类型", "Content Type", language)}</th><th>{label("费率", "Rate", language)}</th><th>{label("单价", "Each Price", language)}</th><th>{label("总价", "Total Price", language)}</th><th>{label("操作", "Action", language)}</th></tr></thead>
+                    <tbody><tr><td><select aria-label="Payment ID" defaultValue={String(row.paymentNo || "")}><option>{String(row.paymentNo || "PID2026082100...")}</option></select></td><td>{String(row.creatorName || "-")}</td><td>{String(row.brand || "-")}</td><td><span className="mini-tag">TikTok</span></td><td><span className="mini-tag">TTS</span></td><td><span className="mini-tag">C</span></td><td>IDR {new Intl.NumberFormat("en-US").format(numeric(row.unitPrice))}</td><td>IDR {new Intl.NumberFormat("en-US").format(numeric(row.unitPrice) * 2)}</td><td><button type="button" className="icon-danger" aria-label="Delete payment">×</button></td></tr></tbody></table>
+                  </div>
+                </section>}
+                {row && <section className="review-edit-section creator-library">
+                  <div className="extra-title"><strong><i />{label("达人库", "Creator Library", language)}</strong></div>
+                  <p>{label("价格预警", "Price warning", language)}</p><span>-</span>
+                </section>}
               </div>
             </div>
           ) : config.key === "payment" ? (

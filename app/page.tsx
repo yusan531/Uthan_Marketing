@@ -419,7 +419,7 @@ function RecordModal({
   onSave: (row: Row) => void;
   onClose: () => void;
 }) {
-  const activeFields = config.modalFields || config.fields;
+  const activeFields = row ? (config.editFields || config.fields) : (config.modalFields || config.fields);
   const [form, setForm] = useState<Record<string, unknown>>(() =>
     Object.fromEntries(activeFields.map((field) => [field.key, row?.[field.key] ?? ""])),
   );
@@ -465,8 +465,10 @@ function RecordModal({
 
   return (
     <Modal
-      title={config.key === "reviews" && !row
-        ? <span className="review-dialog-heading"><b>{label("添加帖子记录", "Add Post Record", language)}</b><strong>RID20260824000024</strong><em><span className="flag-id">🇮🇩</span> ID</em></span>
+      title={config.key === "reviews"
+        ? <span className="review-dialog-heading"><b>{row ? label("修改帖子记录", "Edit Post Record", language) : label("添加帖子记录", "Add Post Record", language)}</b><strong>{String(row?.reviewNo || "RID20260824000024")}</strong><em><span className="flag-id">🇮🇩</span> ID</em></span>
+        : config.key === "payment"
+          ? <span className="review-dialog-heading"><b>{row ? label("修改支付记录", "Edit Payment Record", language) : label("添加支付记录", "Add Payment Record", language)}</b><strong>{String(row?.paymentNo || "PID20260824000028")}</strong><em><span className="flag-id">🇮🇩</span> ID</em></span>
         : row
         ? label("修改记录", "Edit Record", language)
         : config.key === "reviews"
@@ -500,6 +502,7 @@ function RecordModal({
                 <div className="rg spark-row">{["hasSparkCode","sparkExpiry"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
                 <div className="rg one">{renderField(activeFields.find(f=>f.key==="sparkCode")!)}</div>
                 <div className="rg one notes-row">{renderField(activeFields.find(f=>f.key==="notes")!)}</div>
+                {row && <div className="rg three">{["sparkAdsStatus","adDate","adsOwner"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>}
               </div>
             </div>
           ) : <div className="form-grid">{activeFields.slice(0, sectionBreak).map(renderField)}</div>}
@@ -1351,7 +1354,6 @@ function TargetDashboard({
             </table>
           </div>
         </section>
-        <DashboardAnalysis language={language} copy={["发布数量接近本月节奏；Day Cream 仍需重点推动。建议本周优先跟进已收样的 A/B 级达人。", "Publishing is close to the monthly pace. Day Cream needs focused follow-up; prioritize sampled A/B-tier creators."]} />
       </div>
 
       <div className="dashboard-section-row">
@@ -1380,7 +1382,6 @@ function TargetDashboard({
           </div>
         )}
       </section>
-      <DashboardAnalysis language={language} copy={["ROI 高于目标，但预算使用率仍偏低。建议扩大高转化产品的达人投放，并控制低效视频 CPM。", "ROI is above target while budget utilization remains low. Scale creator investment for high-converting products and control CPM on inefficient videos."]} />
       </div>
 
       <div className="dashboard-section-row">
@@ -1411,7 +1412,6 @@ function TargetDashboard({
             </table>}
           </div>
         </section>
-        <DashboardAnalysis language={language} copy={[`${videoPeriod} 视频发布节奏稳定。建议优先跟进 Tone Up Sunscreen 的待发布视频，并核对高成本内容的归属。`, `${videoPeriod} video publishing is steady. Prioritize pending Tone Up Sunscreen videos and verify ownership of high-cost content.`]} />
       </div>
     </div>
   );

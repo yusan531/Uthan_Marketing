@@ -413,14 +413,15 @@ function RecordModal({
   onSave: (row: Row) => void;
   onClose: () => void;
 }) {
+  const activeFields = config.modalFields || config.fields;
   const [form, setForm] = useState<Record<string, unknown>>(() =>
-    Object.fromEntries(config.fields.map((field) => [field.key, row?.[field.key] ?? ""])),
+    Object.fromEntries(activeFields.map((field) => [field.key, row?.[field.key] ?? ""])),
   );
 
   function submit(event: FormEvent) {
     event.preventDefault();
     const normalized = Object.fromEntries(
-      config.fields.map((field) => {
+      activeFields.map((field) => {
         const value = form[field.key];
         if (field.kind === "number" && value !== "") return [field.key, numeric(value)];
         return [field.key, value];
@@ -441,34 +442,59 @@ function RecordModal({
     });
   }
 
+  const renderField = (field: FieldDef) => (
+    <label key={field.key} className={`form-field ${field.wide ? "wide" : ""}`}>
+      <span>{field.required && <b className="required-mark">*</b>}{label(field.zh, field.en, language)}</span>
+      <FieldControl
+        field={field}
+        value={form[field.key]}
+        language={language}
+        onChange={(value) => setForm((current) => ({ ...current, [field.key]: value }))}
+      />
+    </label>
+  );
+
+  const isRealSystemModal = config.key === "reviews" || config.key === "payment";
+  const sectionBreak = config.key === "payment" ? 16 : activeFields.length;
+
   return (
     <Modal
-      title={row ? label("修改记录", "Edit Record", language) : label("新增记录", "Add Record", language)}
+      title={row
+        ? label("修改记录", "Edit Record", language)
+        : config.key === "reviews"
+          ? label("添加帖子记录", "Add Post Record", language)
+          : config.key === "payment"
+            ? label("添加支付记录", "Add Payment Record", language)
+            : label("新增记录", "Add Record", language)}
       onClose={onClose}
-      wide={config.fields.length > 8}
+      wide={activeFields.length > 8}
     >
-      <form onSubmit={submit}>
-        <div className="form-grid">
-          {config.fields.map((field) => (
-            <label key={field.key} className={`form-field ${field.wide ? "wide" : ""}`}>
-              <span>{label(field.zh, field.en, language)}</span>
-              <FieldControl
-                field={field}
-                value={form[field.key]}
-                language={language}
-                onChange={(value) => setForm((current) => ({ ...current, [field.key]: value }))}
-              />
-            </label>
-          ))}
+      <form onSubmit={submit} className={isRealSystemModal ? "real-system-form" : ""}>
+        <div className="modal-scroll-area">
+          {isRealSystemModal && <div className="form-section-title">{label("基础信息", "Basic Information", language)}</div>}
+          <div className="form-grid">
+            {activeFields.slice(0, sectionBreak).map(renderField)}
+          </div>
+          {config.key === "payment" && (
+            <>
+              <div className="form-section-title">{label("财务信息", "Financial Information", language)}</div>
+              <div className="form-grid">{activeFields.slice(sectionBreak).map(renderField)}</div>
+            </>
+          )}
+          {config.key === "reviews" && (
+            <div className="review-modal-extras">
+              <section><div className="extra-title"><strong>*{label("支付单列表", "Payment Records", language)}</strong><button type="button" className="button primary small"><Plus size={13}/>{label("新增", "Add", language)}</button></div><div className="empty-mini-table">{label("暂无关联支付单", "No linked payment records", language)}</div></section>
+              <section><strong>{label("达人库", "Creator Library", language)}</strong><p>{label("请先选择 KOL，以展示达人库数据。", "Select a KOL to display creator-library data.", language)}</p></section>
+              <section className="summary-panels"><div><strong>GMV</strong><span>GMV (Rp)<b>-</b></span><span>GMV ($)<b>-</b></span></div><div><strong>{label("浏览摘要（系统填写）", "Post Summary (system)", language)}</strong><span>Post ID<b>-</b></span><span>{label("播放量（最新合计）", "Latest Views", language)}<b>-</b></span></div><div><strong>{label("目标", "Target", language)}</strong><p>{label("请先填写国家、品牌、产品和发帖日期。", "Complete country, brand, product and post date first.", language)}</p></div></section>
+            </div>
+          )}
         </div>
         <footer className="modal-footer">
-          <button type="button" className="button ghost" onClick={onClose}>
-            {label("取消", "Cancel", language)}
-          </button>
           <button type="submit" className="button primary">
             <Check size={14} />
-            {label("保存", "Save", language)}
+            {isRealSystemModal ? label("确定", "Confirm", language) : label("保存", "Save", language)}
           </button>
+          <button type="button" className="button ghost" onClick={onClose}>{label("取消", "Cancel", language)}</button>
         </footer>
       </form>
     </Modal>

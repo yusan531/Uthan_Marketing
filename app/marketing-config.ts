@@ -36,6 +36,7 @@ export type PageConfig = {
   descEn: string;
   filters: FieldDef[];
   fields: FieldDef[];
+  modalFields?: FieldDef[];
   columns: ColumnDef[];
   actions: ActionKey[];
   views?: ViewDef[];
@@ -137,10 +138,38 @@ export const pageConfigs: Partial<Record<PageKey, PageConfig>> = {
 
 const reviewBaseFields = [text("reviewNo", "审核编号", "Review No."), text("paymentNo", "支付编号", "Payment No."), text("postId", "Post ID"), date("plannedPostDate", "计划发布日期", "Planned Post Date"), date("actualPostDate", "实际发布日期", "Actual Post Date"), text("postSequence", "帖子序号", "Post Sequence"), text("creatorName", "达人", "Creator"), owner(), text("ownerDept", "负责人部门", "KOL Strategist Department"), number("unitPrice", "总成本", "Total Cost"), brand(), text("product", "产品（多个用逗号分隔）", "Products (comma-separated)"), select("postStatus", "帖子状态", "Post Status", statusOptions), select("videoType", "视频类型", "Video Type", contentTypeOptions), text("classification", "Classification"), text("videoSource", "Video Source"), text("adType", "Ad Type"), date("createdAt", "创建时间", "Created At")];
 
+const reviewModalFields: FieldDef[] = [
+  { ...text("postId", "Post ID"), required: true, placeholderZh: "请输入 Post ID（平台视频 ID）" },
+  date("actualPostDate", "Post Date"),
+  { ...select("platform", "平台", "Platform", platformOptions), required: true },
+  text("postSequence", "Post No.", "Post No."),
+  { ...text("postLink", "帖子链接", "Post Link"), required: true, placeholderZh: "请输入文本内容" },
+  select("paymentNo", "支付编号", "Payment No.", []),
+  text("creatorName", "达人名称", "Creator Name"),
+  { ...owner(), required: true },
+  text("submitter", "提交人", "Submitter"),
+  { ...number("unitPrice", "单价", "Unit Price"), required: true },
+  text("rateTier", "费率档位", "Rate Tier"),
+  select("postStatus", "视频状态", "Video Status", statusOptions),
+  { ...brand(), required: true },
+  { ...text("product", "产品", "Product"), required: true },
+  date("sampleDate", "寄样日期", "Sample Date"),
+  { ...select("slideProject", "Slide Project", "Slide Project", [option("Yes", "是", "Yes"), option("No", "否", "No")]), required: true },
+  { ...select("yellowBasket", "Yellow Basket", "Yellow Basket", [option("Yes", "是", "Yes"), option("No", "否", "No")]), required: true },
+  select("ranking", "Ranking", "Ranking", [option("Top", "Top", "Top"), option("Normal", "普通", "Normal")]),
+  { ...select("videoType", "内容类型", "Content Type", contentTypeOptions), required: true },
+  { ...select("contentAngle", "Content Angles", "Content Angles", [option("Review"), option("Tutorial"), option("Vlog")]), required: true },
+  select("contentTag", "内容标签", "Content Tag", [option("Launch", "新品", "Launch"), option("Always-on", "日常", "Always-on")]),
+  { ...select("hasSparkCode", "是否有 Spark Code？", "Has Spark Code?", [option("Yes", "是", "Yes"), option("No", "否", "No")]), required: true },
+  date("sparkExpiry", "过期日期", "Expiry Date"),
+  text("sparkCode", "Spark Code"),
+  area("notes", "备注", "Notes"),
+];
+
 Object.assign(pageConfigs, {
   reviews: {
     key: "reviews", titleZh: "Reviews", titleEn: "Reviews", descZh: "管理达人发布记录、支付关联与审核状态。", descEn: "Manage creator posts, linked payments and review status.",
-    filters: [country(), text("reviewNo", "审核编号", "Review No."), brand(), product(), date("actualPostDate", "Post Date"), text("postId", "Post ID"), number("unitPrice", "单价", "Unit Price"), owner(), select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", statusOptions), select("reviewStatus", "审核状态", "Review Status", statusOptions), select("source", "来源", "Source", [option("GST", "GST", "GST"), option("Private", "私域", "Private")])], fields: reviewBaseFields,
+    filters: [country(), text("reviewNo", "审核编号", "Review No."), brand(), product(), date("actualPostDate", "Post Date"), text("postId", "Post ID"), number("unitPrice", "单价", "Unit Price"), owner(), select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", statusOptions), select("reviewStatus", "审核状态", "Review Status", statusOptions), select("source", "来源", "Source", [option("GST", "GST", "GST"), option("Private", "私域", "Private")])], fields: reviewBaseFields, modalFields: reviewModalFields,
     columns: [column("reviewNo", "审核编号", "Review No."), column("paymentNo", "支付编号", "Payment No."), column("postId", "Post ID"), column("actualPostDate", "Post Date"), column("postSequence", "帖子序号", "Post Sequence"), column("createdAt", "创建时间", "Created At"), column("creatorName", "达人", "Creator"), column("owner", "KOL Strategist", "KOL Strategist"), column("ownerDept", "KOL Strategist 部门", "KOL Strategist Department"), column("postStatus", "视频状态", "Video Status"), column("unitPrice", "单价", "Unit Price"), column("brand", "品牌", "Brand"), column("product", "产品", "Product")], actions: ["add", "edit", "delete", "export"],
     seed: [{ id: 1, reviewNo: "RID20260824000022", paymentNo: "PID2026080687123", postId: "7677446455979724040", actualPostDate: "2026-08-24", postSequence: "1", createdAt: "2026-08-24", creatorName: "alkkna", owner: "Ajeng Salma Nadhifa Fitriani", ownerDept: "Glowsicha", postStatus: "Normal", unitPrice: 350000, brand: "Glowsicha", product: "SerumSpray" }, { id: 2, reviewNo: "RID20260824000020", paymentNo: "PID2026071585203", postId: "7676343039618534664", actualPostDate: "2026-08-21", postSequence: "4", createdAt: "2026-08-24", creatorName: "micizuby", owner: "Ajeng Salma Nadhifa Fitriani", ownerDept: "Glowsicha", postStatus: "Normal", unitPrice: 250000, brand: "Glowsicha", product: "SerumSpray" }],
   },
@@ -172,10 +201,28 @@ Object.assign(pageConfigs, {
 
 const paymentFields = [country(), text("paymentNo", "支付编号", "Payment No."), date("createdAt", "创建时间", "Created At"), date("paymentDate", "付款日期", "Payment Date"), owner(), text("department", "部门", "Department"), text("supervisor", "负责人上级", "Supervisor"), text("creatorName", "达人", "Creator"), number("followersK", "粉丝(K)", "Followers (K)"), select("ownContent", "是否自有内容", "Owned Content", [option("Yes", "是", "Yes"), option("No", "否", "No")]), select("platform", "平台", "Platform", platformOptions), brand(), select("contentType", "内容类型", "Content Type", contentTypeOptions), text("rateTier", "费率档位", "Rate Tier"), number("gracePeriod", "宽限期", "Grace Period"), number("unitPrice", "单价", "Unit Price"), number("qty", "数量", "Quantity"), number("totalPrice", "总价", "Total Price"), number("reviewQty", "审核数量", "Review Quantity"), select("qtyMismatch", "数量不一致", "Quantity Mismatch", [option("Yes", "是", "Yes"), option("No", "否", "No")]), date("expectedPostDate", "预计发帖完成日", "Expected Completion"), date("actualPostDate", "实际发帖完成日", "Actual Completion"), number("progress", "进度", "Progress"), area("notes", "备注", "Notes"), text("paymentBank", "Payment Bank"), text("bankName", "Bank Name"), text("accountName", "Account Name"), text("bankAccount", "Bank Account"), text("idNumber", "ID (NPW/KTP)"), text("idName", "ID Name"), file("invoiceFiles", "发票与证件文件", "Invoice and ID Files"), select("paid", "是否已付款", "Paid", [option("Yes", "是", "Yes"), option("No", "否", "No")]), file("paymentProof", "付款凭证", "Payment Proof"), file("agreement", "合作协议", "Agreement"), file("negotiation", "洽谈记录", "Negotiation Record"), select("invoiceVerified", "发票核验", "Invoice Verification", statusOptions), area("financeNotes", "财务备注", "Finance Notes"), select("supervisorApproval", "主管审批", "Supervisor Approval", statusOptions), select("ceoApproval", "CEO 审批", "CEO Approval", statusOptions), select("qtyConsistent", "数量是否一致", "Quantity Consistent", [option("Yes", "是", "Yes"), option("No", "否", "No")])];
 
+const paymentModalFields: FieldDef[] = [
+  { ...text("creatorName", "达人名称", "Creator Name"), required: true },
+  { ...brand(), required: true },
+  { ...select("platform", "平台", "Platform", platformOptions), required: true },
+  select("contentType", "内容类型", "Content Type", contentTypeOptions),
+  { ...select("ownContent", "是否自有内容", "Owned Content", [option("Yes", "是", "Yes"), option("No", "否", "No")]), required: true },
+  text("rateTier", "费率档位", "Rate Tier"),
+  { ...number("unitPrice", "单价", "Unit Price"), required: true },
+  { ...number("qty", "数量", "Quantity"), required: true },
+  number("totalPrice", "总价", "Total Price"),
+  { ...number("followersK", "粉丝(K)", "Followers (K)"), required: true },
+  owner(), text("supervisor", "Supervisor"), text("submitter", "提交人", "Submitter"),
+  date("expectedPostDate", "预计完成日", "Expected Completion"), date("actualPostDate", "实际完成日", "Actual Completion"), area("notes", "备注", "Notes"),
+  { ...select("paymentBank", "Payment Bank", "Payment Bank", [option("GST"), option("GIA"), option("Private")]), required: true },
+  text("bankName", "Bank Name"), text("accountName", "Account Name"), text("bankAccount", "Bank Account"), text("idNumber", "ID (NPW/KTP)"), text("idName", "ID Name"),
+  select("paid", "是否已付款", "Paid", [option("Yes", "是", "Yes"), option("No", "否", "No")]), file("invoiceFiles", "发票与证件文件", "Invoice and ID Files"),
+];
+
 Object.assign(pageConfigs, {
   payment: {
     key: "payment", titleZh: "Payment", titleEn: "Payment", descZh: "管理达人付款、银行资料、附件与双层审批。", descEn: "Manage creator payments, bank details, files and two-level approval.",
-    filters: [country(), text("paymentNo", "支付编号", "Payment No."), text("creatorName", "达人名称", "Creator Name"), brand(), owner(), date("paymentStart", "付款日期", "Payment Date"), date("paymentEnd", "结束日期", "End Date"), select("invoiceVerified", "发票核验", "Invoice Verification", statusOptions), select("supervisorApproval", "主管审批", "Supervisor Approval", statusOptions), select("ceoApproval", "CEO 审批", "CEO Approval", statusOptions), select("progress", "进度", "Progress", statusOptions), select("paymentBank", "Payment Bank", "Payment Bank", [option("GST", "GST", "GST"), option("Private", "私域", "Private")]), select("source", "来源", "Source", [option("GST", "GST", "GST"), option("Private", "私域", "Private")]), { key: "paymentDateEmpty", zh: "付款日期为空", en: "Payment Date Empty", kind: "checkbox" }], fields: paymentFields,
+    filters: [country(), text("paymentNo", "支付编号", "Payment No."), text("creatorName", "达人名称", "Creator Name"), brand(), owner(), date("paymentStart", "付款日期", "Payment Date"), date("paymentEnd", "结束日期", "End Date"), select("invoiceVerified", "发票核验", "Invoice Verification", statusOptions), select("supervisorApproval", "主管审批", "Supervisor Approval", statusOptions), select("ceoApproval", "CEO 审批", "CEO Approval", statusOptions), select("progress", "进度", "Progress", statusOptions), select("paymentBank", "Payment Bank", "Payment Bank", [option("GST", "GST", "GST"), option("Private", "私域", "Private")]), select("source", "来源", "Source", [option("GST", "GST", "GST"), option("Private", "私域", "Private")]), { key: "paymentDateEmpty", zh: "付款日期为空", en: "Payment Date Empty", kind: "checkbox" }], fields: paymentFields, modalFields: paymentModalFields,
     columns: paymentFields.filter(field => !["country", "invoiceFiles", "paymentProof", "agreement", "negotiation"].includes(field.key)).map(field => column(field.key, field.zh, field.en)).concat([column("invoiceFiles", "发票与证件文件", "Invoice and ID Files"), column("paymentProof", "付款凭证", "Payment Proof"), column("agreement", "合作协议", "Agreement"), column("negotiation", "洽谈记录", "Negotiation Record")]),
     actions: ["add", "edit", "delete", "export"],
     seed: [{ id: 1, paymentNo: "PID20260824000026", createdAt: "2026-08-24", paymentDate: "", owner: "Annisa Putri Nur Aini", department: "Glowsicha", supervisor: "Desy Chintya", creatorName: "fluppydea", followersK: "64.4K", ownContent: "No", platform: "TikTok", brand: "Glowsicha", contentType: "-", rateTier: "C", gracePeriod: 15, unitPrice: 275000, qty: 1, totalPrice: 275000, reviewQty: 0, qtyMismatch: "Yes", expectedPostDate: "", actualPostDate: "", progress: "-", notes: "", paymentBank: "GIA", bankName: "Seabank kalimantan selatan", accountName: "Dea hidayati", bankAccount: "901804750996", idNumber: "6305044607080001", idName: "Dea hidayati", invoiceFiles: "PDF", paid: "No", paymentProof: "-", agreement: "-", negotiation: "-", invoiceVerified: "Pending", financeNotes: "", supervisorApproval: "Pending", ceoApproval: "Pending", qtyConsistent: "No" }, { id: 2, paymentNo: "PID202608247951", createdAt: "2026-08-24", paymentDate: "", owner: "Bam", department: "The Originote", supervisor: "Nasya", creatorName: "babynice6877", followersK: "164.1K", ownContent: "No", platform: "TikTok", brand: "The Originote", contentType: "Video", rateTier: "B", gracePeriod: 15, unitPrice: 5000, qty: 1, totalPrice: 5000, reviewQty: 0, qtyMismatch: "Yes", expectedPostDate: "2026-08-23", actualPostDate: "2026-08-23", progress: "Normal", notes: "", paymentBank: "GST", bankName: "Kasikorn", accountName: "Creator account", bankAccount: "1213846503", idNumber: "1118600049218", idName: "Creator", invoiceFiles: "-", paid: "No", paymentProof: "-", agreement: "-", negotiation: "-", invoiceVerified: "In Progress", financeNotes: "", supervisorApproval: "In Progress", ceoApproval: "Pending", qtyConsistent: "No" }],

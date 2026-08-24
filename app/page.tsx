@@ -308,11 +308,13 @@ function Modal({
   children,
   onClose,
   wide = false,
+  variant,
 }: {
-  title: string;
+  title: ReactNode;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
+  variant?: string;
 }) {
   useEffect(() => {
     const close = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -322,7 +324,7 @@ function Modal({
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className={`modal ${wide ? "modal-wide" : ""}`} role="dialog" aria-modal="true">
+      <section className={`modal ${wide ? "modal-wide" : ""} ${variant || ""}`} role="dialog" aria-modal="true">
         <header className="modal-header">
           <h3>{title}</h3>
           <button className="icon-button" onClick={onClose} aria-label="Close">
@@ -349,7 +351,10 @@ function FieldControl({
   filter?: boolean;
 }) {
   const textLabel = label(field.zh, field.en, language);
-  if (field.kind === "select" || field.kind === "radio") {
+  if (field.kind === "radio") {
+    return <div className="radio-segment">{(field.options || []).map((option) => <button type="button" key={option.value} className={String(value) === option.value ? "active" : ""} onClick={() => onChange(option.value)}>{label(option.zh, option.en, language)}</button>)}</div>;
+  }
+  if (field.kind === "select") {
     return (
       <select value={String(value ?? "")} onChange={(event) => onChange(event.target.value)}>
         <option value="">{filter ? label("全部", "All", language) : label("请选择", "Select", language)}</option>
@@ -390,7 +395,7 @@ function FieldControl({
   }
   const isMonth = field.kind === "date" && field.key.toLowerCase().includes("month");
   const inputType = field.kind === "number" ? "number" : field.kind === "date" ? (isMonth ? "month" : "date") : "text";
-  return (
+  const control = (
     <input
       type={inputType}
       value={String(value ?? "")}
@@ -398,6 +403,7 @@ function FieldControl({
       placeholder={(language === "zh" ? field.placeholderZh : field.placeholderEn) || textLabel}
     />
   );
+  return field.key === "unitPrice" ? <div className="currency-control"><span>IDR</span>{control}</div> : control;
 }
 
 function RecordModal({
@@ -459,7 +465,9 @@ function RecordModal({
 
   return (
     <Modal
-      title={row
+      title={config.key === "reviews" && !row
+        ? <span className="review-dialog-heading"><b>{label("添加帖子记录", "Add Post Record", language)}</b><strong>RID20260824000024</strong><em><span className="flag-id">🇮🇩</span> ID</em></span>
+        : row
         ? label("修改记录", "Edit Record", language)
         : config.key === "reviews"
           ? label("添加帖子记录", "Add Post Record", language)
@@ -468,20 +476,40 @@ function RecordModal({
             : label("新增记录", "Add Record", language)}
       onClose={onClose}
       wide={activeFields.length > 8}
+      variant={config.key === "reviews" ? "review-exact-modal" : config.key === "payment" ? "payment-exact-modal" : undefined}
     >
       <form onSubmit={submit} className={isRealSystemModal ? "real-system-form" : ""}>
         <div className="modal-scroll-area">
-          {isRealSystemModal && <div className="form-section-title">{label("基础信息", "Basic Information", language)}</div>}
-          <div className="form-grid">
-            {activeFields.slice(0, sectionBreak).map(renderField)}
-          </div>
+          {isRealSystemModal && <div className="form-section-title"><i />{label("基础信息", "Basic Information", language)}</div>}
+          {config.key === "reviews" ? (
+            <div className="review-exact-grid">
+              <div className="review-main-fields">
+                <div className="rg two">{["postId","actualPostDate"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg two">{["platform","postSequence"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg one">{renderField(activeFields.find(f=>f.key==="postLink")!)}</div>
+                <div className="rg one">{renderField(activeFields.find(f=>f.key==="paymentNo")!)}</div>
+              </div>
+              <aside className="qr-placeholder">{label("填写帖子链接后显示二维码", "QR code appears after entering the post link", language)}</aside>
+              <div className="review-full-fields">
+                <div className="rg three">{["creatorName","owner","submitter"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg three">{["unitPrice","rateTier","postStatus"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg three">{["brand","product","sampleDate"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg three">{["slideProject","yellowBasket","ranking"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg three blank-last">{["videoType","contentAngle"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg one">{renderField(activeFields.find(f=>f.key==="contentTag")!)}</div>
+                <div className="rg spark-row">{["hasSparkCode","sparkExpiry"].map(key => renderField(activeFields.find(f=>f.key===key)!))}</div>
+                <div className="rg one">{renderField(activeFields.find(f=>f.key==="sparkCode")!)}</div>
+                <div className="rg one notes-row">{renderField(activeFields.find(f=>f.key==="notes")!)}</div>
+              </div>
+            </div>
+          ) : <div className="form-grid">{activeFields.slice(0, sectionBreak).map(renderField)}</div>}
           {config.key === "payment" && (
             <>
               <div className="form-section-title">{label("财务信息", "Financial Information", language)}</div>
               <div className="form-grid">{activeFields.slice(sectionBreak).map(renderField)}</div>
             </>
           )}
-          {config.key === "reviews" && (
+          {config.key === "reviews" && false && (
             <div className="review-modal-extras">
               <section><div className="extra-title"><strong>*{label("支付单列表", "Payment Records", language)}</strong><button type="button" className="button primary small"><Plus size={13}/>{label("新增", "Add", language)}</button></div><div className="empty-mini-table">{label("暂无关联支付单", "No linked payment records", language)}</div></section>
               <section><strong>{label("达人库", "Creator Library", language)}</strong><p>{label("请先选择 KOL，以展示达人库数据。", "Select a KOL to display creator-library data.", language)}</p></section>
@@ -706,14 +734,6 @@ function TablePage({
 
   return (
     <div className="page-stack">
-      <section className="page-heading">
-        <div>
-          <h1>{label(config.titleZh, config.titleEn, language)}</h1>
-          <p>{label(config.descZh, config.descEn, language)}</p>
-        </div>
-        <span className="record-count">{label(`共 ${filteredRows.length} 条`, `${filteredRows.length} records`, language)}</span>
-      </section>
-
       {config.filters.length > 0 && (
         <section className="filter-card">
           <div className="filter-grid">

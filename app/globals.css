@@ -2644,9 +2644,9 @@ thead .operation-column {
 .v31-plan-table .plan-check-cell input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; padding: 0; accent-color: var(--primary); cursor: pointer; }
 .v31-plan-table .plan-system-field { color: var(--muted); border-style: dashed; background: var(--surface-2); cursor: not-allowed; }
 .v31-plan-actions .button:disabled { opacity: 0.45; cursor: not-allowed; }
-.batch-plan-modal { width: min(920px, 92vw); max-height: 76vh; }
-.drawer-backdrop .batch-plan-modal form { display: flex; flex: 1; min-height: 0; flex-direction: column; }
-.batch-plan-modal .modal-scroll-area { flex: 1; min-height: 0; padding: 20px 24px; }
+.batch-plan-modal { width: min(920px, 92vw); height: auto; max-height: 76vh; display: flex; flex-direction: column; }
+.drawer-backdrop .batch-plan-modal form { display: flex; flex: 0 1 auto; min-height: 0; height: auto; max-height: calc(76vh - 48px); flex-direction: column; }
+.batch-plan-modal .modal-scroll-area { flex: 0 1 auto; min-height: 0; max-height: calc(76vh - 106px); padding: 20px 24px; overflow-y: auto; }
 .batch-plan-modal .modal-footer { flex: 0 0 58px; }
 .batch-plan-note { margin-bottom: 18px; padding: 13px 15px; display: grid; gap: 4px; color: var(--text); border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line)); border-radius: 7px; background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
 .batch-plan-note span { color: var(--muted); font-size: 11px; }

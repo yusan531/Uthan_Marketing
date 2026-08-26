@@ -2624,6 +2624,18 @@ thead .operation-column {
 .plan-table td { padding: 7px; border-bottom: 1px solid var(--line); }
 .plan-table input { width: 100%; min-width: 105px; height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--text); }
 .v11-form .form-section-title { margin-top: 18px; }
+.v31-modal { width: min(1420px, 97vw); }
+.v31-form .form-section-title { margin-top: 24px; }
+.v31-linked-banner { margin: 18px 0 4px; padding: 14px 16px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--line)); border-radius: 8px; background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
+.v31-linked-banner span,.v31-linked-banner small { color: var(--muted); }
+.v31-linked-banner b { color: var(--primary); }
+.v31-plan-actions { display: flex; gap: 8px; }
+.v31-plan-wrap { max-height: 310px; }
+.v31-plan-table { min-width: 1420px; }
+.v31-plan-table th { position: sticky; top: 0; z-index: 1; }
+.v31-plan-table tr.selected-plan td { background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
+.v31-plan-table td > span { display: block; min-width: 88px; padding: 7px 5px; white-space: nowrap; }
+.v31-plan-table td:first-child input[type="radio"] { min-width: 16px; width: 16px; accent-color: var(--primary); }
 @media (max-width: 820px) { .v11-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v11-summary { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .v11-grid { grid-template-columns: 1fr; } }
 

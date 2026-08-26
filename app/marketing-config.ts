@@ -1,10 +1,10 @@
 export type RoleKey = "country" | "brand" | "kolPic" | "ads" | "finance" | "analyst" | "admin";
 
 export type PageKey =
-  | "home" | "targetDashboard" | "target1" | "productTarget" | "ownTarget"
+  | "home" | "targetDashboard" | "dashboard31" | "target1" | "productTarget" | "ownTarget"
   | "creator" | "campaign" | "sample"
-  | "reviews" | "reviews11" | "lsaReviews" | "lsaKocReviews" | "ownMediaReview" | "inhouseContent"
-  | "payment" | "payment11" | "paymentPriceChange"
+  | "reviews" | "reviews11" | "review31a" | "review31b" | "review31c" | "lsaReviews" | "lsaKocReviews" | "ownMediaReview" | "inhouseContent"
+  | "payment" | "payment11" | "payment31" | "paymentPriceChange"
   | "paymentAnalytics" | "paymentReview" | "yellowBasket" | "topRankVideo"
   | "targetAnalytics" | "productAnalytics" | "reviewLevelAnalytics" | "videoAnalytics"
   | "kolTargetReport" | "missingPid"
@@ -356,6 +356,20 @@ pageConfigs.reviews11 = {
   ],
 };
 
+const review31Columns = [column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("postNo", "Post No.", "Post No."), column("creatorName", "达人", "Creator"), column("platform", "平台", "Platform"), column("contentType", "内容类型", "Content Type"), column("contentAngle", "内容角度", "Content Angles"), column("product", "产品", "Product"), column("planningPostDate", "计划发布日期", "Planning Post"), column("postId", "Post ID", "Post ID"), column("postStatus", "Review 状态", "Review Status")];
+const review31Filters = [country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), text("postNo", "Post No.", "Post No."), text("creatorName", "达人", "Creator"), brand(), select("postStatus", "Review 状态", "Review Status", statusOptions)];
+const review31Seed = [{ id: 3101, reviewNo: "RID20260826000031", paymentNo: "PID20260824000028", postNo: "1", creatorName: "alkkna", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", product: "Tone Up Sunscreen", planningPostDate: "2026-09-05", postId: "7677446455979724040", postStatus: "Published" }];
+
+pageConfigs.payment31 = {
+  key: "payment31", titleZh: "Payment3.1", titleEn: "Payment3.1", descZh: "Axure 3.1 方案：Payment 主单内统一维护 Post Plan、Finance、Pay Info 与 Approvals。", descEn: "Axure 3.1 option combining Post Plan, Finance, Pay Info and Approvals inside Payment.",
+  filters: [country(), text("paymentNo", "Payment ID", "Payment ID"), text("creatorName", "达人", "Creator"), brand(), owner(), select("progress", "进度", "Progress", statusOptions)], fields: paymentFields,
+  columns: [column("paymentNo", "Payment ID", "Payment ID"), column("creatorName", "达人", "Creator"), column("brand", "品牌", "Brand"), column("owner", "KOL Strategist", "KOL Strategist"), column("qty", "数量", "Qty"), column("unitPrice", "单价", "Each Price"), column("totalPrice", "总价", "Total Price"), column("expectedPostDate", "计划完成日期", "Expected Finish"), column("reviewQty", "Review 数量", "Review Qty"), column("supervisorApproval", "主管审批", "Supervisor Approval"), column("ceoApproval", "CEO 审批", "CEO Approval")], actions: ["add", "edit", "export"],
+  seed: [{ id: 3001, paymentNo: "PID20260826000031", creatorName: "alkkna", brand: "Glowsicha", owner: "Ajeng Salma Nadhifa Fitriani", qty: 3, unitPrice: 350000, totalPrice: 1050000, expectedPostDate: "2026-09-18", reviewQty: 1, supervisorApproval: "Approved", ceoApproval: "Pending" }],
+};
+pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed };
+pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1-B · 计划编辑", titleEn: "Review3.1-B · Plan Editing", descZh: "方案 B：Post Info 与可编辑 Post Plan 明细集中维护，支持新增和复制计划行。", descEn: "Option B: maintain Post Info and editable Post Plan rows together, with add and copy actions.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: 3201 })) };
+pageConfigs.review31c = { key: "review31c", titleZh: "Review3.1-C · 计划选择", titleEn: "Review3.1-C · Plan Selection", descZh: "方案 C：先填写发布结果，再从 Payment 的 Post Plan 表中选择待关联明细。", descEn: "Option C: enter publishing results first, then select the linked row from Payment Post Plan.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: 3301 })) };
+
 export const menuGroups: { key: string; zh: string; en: string; pages: { key: PageKey; zh: string; en: string }[] }[] = [
   { key: "home", zh: "Home", en: "Home", pages: [{ key: "home", zh: "Home", en: "Home" }] },
   { key: "target", zh: "Target", en: "Target", pages: [{ key: "targetDashboard", zh: "Dashboard", en: "Dashboard" }, { key: "productTarget", zh: "Target", en: "Target" }, { key: "ownTarget", zh: "Own Target", en: "Own Target" }] },
@@ -364,16 +378,17 @@ export const menuGroups: { key: string; zh: string; en: string; pages: { key: Pa
   { key: "finance", zh: "Finance", en: "Finance", pages: [{ key: "payment", zh: "Payment", en: "Payment" }, { key: "payment11", zh: "Payment1.1", en: "Payment1.1" }, { key: "paymentPriceChange", zh: "Payment Change Price", en: "Payment Change Price" }] },
   { key: "analysis", zh: "Analysis", en: "Analysis", pages: [{ key: "paymentAnalytics", zh: "Payment Analytics", en: "Payment Analytics" }, { key: "paymentReview", zh: "Payment and Review Post", en: "Payment and Review Post" }, { key: "yellowBasket", zh: "Yellow Basket Analytics", en: "Yellow Basket Analytics" }, { key: "topRankVideo", zh: "Top Rank Video", en: "Top Rank Video" }, { key: "targetAnalytics", zh: "Target Analytics", en: "Target Analytics" }, { key: "productAnalytics", zh: "Product Analytics", en: "Product Analytics" }, { key: "reviewLevelAnalytics", zh: "Review Level Analytics", en: "Review Level Analytics" }, { key: "videoAnalytics", zh: "Video Analytics", en: "Video Analytics" }, { key: "kolTargetReport", zh: "KOL Target Analytics", en: "KOL Target Analytics" }, { key: "missingPid", zh: "Missing PID", en: "Missing PID" }] },
   { key: "basic", zh: "Basic Data", en: "Basic Data", pages: [{ key: "brandData", zh: "Brand", en: "Brand" }, { key: "productData", zh: "Product", en: "Product" }, { key: "budgetRule", zh: "Budget Rule Config", en: "Budget Rule Config" }] },
+  { key: "versions", zh: "Payment & Review 3.1", en: "Payment & Review 3.1", pages: [{ key: "payment31", zh: "Payment3.1", en: "Payment3.1" }, { key: "review31a", zh: "Review3.1-A · 关联明细", en: "Review3.1-A · Linked" }, { key: "review31b", zh: "Review3.1-B · 计划编辑", en: "Review3.1-B · Edit Plan" }, { key: "review31c", zh: "Review3.1-C · 计划选择", en: "Review3.1-C · Select Plan" }, { key: "dashboard31", zh: "Dashboard3.1", en: "Dashboard3.1" }] },
   { key: "system", zh: "系统管理", en: "System Management", pages: [{ key: "users", zh: "用户管理", en: "Users" }, { key: "roles", zh: "角色管理", en: "Roles" }, { key: "menus", zh: "菜单管理", en: "Menus" }, { key: "notices", zh: "通知公告", en: "Notices" }, { key: "operLogs", zh: "操作日志", en: "Operation Logs" }, { key: "loginLogs", zh: "登录日志", en: "Login Logs" }] },
   { key: "monitor", zh: "系统监控", en: "System Monitor", pages: [{ key: "onlineUsers", zh: "在线用户", en: "Online Users" }] },
 ];
 
 export const roles: { key: RoleKey; zh: string; en: string; groups: string[]; canEdit: string[]; canApprove: string[] }[] = [
-  { key: "country", zh: "国家经理", en: "Country Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic"], canEdit: ["target", "creator", "content", "basic"], canApprove: ["finance", "target"] },
-  { key: "brand", zh: "品牌经理", en: "Brand Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic"], canEdit: ["target", "creator", "content", "finance", "basic"], canApprove: ["target"] },
-  { key: "kolPic", zh: "KOL Strategist", en: "KOL Strategist", groups: ["home", "target", "creator", "content", "finance"], canEdit: ["creator", "content", "finance"], canApprove: [] },
+  { key: "country", zh: "国家经理", en: "Country Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "basic", "versions"], canApprove: ["finance", "target"] },
+  { key: "brand", zh: "品牌经理", en: "Brand Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "finance", "basic", "versions"], canApprove: ["target"] },
+  { key: "kolPic", zh: "KOL Strategist", en: "KOL Strategist", groups: ["home", "target", "creator", "content", "finance", "versions"], canEdit: ["creator", "content", "finance", "versions"], canApprove: [] },
   { key: "ads", zh: "广告经理", en: "Ads Manager", groups: ["home", "target", "content", "analysis"], canEdit: ["content"], canApprove: [] },
-  { key: "finance", zh: "财务", en: "Finance", groups: ["home", "finance", "analysis", "basic"], canEdit: ["finance"], canApprove: ["finance"] },
+  { key: "finance", zh: "财务", en: "Finance", groups: ["home", "finance", "analysis", "basic", "versions"], canEdit: ["finance", "versions"], canApprove: ["finance"] },
   { key: "analyst", zh: "数据分析师", en: "Data Analyst", groups: ["home", "target", "analysis"], canEdit: [], canApprove: [] },
   { key: "admin", zh: "管理员", en: "Administrator", groups: menuGroups.map(group => group.key), canEdit: menuGroups.map(group => group.key), canApprove: menuGroups.map(group => group.key) },
 ];

@@ -718,6 +718,9 @@ function TablePage({
   const [activeView, setActiveView] = useState(config.views?.[0]?.key || "");
   const [page, setPage] = useState(1);
   const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+  const [batchApprovalOpen, setBatchApprovalOpen] = useState(false);
+  const [batchSupervisorStatus, setBatchSupervisorStatus] = useState("Approved");
+  const [batchCeoStatus, setBatchCeoStatus] = useState("Pending");
   const [hiddenColumns, setHiddenColumns] = useStored<string[]>(`marketing-columns-${config.key}`, []);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -868,6 +871,7 @@ function TablePage({
 
   const actionAllowed = (action: ActionKey) => {
     if (action === "export") return true;
+    if (action === "approve" && config.key === "payment31") return canEdit || canApprove;
     if (action === "approve") return canApprove;
     return canEdit;
   };
@@ -949,6 +953,14 @@ function TablePage({
                       {label("CEO 审批", "CEO Approve", language)}
                     </button>
                   </span>
+                );
+              }
+              if (action === "approve" && config.key === "payment31") {
+                return (
+                  <button key={action} className="button approve" onClick={() => requireSelection() && setBatchApprovalOpen(true)}>
+                    <ShieldCheck size={14} />
+                    {label("批量修改审批状态", "Batch Update Approval", language)}
+                  </button>
                 );
               }
               return (
@@ -1082,6 +1094,18 @@ function TablePage({
 
       {editing !== undefined && (
         <RecordModal config={config} row={editing} language={language} onSave={saveRow} onClose={() => setEditing(undefined)} />
+      )}
+      {batchApprovalOpen && (
+        <Modal title={label("批量修改审批状态", "Batch Update Approval Status", language)} onClose={() => setBatchApprovalOpen(false)}>
+          <form onSubmit={(event) => { event.preventDefault(); setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, supervisorApproval: batchSupervisorStatus, ceoApproval: batchCeoStatus, updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } : row)); setBatchApprovalOpen(false); setSelected(new Set()); notify(label("已批量更新审批状态", "Approval statuses updated", language)); }}>
+            <div className="form-grid batch-approval-grid">
+              <div className="batch-selection-note"><CheckCircle2 size={16}/><span>{label(`将更新已选择的 ${selectedRows.length} 条 Payment 记录`, `Updating ${selectedRows.length} selected Payment record(s)`, language)}</span></div>
+              <label className="form-field"><span>{label("主管审批状态", "Supervisor Approval", language)}</span><select value={batchSupervisorStatus} onChange={(event) => setBatchSupervisorStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>
+              <label className="form-field"><span>{label("CEO 审批状态", "CEO Approval", language)}</span><select value={batchCeoStatus} onChange={(event) => setBatchCeoStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>
+            </div>
+            <footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchApprovalOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("确认修改", "Apply", language)}</button></footer>
+          </form>
+        </Modal>
       )}
     </div>
   );

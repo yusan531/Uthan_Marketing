@@ -2682,6 +2682,13 @@ thead .operation-column {
 .single-review-plan-heading.unplanned b { color: #a46b18; background: color-mix(in srgb, #e8a33b 16%, var(--surface)); }
 .single-review-plan-grid { padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
 .single-review-plan-grid input[readonly] { color: var(--muted); background: var(--surface-3); cursor: not-allowed; }
+.review-plan-editable > span { display: flex; align-items: center; gap: 5px; }
+.review-plan-editable > span em { padding: 1px 5px; color: #168756; border-radius: 999px; background: color-mix(in srgb, #20a66a 13%, var(--surface)); font-size: 8px; font-style: normal; font-weight: 700; }
+.review-plan-editable select,.review-plan-editable input:not([readonly]) { border-color: color-mix(in srgb, #20a66a 42%, var(--line)); background: color-mix(in srgb, #20a66a 3%, var(--surface-2)); }
+.review-plan-readonly input { color: var(--muted); background: var(--surface-3); cursor: not-allowed; }
+.post-info-step-note { margin: 0 0 12px; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
+.post-info-step-note span { padding: 3px 7px; color: var(--primary); border-radius: 999px; background: color-mix(in srgb, var(--primary) 10%, var(--surface)); font-weight: 700; }
+.post-info-step-note b { color: var(--text); }
 .v31-plan-actions { display: flex; gap: 8px; }
 .v31-plan-wrap { max-height: 310px; }
 .v31-plan-table { min-width: 1420px; }

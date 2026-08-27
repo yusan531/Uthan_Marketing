@@ -1452,12 +1452,17 @@ function TargetDashboard({
   const [videoPeriod, setVideoPeriod] = useState("MTD");
   const [videoTab, setVideoTab] = useState("video");
   const [expandedVideoGroups, setExpandedVideoGroups] = useState<Set<string>>(new Set());
-  const sourceRows = targetRows.length
+  const sourceRows = (targetRows.length
     ? targetRows
     : [
         { id: 1, product: "Tone Up Sunscreen", owner: "Nadia", qty: 38, qtyTarget: 52, actualCost: 17600000, budgetTarget: 43000000 },
         { id: 2, product: "Day Cream", owner: "Delvi", qty: 7, qtyTarget: 32, actualCost: 8500000, budgetTarget: 29000000 },
-      ];
+      ]).filter((row) => (
+        (!filters.country || String(row.country || "ID") === filters.country) &&
+        (!filters.month || String(row.targetMonth || "2026-08") === filters.month) &&
+        (!filters.brand || String(row.brand || "") === filters.brand) &&
+        (!filters.owner || String(row.owner || "") === filters.owner)
+      ));
   const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
     name: String(row.product || "Product"),
     sub: `Glowsicha · ${String(row.owner || "All KOL Strategists")}`,

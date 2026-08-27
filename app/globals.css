@@ -2653,7 +2653,7 @@ thead .operation-column {
 .plan-table td { padding: 7px; border-bottom: 1px solid var(--line); }
 .plan-table input,.plan-table select { width: 100%; min-width: 105px; height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--text); }
 .v11-form .form-section-title { margin-top: 18px; }
-.v31-modal { width: min(1420px, 97vw); height: 100vh; max-height: 100vh; display: flex; flex-direction: column; border-radius: 0; }
+.v31-modal { width: min(66.666vw, 960px); max-width: calc(100vw - 16px); height: 100vh; max-height: 100vh; display: flex; flex-direction: column; border-radius: 0; }
 .v31-modal .modal-header { flex: 0 0 48px; }
 .drawer-backdrop .v31-modal form { flex: 1; min-height: 0; height: auto; max-height: none; }
 .v31-modal .modal-scroll-area { flex: 1; min-height: 0; padding-bottom: 28px; }

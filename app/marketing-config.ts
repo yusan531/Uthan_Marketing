@@ -115,6 +115,13 @@ export const pageConfigs: Partial<Record<PageKey, PageConfig>> = {
     seed: [
       { id: 1, country: "ID", avatar: "MA", accountId: "mamisikembar.1", creatorName: "Mami Si Kembar", brand: "Glowsicha", cooperationDate: "2026-07-21", creatorType: "KOL", category: "Beauty", tier: "A", updatedBy: "Delvi", updatedAt: "2026-08-02 09:20", platform: "TikTok", whatsapp: "+62 812-0000-0188" },
       { id: 2, country: "ID", avatar: "PC", accountId: "parasceria", creatorName: "Paras Ceria", brand: "Glowsicha", cooperationDate: "2026-07-18", creatorType: "KOL", category: "Skincare", tier: "B", updatedBy: "Shafi", updatedAt: "2026-08-01 16:40", platform: "TikTok" },
+      ...Array.from({ length: 10 }, (_, index) => {
+        const names = ["Sharon Atas", "Zizaa Karr", "Reyhan Syah", "Amanda Fabi", "Bidan Winda", "Fuji Ian", "Diana Arta", "Nabila Putri", "Caca Beauty", "Rani Glow"];
+        const brands = ["Glad2Glow", "Skintific", "Glowsicha"];
+        const tiers = ["S", "A", "B", "C"];
+        const platforms = ["TikTok", "Instagram", "YouTube"];
+        return { id: index + 3, country: index % 4 === 0 ? "MY" : "ID", avatar: names[index].slice(0, 2).toUpperCase(), accountId: names[index].toLowerCase().replace(/ /g, ""), creatorName: names[index], brand: brands[index % brands.length], cooperationDate: `2026-0${(index % 7) + 1}-1${index % 9}`, creatorType: index % 3 === 0 ? "KOC" : "KOL", category: index % 2 === 0 ? "Beauty" : "Skincare", tier: tiers[index % tiers.length], updatedBy: ["Nadia", "Delvi", "Shafi"][index % 3], updatedAt: "2026-08-26 10:20", platform: platforms[index % platforms.length], followersK: 42.5 + index * 18.4, engagementRate: `${2.4 + (index % 5) * 0.7}%`, status: index % 6 === 0 ? "Dormant" : "Active", riskLevel: index % 7 === 0 ? "High" : index % 3 === 0 ? "Medium" : "Low", relationshipScope: index % 3 === 0 ? "Industry" : index % 3 === 1 ? "Group" : "Brand", candidateStatus: index % 4 === 0 ? "Shortlisted" : "Candidate", paymentCount: index % 5, reviewCount: index * 2, bankStatus: index % 3 === 0 ? "Pending" : "Verified", complianceStatus: index % 7 === 0 ? "Review" : "Passed", source: ["Echotik", "知虾", "Fastmoss", "Manual"][index % 4] };
+      }),
     ],
   },
   campaign: {
@@ -358,17 +365,98 @@ pageConfigs.reviews11 = {
 
 const review31Columns = [column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("postNo", "Post No.", "Post No."), column("creatorName", "达人", "Creator"), column("platform", "平台", "Platform"), column("contentType", "内容类型", "Content Type"), column("contentAngle", "内容角度", "Content Angles"), column("product", "产品", "Product"), column("planningPostDate", "计划发布日期", "Planning Post"), column("postId", "Post ID", "Post ID"), column("postStatus", "Review 状态", "Review Status")];
 const review31Filters = [country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), text("postNo", "Post No.", "Post No."), text("creatorName", "达人", "Creator"), brand(), select("postStatus", "Review 状态", "Review Status", statusOptions)];
-const review31Seed = [{ id: 3101, reviewNo: "RID20260826000031", paymentNo: "PID20260824000028", postNo: "1", creatorName: "alkkna", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", product: "Tone Up Sunscreen", planningPostDate: "2026-09-05", postId: "7677446455979724040", postStatus: "Published" }];
+const payment31Seed = Array.from({ length: 15 }, (_, index) => {
+  const number = 31 + index;
+  const paymentNo = `PID20260826${String(number).padStart(6, "0")}`;
+  const creators = ["alkkna", "adelapermatasari", "sharonatas", "zizaakarr", "reyhansyphtg"];
+  const brands = ["Glowsicha", "Glad2Glow", "Skintific"];
+  const owners = ["Ajeng Salma Nadhifa Fitriani", "Nadia", "Delvi", "Shafi", "Cilla"];
+  const products = ["Tone Up Sunscreen", "Day Cream", "Body Scrub", "Serum Spray", "Hair Oil"];
+  const platforms = ["TikTok", "Instagram", "YouTube"];
+  const creatorName = creators[index % creators.length];
+  const brandName = brands[index % brands.length];
+  const owner = owners[index % owners.length];
+  const qty = 2 + (index % 4);
+  const unitPrice = [350000, 420000, 500000, 280000][index % 4];
+  const expectedPostDate = `2026-09-${String(5 + (index % 5) * 3).padStart(2, "0")}`;
+  const paid = index % 3 === 0;
+  const plans = Array.from({ length: qty }, (_, planIndex) => ({
+    postNo: planIndex + 1,
+    strategist: owner,
+    reviewId: `RID20260826${String(number).padStart(6, "0")}${String(planIndex + 1).padStart(2, "0")}`,
+    platform: platforms[(index + planIndex) % platforms.length],
+    contentType: ["Vlog", "TTS", "Photoslide", "Livetalk"][planIndex % 4],
+    contentAngle: ["Review", "Tutorial", "Lifestyle", "Before & After"][planIndex % 4],
+    planningPostDate: index === 3 || index === 6 ? `2026-08-${String(12 + planIndex * 2).padStart(2, "0")}` : `2026-09-${String(5 + ((index + planIndex) % 5) * 3).padStart(2, "0")}`,
+    eachPrice: String(unitPrice),
+    rate: unitPrice >= 300000 ? "A" : "B",
+    product: products[(index + planIndex) % products.length],
+    yellowCart: planIndex % 3 === 0 ? "Yes" : "No",
+    boostCode: planIndex % 3 === 0 ? "Required" : "No",
+    owning: "",
+    sparkStatus: planIndex % 3 === 0 ? "Required" : "None",
+  }));
+  return {
+    id: 3001 + index,
+    paymentNo,
+    country: index % 4 === 0 ? "MY" : "ID",
+    creatorName,
+    brand: brandName,
+    owner,
+    supervisor: "Desy Chintya",
+    submitter: "Uthan",
+    department: "Marketing ID",
+    qty,
+    unitPrice,
+    totalPrice: qty * unitPrice,
+    expectedPostDate,
+    reviewQty: qty,
+    supervisorApproval: index % 4 === 0 ? "Approved" : "Pending",
+    ceoApproval: index % 7 === 0 ? "Approved" : "Pending",
+    sendPayment: paid ? "Yes" : "No",
+    paymentDate: paid ? "2026-08-20" : "",
+    postPlans: plans,
+  };
+});
+
+const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string }[]).map((plan, planIndex) => {
+  const published = paymentIndex % 3 === 0 && planIndex === 0;
+  const postId = published ? `76774464559797${String(24040 + paymentIndex * 10 + planIndex)}` : "";
+  return {
+    id: 3101 + paymentIndex * 10 + planIndex,
+    reviewNo: plan.reviewId,
+    paymentNo: payment.paymentNo,
+    postNo: String(plan.postNo),
+    creatorName: payment.creatorName,
+    country: payment.country,
+    brand: payment.brand,
+    owner: payment.owner,
+    supervisor: payment.supervisor,
+    submitter: payment.submitter,
+    department: payment.department,
+    platform: plan.platform,
+    contentType: plan.contentType,
+    contentAngle: plan.contentAngle,
+    product: plan.product,
+    planningPostDate: plan.planningPostDate,
+    postId,
+    postLink: postId ? `https://www.tiktok.com/@${payment.creatorName}/video/${postId}` : "",
+    actualPostDate: published ? `2026-08-${String(12 + paymentIndex).padStart(2, "0")}` : "",
+    postStatus: published ? "Published" : "Pending",
+    linkStatus: "Linked",
+    postPlans: payment.postPlans,
+  };
+}));
 
 pageConfigs.payment31 = {
   key: "payment31", titleZh: "Payment3.1", titleEn: "Payment3.1", descZh: "Axure 3.1 方案：Payment 主单内统一维护 Post Plan、Finance、Pay Info 与 Approvals。", descEn: "Axure 3.1 option combining Post Plan, Finance, Pay Info and Approvals inside Payment.",
   filters: [country(), text("paymentNo", "Payment ID", "Payment ID"), text("creatorName", "达人", "Creator"), brand(), owner(), select("progress", "进度", "Progress", statusOptions)], fields: paymentFields,
   columns: [column("paymentNo", "Payment ID", "Payment ID"), column("creatorName", "达人", "Creator"), column("brand", "品牌", "Brand"), column("owner", "KOL Strategist", "KOL Strategist"), column("qty", "数量", "Qty"), column("unitPrice", "单价", "Each Price"), column("totalPrice", "总价", "Total Price"), column("expectedPostDate", "计划完成日期", "Expected Finish"), column("reviewQty", "Review 数量", "Review Qty"), column("supervisorApproval", "主管审批", "Supervisor Approval"), column("ceoApproval", "CEO 审批", "CEO Approval")], actions: ["add", "edit", "approve", "export"],
-  seed: [{ id: 3001, paymentNo: "PID20260826000031", creatorName: "alkkna", brand: "Glowsicha", owner: "Ajeng Salma Nadhifa Fitriani", qty: 3, unitPrice: 350000, totalPrice: 1050000, expectedPostDate: "2026-09-18", reviewQty: 1, supervisorApproval: "Approved", ceoApproval: "Pending" }],
+  seed: payment31Seed,
 };
 pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed };
-pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "方案 B：Post Info 与可编辑 Post Plan 明细集中维护，支持新增和复制计划行。", descEn: "Option B: maintain Post Info and editable Post Plan rows together, with add and copy actions.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: 3201 })) };
-pageConfigs.review31c = { key: "review31c", titleZh: "Review3.1-C · 计划选择", titleEn: "Review3.1-C · Plan Selection", descZh: "方案 C：先填写发布结果，再从 Payment 的 Post Plan 表中选择待关联明细。", descEn: "Option C: enter publishing results first, then select the linked row from Payment Post Plan.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: 3301 })) };
+pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "从 Payment 带出计划信息，并分区维护 Payment、Post 与广告发布信息。", descEn: "Bring planned information from Payment and maintain Payment, Post and Ads details in separate sections.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 1000 })) };
+pageConfigs.review31c = { key: "review31c", titleZh: "Review3.1-C · 计划选择", titleEn: "Review3.1-C · Plan Selection", descZh: "方案 C：先填写发布结果，再从 Payment 的 Post Plan 表中选择待关联明细。", descEn: "Option C: enter publishing results first, then select the linked row from Payment Post Plan.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 2000 })) };
 
 export const menuGroups: { key: string; zh: string; en: string; pages: { key: PageKey; zh: string; en: string }[] }[] = [
   { key: "home", zh: "Home", en: "Home", pages: [{ key: "home", zh: "Home", en: "Home" }] },
@@ -383,15 +471,14 @@ export const menuGroups: { key: string; zh: string; en: string; pages: { key: Pa
   { key: "monitor", zh: "系统监控", en: "System Monitor", pages: [{ key: "onlineUsers", zh: "在线用户", en: "Online Users" }] },
 ];
 
-export const roles: { key: RoleKey; zh: string; en: string; groups: string[]; canEdit: string[]; canApprove: string[] }[] = [
-  { key: "country", zh: "国家经理", en: "Country Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "basic", "versions"], canApprove: ["finance", "target"] },
-  { key: "brand", zh: "品牌经理", en: "Brand Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "finance", "basic", "versions"], canApprove: ["target"] },
-  { key: "kolPic", zh: "KOL Strategist", en: "KOL Strategist", groups: ["home", "target", "creator", "content", "finance", "versions"], canEdit: ["creator", "content", "finance", "versions"], canApprove: [] },
-  { key: "ads", zh: "广告经理", en: "Ads Manager", groups: ["home", "target", "content", "analysis"], canEdit: ["content"], canApprove: [] },
-  { key: "finance", zh: "财务", en: "Finance", groups: ["home", "finance", "analysis", "basic", "versions"], canEdit: ["finance", "versions"], canApprove: ["finance"] },
-  { key: "analyst", zh: "数据分析师", en: "Data Analyst", groups: ["home", "target", "analysis"], canEdit: [], canApprove: [] },
-  { key: "admin", zh: "管理员", en: "Administrator", groups: menuGroups.map(group => group.key), canEdit: menuGroups.map(group => group.key), canApprove: menuGroups.map(group => group.key) },
+export const roles: { key: RoleKey; zh: string; en: string; groups: string[]; canEdit: string[]; canApprove: string[]; approvalTypes: ("supervisor" | "ceo")[] }[] = [
+  { key: "country", zh: "国家经理", en: "Country Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "basic", "versions"], canApprove: ["finance", "target"], approvalTypes: ["supervisor"] },
+  { key: "brand", zh: "品牌经理", en: "Brand Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "finance", "basic", "versions"], canApprove: ["target"], approvalTypes: ["supervisor"] },
+  { key: "kolPic", zh: "KOL Strategist", en: "KOL Strategist", groups: ["home", "target", "creator", "content", "finance", "versions"], canEdit: ["creator", "content", "finance", "versions"], canApprove: [], approvalTypes: [] },
+  { key: "ads", zh: "广告经理", en: "Ads Manager", groups: ["home", "target", "content", "analysis"], canEdit: ["content"], canApprove: [], approvalTypes: [] },
+  { key: "finance", zh: "财务", en: "Finance", groups: ["home", "finance", "analysis", "basic", "versions"], canEdit: ["finance", "versions"], canApprove: ["finance"], approvalTypes: ["ceo"] },
+  { key: "analyst", zh: "数据分析师", en: "Data Analyst", groups: ["home", "target", "analysis"], canEdit: [], canApprove: [], approvalTypes: [] },
+  { key: "admin", zh: "管理员", en: "Administrator", groups: menuGroups.map(group => group.key), canEdit: menuGroups.map(group => group.key), canApprove: menuGroups.map(group => group.key), approvalTypes: ["supervisor", "ceo"] },
 ];
 
 export const pageGroup = (page: PageKey) => menuGroups.find(group => group.pages.some(item => item.key === page))?.key || "home";
-

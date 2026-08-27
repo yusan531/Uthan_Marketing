@@ -470,79 +470,50 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
   </Modal>;
 }
 
-type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string };
+type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string; createdAfterApproval?: boolean };
 type BatchPlanKey = "strategist" | "platform" | "contentType" | "contentAngle" | "planningPostDate" | "eachPrice" | "product" | "yellowCart" | "owning";
 const plan31Seed: PostPlan31[] = [
-  { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "Required", owning: "Brand", sparkStatus: "Required" },
-  { postNo: 2, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "TikTok", contentType: "TTS", contentAngle: "Tutorial", planningPostDate: "2026-09-12", eachPrice: "350000", rate: "A", product: "Day Cream", yellowCart: "Yes", boostCode: "No", owning: "Creator", sparkStatus: "None" },
-  { postNo: 3, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", eachPrice: "350000", rate: "A", product: "Body Scrub", yellowCart: "No", boostCode: "No", owning: "Creator", sparkStatus: "None" },
+  { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "Required", owning: "", sparkStatus: "Required" },
+  { postNo: 2, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "TikTok", contentType: "TTS", contentAngle: "Tutorial", planningPostDate: "2026-09-12", eachPrice: "350000", rate: "A", product: "Day Cream", yellowCart: "Yes", boostCode: "No", owning: "", sparkStatus: "None" },
+  { postNo: 3, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", eachPrice: "350000", rate: "A", product: "Body Scrub", yellowCart: "No", boostCode: "No", owning: "", sparkStatus: "None" },
 ];
 
-function Version31Modal({ config, row, language, onSave, onClose }: { config: PageConfig; row: Row | null; language: Language; onSave: (row: Row) => void; onClose: () => void }) {
+function Version31Modal({ config, row, language, relatedRows, onSave, onClose }: { config: PageConfig; row: Row | null; language: Language; relatedRows: Row[]; onSave: (row: Row) => void; onClose: () => void }) {
   const isPayment = config.key === "payment31";
   const scheme = config.key === "review31a" ? "A" : config.key === "review31b" ? "B" : "C";
-  const [plans, setPlans] = useState<PostPlan31[]>(() => plan31Seed.map(item => ({ ...item })));
+  const relatedPayment = !isPayment && row?.paymentNo ? relatedRows.find(payment => String(payment.paymentNo || "") === String(row.paymentNo)) : undefined;
+  const [plans, setPlans] = useState<PostPlan31[]>(() => {
+    const savedPlans = Array.isArray(row?.postPlans) ? row.postPlans as PostPlan31[] : Array.isArray(relatedPayment?.postPlans) ? relatedPayment.postPlans as PostPlan31[] : plan31Seed;
+    return savedPlans.map(item => ({ ...item }));
+  });
   const [selectedPlan, setSelectedPlan] = useState(Number(row?.postNo || (isPayment ? 1 : 0)));
   const [selectedPlanRows, setSelectedPlanRows] = useState<Set<number>>(() => new Set([Number(row?.postNo || 1)]));
   const emptyBatchPlan: Record<BatchPlanKey, string> = { strategist: "", platform: "", contentType: "", contentAngle: "", planningPostDate: "", eachPrice: "", product: "", yellowCart: "", owning: "" };
   const [batchPlanEditOpen, setBatchPlanEditOpen] = useState(false);
   const [batchPlanValues, setBatchPlanValues] = useState<Record<BatchPlanKey, string>>(emptyBatchPlan);
+  const [batchPlanTouched, setBatchPlanTouched] = useState<Set<BatchPlanKey>>(new Set());
   const selected = plans.find(item => item.postNo === selectedPlan) || plans[0];
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || (isPayment ? "ID" : ""), creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || "350000", notes: row?.notes || "",
     reviewPlatform: row?.platform || selected.platform, reviewContentType: row?.contentType || selected.contentType, reviewContentAngle: row?.contentAngle || selected.contentAngle, reviewProduct: row?.product || selected.product, reviewPlanningPost: row?.planningPostDate || selected.planningPostDate, reviewEachPrice: row?.unitPrice || selected.eachPrice, reviewRate: row?.rate || selected.rate, reviewYellowCart: row?.yellowCart || selected.yellowCart, reviewOwning: row?.owning || selected.owning, reviewSparkStatus: row?.sparkStatus || selected.sparkStatus, reviewBoostCode: row?.boostCode || selected.boostCode,
-    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
-    paymentBank: row?.paymentBank || "GST", bankName: row?.bankName || "Seabank", accountName: row?.accountName || "Alkkna Creator", bankAccount: row?.bankAccount || "901804750996", idNumber: row?.idNumber || "6305044607080001", idName: row?.idName || "Alkkna", sendPayment: row?.sendPayment || "No", invoiceChecked: row?.invoiceChecked || "Pending", paymentDate: row?.paymentDate || "", financeNote: row?.financeNote || "", supervisorApproval: row?.supervisorApproval || "Pending", ceoApproval: row?.ceoApproval || "Pending",
+    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", sparkCode: row?.sparkCode || "", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
+    paymentBank: row?.paymentBank || "GST", bankName: row?.bankName || "Seabank", accountName: row?.accountName || "Alkkna Creator", bankAccount: row?.bankAccount || "901804750996", idNumber: row?.idNumber || "6305044607080001", idName: row?.idName || "Alkkna", invoiceFile: row?.invoiceFile || "", paymentReceipt: row?.paymentReceipt || "", sendPayment: row?.sendPayment || "No", invoiceChecked: row?.invoiceChecked || "Pending", paymentDate: row?.paymentDate || "", financeNote: row?.financeNote || "", supervisorApproval: row?.supervisorApproval || "Pending", ceoApproval: row?.ceoApproval || "Pending",
   }));
+  const isPaymentLocked = isPayment && Boolean(row) && [String(form.supervisorApproval || ""), String(form.ceoApproval || "")].includes("Approved");
+  const isPaymentPaid = isPayment && Boolean(row) && (String(form.sendPayment || "") === "Yes" || Boolean(form.paymentDate));
+  const financeFieldKeys = new Set(["paymentBank", "bankName", "accountName", "bankAccount", "idNumber", "idName", "invoiceFile", "sendPayment", "invoiceChecked", "paymentDate", "paymentReceipt", "financeNote"]);
+  const isFinanceFieldLocked = (key: string) => isPaymentPaid && financeFieldKeys.has(key);
   const set = (key: string, value: unknown) => setForm(current => ({ ...current, [key]: value }));
-  const creatorProfiles: Record<string, { country: string; brand: string; owner: string; department: string }> = {
-    alkkna: { country: "ID", brand: "Glowsicha", owner: "Ajeng Salma Nadhifa Fitriani", department: "Marketing ID" },
-    adelapermatasari: { country: "ID", brand: "Glowsicha", owner: "Nadia", department: "Marketing ID" },
-    sharonatas: { country: "ID", brand: "Glad2Glow", owner: "Delvi", department: "Marketing ID" },
-  };
-  const creatorPayments: Record<string, string[]> = {
-    alkkna: ["PID20260826000031", "PID20260819000018"],
-    adelapermatasari: ["PID20260822000027"],
-    sharonatas: ["PID20260812000009"],
-  };
-  const paymentReviews: Record<string, string[]> = {
-    PID20260826000031: ["RID20260826000031"],
-    PID20260819000018: ["RID20260819000045"],
-    PID20260822000027: ["RID20260822000027"],
-    PID20260812000009: ["RID20260812000009"],
-  };
   const creatorValue = String(form.creatorName || "");
   const paymentValue = String(form.paymentNo || "");
   const reviewValue = String(form.reviewNo || "");
-  const availablePayments = Array.from(new Set([...(creatorPayments[creatorValue] || []), ...(paymentValue ? [paymentValue] : [])]));
-  const availableReviews = Array.from(new Set([...(paymentReviews[paymentValue] || []), ...(reviewValue ? [reviewValue] : [])]));
-  const changeReviewCreator = (value: string) => {
-    const profile = creatorProfiles[value];
-    setForm(current => ({ ...current, creatorName: value, paymentNo: "", reviewNo: "", country: profile?.country || "", brand: profile?.brand || "", owner: profile?.owner || "", department: profile?.department || "", reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
-    setSelectedPlan(0);
-  };
+  const availablePayments = Array.from(new Set([...relatedRows.filter(payment => !creatorValue || String(payment.creatorName || "").toLowerCase() === creatorValue.toLowerCase()).map(payment => String(payment.paymentNo || "")).filter(Boolean), ...(paymentValue ? [paymentValue] : [])]));
   const changeReviewPayment = (value: string) => {
-    setForm(current => ({ ...current, paymentNo: value, reviewNo: "", reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
+    const payment = relatedRows.find(item => String(item.paymentNo || "") === value);
+    const paymentPlans = Array.isArray(payment?.postPlans) ? payment.postPlans as PostPlan31[] : plan31Seed;
+    setPlans(paymentPlans.map(item => ({ ...item })));
+    setForm(current => ({ ...current, paymentNo: value, reviewNo: "", country: String(payment?.country || current.country || ""), creatorName: String(payment?.creatorName || current.creatorName || ""), brand: String(payment?.brand || current.brand || ""), owner: String(payment?.owner || current.owner || ""), supervisor: String(payment?.supervisor || current.supervisor || ""), submitter: String(payment?.submitter || current.submitter || ""), department: String(payment?.department || current.department || ""), unitPrice: payment?.unitPrice || current.unitPrice, reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
     setSelectedPlan(0);
-  };
-  const changeReviewLink = (value: string) => {
-    const linkedPlan = value ? (plans.find(item => item.reviewId === value) || plans[0]) : undefined;
-    setForm(current => ({
-      ...current,
-      reviewNo: value,
-      reviewPlatform: linkedPlan?.platform || "TikTok",
-      reviewContentType: linkedPlan?.contentType || "",
-      reviewContentAngle: linkedPlan?.contentAngle || "",
-      reviewProduct: linkedPlan?.product || "",
-      reviewPlanningPost: linkedPlan?.planningPostDate || "",
-      reviewEachPrice: linkedPlan?.eachPrice || "",
-      reviewRate: linkedPlan?.rate || "C",
-      reviewYellowCart: linkedPlan?.yellowCart || "No",
-      reviewOwning: linkedPlan?.owning || "Creator",
-      reviewSparkStatus: linkedPlan?.sparkStatus || "None",
-      reviewBoostCode: linkedPlan?.boostCode || "",
-    }));
-    setSelectedPlan(value ? (linkedPlan?.postNo || 1) : 0);
   };
   const rateFromPrice = (value: string) => { const price = numeric(value); return price >= 1000000 ? "S" : price >= 300000 ? "A" : price >= 150000 ? "B" : "C"; };
   const updateBasePrice = (value: string) => {
@@ -551,28 +522,38 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
   };
   const addPlan = () => {
     const nextNo = Math.max(0, ...plans.map(item => item.postNo)) + 1;
-    setPlans(current => [...current, { ...plan31Seed[0], postNo: nextNo, reviewId: "", eachPrice: String(form.unitPrice || plan31Seed[0].eachPrice), rate: rateFromPrice(String(form.unitPrice || plan31Seed[0].eachPrice)), contentAngle: "", planningPostDate: "", boostCode: "No" }]);
+    const createdAfterApproval = isPayment && isPaymentLocked;
+    const eachPrice = createdAfterApproval ? "0" : String(form.unitPrice || plan31Seed[0].eachPrice);
+    setPlans(current => [...current, { ...plan31Seed[0], postNo: nextNo, reviewId: "", eachPrice, rate: createdAfterApproval ? "C" : rateFromPrice(eachPrice), contentAngle: "", planningPostDate: "", boostCode: "No", createdAfterApproval }]);
     setSelectedPlan(nextNo);
     if (isPayment) setSelectedPlanRows(new Set([nextNo]));
   };
   const copyPlan = () => {
     const nextNo = Math.max(0, ...plans.map(item => item.postNo)) + 1;
-    setPlans(current => [...current, { ...(current.find(item => item.postNo === selectedPlan) || current[0]), postNo: nextNo, reviewId: "", boostCode: "No" }]);
+    const createdAfterApproval = isPayment && isPaymentLocked;
+    const source = plans.find(item => item.postNo === selectedPlan) || plans[0];
+    setPlans(current => [...current, { ...source, postNo: nextNo, reviewId: "", eachPrice: createdAfterApproval ? "0" : source.eachPrice, rate: createdAfterApproval ? "C" : source.rate, boostCode: "No", createdAfterApproval }]);
     setSelectedPlan(nextNo);
     if (isPayment) setSelectedPlanRows(new Set([nextNo]));
   };
-  const field = (key: string, title: string, type = "text", readOnly = false) => <label className="form-field"><span>{title}</span><input type={type} value={String(form[key] ?? "")} readOnly={readOnly} onChange={event => set(key, event.target.value)} /></label>;
-  const choice = (key: string, title: string, options: string[]) => <label className="form-field"><span>{title}</span><select value={String(form[key] ?? "")} onChange={event => set(key, event.target.value)}>{options.map(option => <option key={option}>{option}</option>)}</select></label>;
+  const field = (key: string, title: string, type = "text", readOnly = false) => <label className="form-field"><span>{title}</span><input type={type} value={String(form[key] ?? "")} readOnly={readOnly || isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)} /></label>;
+  const choice = (key: string, title: string, options: string[]) => <label className="form-field"><span>{title}</span><select value={String(form[key] ?? "")} disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)}>{options.map(option => <option key={option}>{option}</option>)}</select></label>;
+  const attachment = (key: string, title: string) => <label className="form-field"><span>{title}</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.files?.[0]?.name || "")} />{form[key] ? <small className="attachment-name">{String(form[key])}</small> : <small className="attachment-hint">付款时上传附件</small>}</label>;
   const section = (title: string) => <div className="form-section-title"><i />{title}</div>;
   const updatePlan = (index: number, key: keyof PostPlan31, value: string) => setPlans(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value, ...(key === "eachPrice" ? { rate: rateFromPrice(value) } : {}) } : item));
   const togglePlanRow = (postNo: number) => setSelectedPlanRows(current => { const next = new Set(current); if (next.has(postNo)) next.delete(postNo); else next.add(postNo); return next; });
   const toggleAllPlanRows = () => setSelectedPlanRows(current => current.size === plans.length ? new Set() : new Set(plans.map(item => item.postNo)));
-  const openBatchPlanEdit = () => { setBatchPlanValues({ ...emptyBatchPlan }); setBatchPlanEditOpen(true); };
+  const openBatchPlanEdit = () => { setBatchPlanValues({ ...emptyBatchPlan }); setBatchPlanTouched(new Set()); setBatchPlanEditOpen(true); };
+  const updateBatchPlanValue = (key: BatchPlanKey, value: string) => {
+    setBatchPlanValues(current => ({ ...current, [key]: value }));
+    setBatchPlanTouched(current => new Set(current).add(key));
+  };
   const applyBatchPlanEdit = () => {
+    if (isPaymentLocked) return;
     setPlans(current => current.map(item => {
       if (!selectedPlanRows.has(item.postNo)) return item;
-      const updates = Object.fromEntries(Object.entries(batchPlanValues).filter(([, value]) => value !== "")) as Partial<PostPlan31>;
-      if (batchPlanValues.eachPrice) updates.rate = rateFromPrice(batchPlanValues.eachPrice);
+      const updates = Object.fromEntries([...batchPlanTouched].filter(key => batchPlanValues[key] !== "").map(key => [key, batchPlanValues[key]])) as Partial<PostPlan31>;
+      if (batchPlanTouched.has("eachPrice") && batchPlanValues.eachPrice) updates.rate = rateFromPrice(batchPlanValues.eachPrice);
       return { ...item, ...updates };
     }));
     setBatchPlanEditOpen(false);
@@ -585,7 +566,7 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
     contentAngle: ["Review", "Tutorial", "Lifestyle", "Before & After", "Product Demo"],
     product: ["Tone Up Sunscreen", "Day Cream", "Body Scrub", "Serum Spray", "Hair Oil"],
     yellowCart: ["Yes", "No"],
-    owning: ["Brand", "Creator"],
+    owning: ["Yes", "No"],
   };
   const planTotal = plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0);
   const planExpectedFinish = plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "—";
@@ -615,34 +596,43 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
   const save = (event: FormEvent) => {
     event.preventDefault();
     const linked = plans.find(item => item.postNo === selectedPlan) || plans[0];
-    const createsUnplannedReview = !isPayment && !reviewValue;
+    const createsUnplannedReview = !isPayment && !row?.reviewNo;
     const generatedReviewNo = `RID${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
     const singleReviewPlan = !isPayment && scheme === "A" ? { platform: String(form.reviewPlatform || ""), contentType: String(form.reviewContentType || ""), contentAngle: String(form.reviewContentAngle || ""), product: String(form.reviewProduct || ""), planningPostDate: String(form.reviewPlanningPost || ""), eachPrice: String(form.reviewEachPrice || ""), rate: String(form.reviewRate || ""), yellowCart: String(form.reviewYellowCart || ""), owning: String(form.reviewOwning || ""), sparkStatus: String(form.reviewSparkStatus || ""), boostCode: String(form.reviewBoostCode || "") } : linked;
-    onSave({ ...(row || {}), ...form, reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: isPayment ? plans : undefined, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || "RID" + Date.now(), creatorName: form.creatorName, owner: form.owner, brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, postStatus: "Pending" })) : undefined });
+    onSave({ ...(row || {}), ...form, reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: isPayment ? plans : row?.postPlans, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || `RID${Date.now()}${item.postNo}`, creatorName: form.creatorName, owner: form.owner, brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, product: item.product, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, sparkStatus: item.sparkStatus, boostCode: item.boostCode, postStatus: "Pending", linkStatus: "Linked", postPlans: plans })) : undefined });
   };
 
   const renderPlanControl = (item: PostPlan31, index: number, key: keyof PostPlan31) => {
-    if (!showEditablePlans) return <span>{item[key] || "—"}</span>;
+    const inheritedPaymentField = !isPayment && ["strategist", "platform", "planningPostDate", "eachPrice"].includes(String(key));
+    if (!showEditablePlans || inheritedPaymentField || (isPaymentLocked && !item.createdAfterApproval)) return <span>{item[key] || "—"}</span>;
+    if (isPaymentLocked && item.createdAfterApproval && key === "eachPrice") return <input className="plan-system-field" value="0" readOnly title={label("审批后新增计划单价固定为 0，不可编辑", "Post-approval plans have a fixed price of 0 and cannot be edited", language)} />;
     if (["reviewId", "rate", "boostCode"].includes(String(key))) return <input className="plan-system-field" value={item[key]} readOnly placeholder={key === "reviewId" ? label("创建 Review 后自动生成", "Generated after Review is created", language) : label("系统自动带出", "Auto-filled", language)} title={key === "reviewId" ? label("Review 创建成功后生成并回写，不可编辑", "Generated and written back after Review creation; read-only", language) : label("系统字段，不可编辑", "System field; read-only", language)} />;
     const options = planOptions[key];
-    if (options) return <select required={key === "strategist" || key === "platform"} value={String(item[key])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{options.map(option => <option key={option}>{option}</option>)}</select>;
-    return <input type={key === "planningPostDate" ? "date" : key === "eachPrice" ? "number" : "text"} min={key === "eachPrice" ? 0 : undefined} value={item[key]} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)} />;
+    if (options) return <select required={["strategist", "platform"].includes(String(key))} value={String(item[key])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{options.map(option => <option key={option}>{option}</option>)}</select>;
+    return <input required={key === "planningPostDate" || key === "eachPrice"} type={key === "planningPostDate" ? "date" : key === "eachPrice" ? "number" : "text"} min={key === "eachPrice" ? 0 : undefined} value={item[key]} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)} />;
   };
-  const planTable = <div className="plan-table-wrap v31-plan-wrap"><table className="plan-table v31-plan-table"><thead><tr>{isPayment && <th className="plan-check-cell"><input type="checkbox" aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>}{!isPayment && scheme === "C" && <th /> }<th>No.</th><th>Review ID</th><th>KOL Strategist *</th><th>Platform *</th><th>Content Type</th><th>Content Angles</th><th>Planning Post</th><th>Each Price</th><th>Rate</th><th>Product</th><th>YC</th><th>Boost Code</th><th>Owning</th></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo} className={selectedPlan === item.postNo ? "selected-plan" : ""}>{isPayment && <td className="plan-check-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} Post No. ${item.postNo}`} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>}{!isPayment && scheme === "C" && <td><input type="radio" disabled={!reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}<td><b>{item.postNo}</b></td>{(["reviewId","strategist","platform","contentType","contentAngle","planningPostDate","eachPrice","rate","product","yellowCart","boostCode","owning"] as const).map(key => <td key={key}>{renderPlanControl(item, index, key)}</td>)}</tr>)}</tbody></table></div>;
-  const postPlanSection = <>{section(isPayment ? "Post Plan" : scheme === "A" ? label("Payment Post Plan（只读参考）", "Payment Post Plan (Reference Only)", language) : "Post Plan")}<div className="post-plan-title"><div><strong>{isPayment ? label("付款内发布计划", "Payment Post Plan", language) : scheme === "A" ? label("对应 Payment 的 Post Plan", "Post Plans for the Selected Payment", language) : scheme === "B" ? label("可修改的现有 Post Plan", "Editable Existing Post Plan", language) : label("选择现有 Post Plan", "Select Existing Post Plan", language)}</strong><span>{isPayment ? label(`已选择 ${selectedPlanRows.size} 行；支持新增、复制和批量修改，不提供删除`, `${selectedPlanRows.size} selected; add, copy and batch edit are available; deletion is disabled`, language) : scheme === "A" ? label("仅用于查看，不影响上方当前 Review 的输入与保存", "For reference only; it does not affect the current Review fields or save", language) : reviewValue ? label("第一步：先确认或修改现有 Post Plan，再填写 Post Info", "Step 1: confirm or edit the existing Post Plan before Post Info", language) : label("第一步：先选择 Payment；Review 不选时将创建计划外 Review", "Step 1: select Payment first; leaving Review empty creates an unplanned Review", language)}</span></div>{showEditablePlans && <div className="v31-plan-actions">{isPayment && <button type="button" className="button secondary" disabled={selectedPlanRows.size === 0} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button>}<button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div>}</div>{!isPayment && !paymentValue ? <div className="review-plan-locked"><LockKeyholeOpen size={18}/><b>{label("请先选择 Creator，再选择关联的 Payment", "Select a Creator, then the linked Payment", language)}</b></div> : planTable}</>;
+  const planTable = <div className="plan-table-wrap v31-plan-wrap"><table className="plan-table v31-plan-table"><thead><tr>{isPayment && <th className="plan-check-cell"><input type="checkbox" aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>}{!isPayment && scheme === "C" && <th /> }<th>No.</th><th>Review ID</th><th>KOL Strategist *</th><th>Platform *</th><th>Planning Post *</th><th>Each Price *</th><th>Content Type</th><th>Content Angles</th><th>Rate</th><th>Product</th><th>YC</th><th>Boost Code</th><th>Owning</th></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo} className={selectedPlan === item.postNo ? "selected-plan" : ""}>{isPayment && <td className="plan-check-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} Post No. ${item.postNo}`} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>}{!isPayment && scheme === "C" && <td><input type="radio" disabled={!reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}<td><b>{item.postNo}</b></td>{(["reviewId","strategist","platform","planningPostDate","eachPrice","contentType","contentAngle","rate","product","yellowCart","boostCode","owning"] as const).map(key => <td key={key}>{renderPlanControl(item, index, key)}</td>)}</tr>)}</tbody></table></div>;
+  const reviewSectionedPlan = !isPayment && paymentValue ? <>
+    {section("Payment")}
+    <div className="v11-grid review-payment-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name", "text", true)}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist", "text", true)}{field("supervisor", "Supervisor", "text", true)}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input value={plans.length} readOnly /></label>{field("unitPrice", "Each Price", "number", true)}<label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label></div>
+    {planTable}
+    {section("Post")}
+    <div className="v11-grid review-post-grid">{field("postId", "Post ID")}{field("postLink", "Post Link")}{field("postDate", "Post Date", "date")}</div>
+    {section("Ads")}
+    <div className="v11-grid review-ads-grid">{field("sparkCode", "Spark Code")}{field("boostCode", "Boost Code")}{field("expiredDate", "Expired Date", "date")}{choice("sparkAdsStatus", "Spark Ads Status", ["None", "Active", "Expired", "Code Deleted"])}</div>
+  </> : null;
+  const postPlanSection = <>{section("Post Plan")}<div className="post-plan-title"><div><strong>{label("付款内发布计划", "Payment Post Plan", language)}</strong><span>{label(`已选择 ${selectedPlanRows.size} 行；支持新增、复制和批量修改，不提供删除`, `${selectedPlanRows.size} selected; add, copy and batch edit are available; deletion is disabled`, language)}</span></div><div className="v31-plan-actions"><button type="button" className="button secondary" disabled={selectedPlanRows.size === 0 || isPaymentLocked} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button><button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div></div>{planTable}</>;
 
-  return <><Modal title={<span className="review-dialog-heading"><b>{isPayment ? "Payment3.1" : `Review3.1-${scheme}`}</b><strong>{String(isPayment ? form.paymentNo : (form.reviewNo || label("新建 Review", "New Review", language)))}</strong><em>{isPayment ? label("主单 + Post Plan", "Payment + Post Plan", language) : label(`方案 ${scheme}`, `Option ${scheme}`, language)}</em></span>} onClose={onClose} wide variant="v11-modal v31-modal">
+  return <><Modal title={<span className="review-dialog-heading"><b>{isPayment ? "Payment3.1" : "Review3.1-Add"}</b><strong>{String(isPayment ? form.paymentNo : (form.reviewNo || label("新建 Review", "New Review", language)))}</strong></span>} onClose={onClose} wide variant="v11-modal v31-modal">
     <form onSubmit={save} className="v11-form v31-form"><div className="modal-scroll-area">
-      {section(label("基础信息", "Base Info", language))}{isPayment ? <div className="v11-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name")}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist")}{field("supervisor", "Supervisor")}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input type="number" min="0" value={plans.length} onChange={event => updateQuantity(event.target.value)} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" value={String(form.unitPrice || "")} onChange={event => updateBasePrice(event.target.value)} /></label><label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label><label className="form-field"><span>Expected Finish All Post Date</span><input value={planExpectedFinish} readOnly /></label></div> : <><div className="v11-grid review-link-grid"><label className="form-field"><span>Country</span><input value={String(form.country || "")} readOnly /></label><label className="form-field"><span>Creator Name *</span><select required value={creatorValue} onChange={event => changeReviewCreator(event.target.value)}><option value="">{label("请先选择 Creator", "Select Creator first", language)}</option>{Object.keys(creatorProfiles).map(creator => <option key={creator}>{creator}</option>)}</select></label><label className="form-field"><span>Payment ID *</span><select required disabled={!creatorValue} value={paymentValue} onChange={event => changeReviewPayment(event.target.value)}><option value="">{creatorValue ? label("请选择关联 Payment", "Select linked Payment", language) : label("请先选择 Creator", "Select Creator first", language)}</option>{availablePayments.map(payment => <option key={payment}>{payment}</option>)}</select></label><label className="form-field"><span>Review ID</span><select disabled={!paymentValue} value={reviewValue} onChange={event => changeReviewLink(event.target.value)}><option value="">{paymentValue ? label("不选择（保存时新建计划外 Review）", "None (create an unplanned Review on save)", language) : label("请先选择 Payment", "Select Payment first", language)}</option>{availableReviews.map(review => <option key={review}>{review}</option>)}</select></label><label className="form-field"><span>Brand</span><input value={String(form.brand || "")} readOnly /></label><label className="form-field"><span>KOL Strategist</span><input value={String(form.owner || "")} readOnly /></label><label className="form-field"><span>Submitter</span><input value={String(form.submitter || "")} readOnly /></label><label className="form-field"><span>Initiator Department</span><input value={String(form.department || "")} readOnly /></label></div><div className={`review-link-state ${reviewValue ? "linked" : paymentValue ? "unplanned" : "waiting"}`}><span>1. Creator</span><i>→</i><span>2. Payment</span><i>→</i><span>3. Review ({label("可选", "Optional", language)})</span><b>{reviewValue ? label("已关联计划内 Review", "Linked planned Review", language) : paymentValue ? label("保存后生成计划外 Review", "Creates unplanned Review on save", language) : label("请按顺序完成选择", "Complete selections in order", language)}</b></div></>}
-      {!isPayment && scheme === "A" && paymentValue && <><div className={`single-review-plan-heading ${reviewValue ? "planned" : "unplanned"}`}><div><span>{label("第一步", "Step 1", language)}</span><b>{reviewValue ? label("现有 Post Plan", "Existing Post Plan", language) : label("计划外 Post Plan", "Unplanned Post Plan", language)}</b></div><small>{reviewValue ? label("先显示现有计划；带“可修改”的字段允许在 Review 页面调整。", "The existing plan is shown first; fields marked Editable can be changed on the Review page.", language) : label("未选择 Review；填写新的计划外 Post Plan 后再录入 Post Info。", "No Review selected; complete the unplanned Post Plan before Post Info.", language)}</small></div>{section(label("现有 Post Plan", "Existing Post Plan", language))}<div className="v11-grid single-review-plan-grid"><label className="form-field review-plan-readonly"><span>Platform</span><input value={String(form.reviewPlatform || "")} readOnly /></label><label className="form-field review-plan-editable"><span>Content Type <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewContentType || "")} onChange={event => updateSingleReviewPlan("reviewContentType", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{(planOptions.contentType || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Content Angles <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewContentAngle || "")} onChange={event => updateSingleReviewPlan("reviewContentAngle", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{(planOptions.contentAngle || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Product <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewProduct || "")} onChange={event => updateSingleReviewPlan("reviewProduct", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{(planOptions.product || []).map(option => <option key={option}>{option}</option>)}</select></label><label className={`form-field ${reviewValue ? "review-plan-readonly" : "review-plan-editable"}`}><span>Planning Post {!reviewValue && <em>{label("可修改", "Editable", language)}</em>}</span><input type="date" value={String(form.reviewPlanningPost || "")} readOnly={Boolean(reviewValue)} onChange={event => updateSingleReviewPlan("reviewPlanningPost", event.target.value)} /></label><label className={`form-field ${reviewValue ? "review-plan-readonly" : "review-plan-editable"}`}><span>Each Price {!reviewValue && <em>{label("可修改", "Editable", language)}</em>}</span><input type="number" min="0" value={String(form.reviewEachPrice || "")} readOnly={Boolean(reviewValue)} onChange={event => updateSingleReviewPlan("reviewEachPrice", event.target.value)} /></label><label className="form-field review-plan-readonly"><span>Rate</span><input value={String(form.reviewRate || "")} readOnly /></label><label className="form-field review-plan-editable"><span>Yellow Cart <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewYellowCart || "")} onChange={event => updateSingleReviewPlan("reviewYellowCart", event.target.value)}>{(planOptions.yellowCart || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Owning <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewOwning || "")} onChange={event => updateSingleReviewPlan("reviewOwning", event.target.value)}>{(planOptions.owning || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Spark Code Status <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewSparkStatus || "")} onChange={event => updateSingleReviewPlan("reviewSparkStatus", event.target.value)}>{["None","Required","Provided","Expired"].map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Boost Code <em>{label("可修改", "Editable", language)}</em></span><input value={String(form.reviewBoostCode || "")} onChange={event => updateSingleReviewPlan("reviewBoostCode", event.target.value)} /></label></div></>}
-      {!isPayment && scheme !== "A" && postPlanSection}
-      {!isPayment && <>{section(label("发布信息", "Post Info", language))}<div className="post-info-step-note"><span>{label("第二步", "Step 2", language)}</span><b>{label("确认 Post Plan 后填写实际发布信息", "Enter actual publishing information after confirming Post Plan", language)}</b></div><div className="v11-grid">{field("postId", "Post ID")}{field("postDate", "Post Date", "date")}{field("actualPostNo", "Post No.")}<label className="form-field"><span>Post Link</span><input value={String(form.postLink || "")} onChange={event => setForm(current => ({ ...current, postLink: event.target.value, qrCode: event.target.value ? label("已根据 Post Link 生成", "Generated from Post Link", language) : "" }))} /></label><label className="form-field review-plan-readonly"><span>QR Code</span><input value={String(form.qrCode || "")} readOnly /></label>{field("contentTag", "Content Tag")}{field("actualPrice", "Actual Price", "number")}{field("rate", "Rate")}{choice("postStatus", "Reviews Status", ["Pending","Published","Video Removed"])}{field("sampleDate", "Date of Send Product", "date")}{choice("slideProject", "Slide Project", ["No","Yes"])}{choice("ranking", "Ranking", ["Normal","Top"])}{field("notes", "Note")}</div></>}
-      {(isPayment || (!isPayment && scheme === "A")) && postPlanSection}
-      {isPayment && <>{section(label("财务信息", "Finance Info", language))}<div className="v11-grid">{choice("paymentBank", "Payment Bank", ["GST","GIA","Private"])}{field("bankName", "Bank Name")}{field("accountName", "Account Name")}{field("bankAccount", "Bank Account")}{field("idNumber", "ID (NPW/KTP)")}{field("idName", "ID Name")}{field("invoiceFile", "Invoice & ID File")}</div>{section("Pay Info")}<div className="v11-grid">{choice("sendPayment", "Send Payment", ["No","Yes"])}{choice("invoiceChecked", "Invoice Checked", ["Pending","Approved","Rejected"])}{field("paymentDate", "Date of Payment", "date")}{field("paymentReceipt", "Payment Receipt")}{field("financeNote", "Finance Note")}</div>{section("Approvals")}<div className="v11-grid">{choice("supervisorApproval", "Supervisor", ["Pending","Approved","Rejected"])}{choice("ceoApproval", "CEO Approval", ["Pending","Approved","Rejected"])}</div></>}
+      {section(label("基础信息", "Base Info", language))}{isPayment ? <div className="v11-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name")}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist")}{field("supervisor", "Supervisor")}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input type="number" min="0" value={plans.length} readOnly={isPaymentLocked} onChange={event => updateQuantity(event.target.value)} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" value={String(form.unitPrice || "")} readOnly={isPaymentLocked} onChange={event => updateBasePrice(event.target.value)} /></label><label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label><label className="form-field"><span>Expected Finish All Post Date</span><input value={planExpectedFinish} readOnly /></label></div> : <><div className="v11-grid review-link-grid"><label className="form-field"><span>Country</span><select required disabled={Boolean(paymentValue)} value={String(form.country || "")} onChange={event => set("country", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{["ID", "MY", "VN", "TH", "PH", "SG", "MX"].map(value => <option key={value}>{value}</option>)}</select></label><label className="form-field"><span>Creator Name *</span><input required readOnly={Boolean(paymentValue)} value={creatorValue} onChange={event => set("creatorName", event.target.value)} /></label><label className="form-field"><span>Payment ID *</span><select required disabled={!creatorValue} value={paymentValue} onChange={event => changeReviewPayment(event.target.value)}><option value="">{creatorValue ? label("请选择关联 Payment", "Select linked Payment", language) : label("请先填写 Creator", "Enter Creator first", language)}</option>{availablePayments.map(payment => <option key={payment}>{payment}</option>)}</select></label></div></>}
+      {!isPayment && reviewSectionedPlan}
+      {isPayment && postPlanSection}
+      {isPayment && <>{section(label("财务信息", "Finance Info", language))}<div className="v11-grid">{choice("paymentBank", "Payment Bank", ["GST","GIA","Private"])}{field("bankName", "Bank Name")}{field("accountName", "Account Name")}{field("bankAccount", "Bank Account")}{field("idNumber", "ID (NPW/KTP)")}{field("idName", "ID Name")}{attachment("invoiceFile", "Invoice & ID File")}</div>{row && <>{section("Pay Info")}<div className="v11-grid">{choice("sendPayment", "Send Payment", ["No","Yes"])}{choice("invoiceChecked", "Invoice Checked", ["Pending","Approved","Rejected"])}{field("paymentDate", "Date of Payment", "date")}{attachment("paymentReceipt", "Payment Receipt")}{attachment("financeNote", "Finance Note")}</div>{section("Approvals")}<div className="v11-grid">{choice("supervisorApproval", "Supervisor", ["Pending","Approved","Rejected"])}{choice("ceoApproval", "CEO Approval", ["Pending","Approved","Rejected"])}</div></>}</>}
     </div><footer className="modal-footer"><button type="button" className="button ghost" onClick={onClose}>{label("取消", "Cancel", language)}</button><button className="button primary" type="submit"><Check size={14}/>{label("保存", "Save", language)}</button></footer></form>
   </Modal>{batchPlanEditOpen && <Modal title={label("批量修改 Post Plan", "Batch Edit Post Plan", language)} onClose={() => setBatchPlanEditOpen(false)} wide variant="v11-modal batch-plan-modal"><form onSubmit={event => { event.preventDefault(); applyBatchPlanEdit(); }}><div className="modal-scroll-area"><div className="batch-plan-note"><b>{label(`将修改已选择的 ${selectedPlanRows.size} 行`, `Editing ${selectedPlanRows.size} selected rows`, language)}</b><span>{label("留空或选择“不修改”将保留原值；Review ID、Rate、Boost Code 为系统字段。", "Blank or No change keeps the original value. Review ID, Rate and Boost Code are system fields.", language)}</span></div><div className="v11-grid batch-plan-grid">
-    {(["strategist", "platform", "contentType", "contentAngle", "product", "yellowCart", "owning"] as BatchPlanKey[]).map(key => <label className="form-field" key={key}><span>{{ strategist: "KOL Strategist", platform: "Platform", contentType: "Content Type", contentAngle: "Content Angles", product: "Product", yellowCart: "Yellow Cart / YC", owning: "Owning" }[key]}</span><select value={batchPlanValues[key]} onChange={event => setBatchPlanValues(current => ({ ...current, [key]: event.target.value }))}><option value="">{label("不修改", "No change", language)}</option>{(planOptions[key] || []).map(option => <option key={option}>{option}</option>)}</select></label>)}
-    <label className="form-field"><span>Planning Post</span><input type="date" value={batchPlanValues.planningPostDate} onChange={event => setBatchPlanValues(current => ({ ...current, planningPostDate: event.target.value }))} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" placeholder={label("留空则不修改", "Blank keeps original", language)} value={batchPlanValues.eachPrice} onChange={event => setBatchPlanValues(current => ({ ...current, eachPrice: event.target.value }))} /></label>
+    {(["strategist", "platform", "contentType", "contentAngle", "product", "yellowCart", "owning"] as BatchPlanKey[]).map(key => <label className="form-field" key={key}><span>{{ strategist: "KOL Strategist", platform: "Platform", contentType: "Content Type", contentAngle: "Content Angles", product: "Product", yellowCart: "Yellow Cart / YC", owning: "Owning" }[key]}</span><select value={batchPlanValues[key]} onChange={event => updateBatchPlanValue(key, event.target.value)}><option value="">{label("不修改", "No change", language)}</option>{(planOptions[key] || []).map(option => <option key={option}>{option}</option>)}</select></label>)}
+    <label className="form-field"><span>Planning Post</span><input type="date" value={batchPlanValues.planningPostDate} onChange={event => updateBatchPlanValue("planningPostDate", event.target.value)} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" placeholder={label("留空则不修改", "Blank keeps original", language)} value={batchPlanValues.eachPrice} onChange={event => updateBatchPlanValue("eachPrice", event.target.value)} /></label>
   </div></div><footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchPlanEditOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("应用到所选行", "Apply to Selected", language)}</button></footer></form></Modal>}</>;
 }
 
@@ -650,12 +640,14 @@ function RecordModal({
   config,
   row,
   language,
+  relatedRows = [],
   onSave,
   onClose,
 }: {
   config: PageConfig;
   row: Row | null;
   language: Language;
+  relatedRows?: Row[];
   onSave: (row: Row) => void;
   onClose: () => void;
 }) {
@@ -682,7 +674,7 @@ function RecordModal({
   );
 
   if (["payment11", "reviews11"].includes(String(config.key))) return <Version11Modal config={config} row={row} language={language} onSave={onSave} onClose={onClose} />;
-  if (["payment31", "review31a", "review31b", "review31c"].includes(String(config.key))) return <Version31Modal config={config} row={row} language={language} onSave={onSave} onClose={onClose} />;
+  if (["payment31", "review31a", "review31b", "review31c"].includes(String(config.key))) return <Version31Modal config={config} row={row} language={language} relatedRows={relatedRows} onSave={onSave} onClose={onClose} />;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -836,6 +828,8 @@ function TablePage({
   language,
   canEdit,
   canApprove,
+  approvalPermissions = { supervisor: true, ceo: true },
+  relatedRows = [],
   notify,
 }: {
   config: PageConfig;
@@ -844,6 +838,8 @@ function TablePage({
   language: Language;
   canEdit: boolean;
   canApprove: boolean;
+  approvalPermissions?: { supervisor: boolean; ceo: boolean };
+  relatedRows?: Row[];
   notify: (message: string) => void;
 }) {
   const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>({});
@@ -876,7 +872,7 @@ function TablePage({
       ),
     [rows, appliedFilters],
   );
-  const pageSize = 8;
+  const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const visibleRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -1006,7 +1002,7 @@ function TablePage({
 
   const actionAllowed = (action: ActionKey) => {
     if (action === "export") return true;
-    if (action === "approve" && config.key === "payment31") return canEdit || canApprove;
+    if (action === "approve" && config.key === "payment31") return (canEdit || canApprove) && (approvalPermissions.supervisor || approvalPermissions.ceo);
     if (action === "approve") return canApprove;
     return canEdit;
   };
@@ -1094,7 +1090,7 @@ function TablePage({
                 return (
                   <button key={action} className="button approve" onClick={() => requireSelection() && setBatchApprovalOpen(true)}>
                     <ShieldCheck size={14} />
-                    {label("批量修改审批状态", "Batch Update Approval", language)}
+                    {label("批量审批", "Batch Approval", language)}
                   </button>
                 );
               }
@@ -1228,15 +1224,15 @@ function TablePage({
       </section>
 
       {editing !== undefined && (
-        <RecordModal config={config} row={editing} language={language} onSave={saveRow} onClose={() => setEditing(undefined)} />
+        <RecordModal config={config} row={editing} language={language} relatedRows={relatedRows} onSave={saveRow} onClose={() => setEditing(undefined)} />
       )}
       {batchApprovalOpen && (
-        <Modal title={label("批量修改审批状态", "Batch Update Approval Status", language)} onClose={() => setBatchApprovalOpen(false)}>
-          <form onSubmit={(event) => { event.preventDefault(); setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, supervisorApproval: batchSupervisorStatus, ceoApproval: batchCeoStatus, updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } : row)); setBatchApprovalOpen(false); setSelected(new Set()); notify(label("已批量更新审批状态", "Approval statuses updated", language)); }}>
+        <Modal title={label("批量审批", "Batch Approval", language)} onClose={() => setBatchApprovalOpen(false)}>
+          <form onSubmit={(event) => { event.preventDefault(); const approvalUpdates: Partial<Row> = {}; if (approvalPermissions.supervisor) approvalUpdates.supervisorApproval = batchSupervisorStatus; if (approvalPermissions.ceo) approvalUpdates.ceoApproval = batchCeoStatus; setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, ...approvalUpdates, updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } : row)); setBatchApprovalOpen(false); setSelected(new Set()); notify(label("已批量更新审批状态", "Approval statuses updated", language)); }}>
             <div className="form-grid batch-approval-grid">
               <div className="batch-selection-note"><CheckCircle2 size={16}/><span>{label(`将更新已选择的 ${selectedRows.length} 条 Payment 记录`, `Updating ${selectedRows.length} selected Payment record(s)`, language)}</span></div>
-              <label className="form-field"><span>{label("主管审批状态", "Supervisor Approval", language)}</span><select value={batchSupervisorStatus} onChange={(event) => setBatchSupervisorStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>
-              <label className="form-field"><span>{label("CEO 审批状态", "CEO Approval", language)}</span><select value={batchCeoStatus} onChange={(event) => setBatchCeoStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>
+              {approvalPermissions.supervisor && <label className="form-field"><span>{label("主管审批状态", "Supervisor Approval", language)}</span><select value={batchSupervisorStatus} onChange={(event) => setBatchSupervisorStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>}
+              {approvalPermissions.ceo && <label className="form-field"><span>{label("CEO 审批状态", "CEO Approval", language)}</span><select value={batchCeoStatus} onChange={(event) => setBatchCeoStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>}
             </div>
             <footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchApprovalOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("确认修改", "Apply", language)}</button></footer>
           </form>
@@ -1402,24 +1398,18 @@ function ProgressSummary({
   );
 }
 
-function DashboardAnalysis({ language, copy }: { language: Language; copy: [string, string] }) {
-  const [analysis, setAnalysis] = useState("");
-  return (
-    <aside className="panel analysis-panel section-analysis">
-      <div className="section-caption"><span />{label("分析说明", "Analysis", language)}<button className="ai-button" onClick={() => setAnalysis(label(copy[0], copy[1], language))}>AI</button></div>
-      {analysis ? <p className="analysis-copy">{analysis}</p> : <div className="analysis-empty analysis-prompt"><span>{label("点击右上角 AI 生成分析", "Click AI in the top-right to generate analysis", language)}</span></div>}
-    </aside>
-  );
-}
-
 function TargetDashboard({
   language,
   targetRows,
+  paymentRows,
+  reviewRows,
   notify,
   version31 = false,
 }: {
   language: Language;
   targetRows: Row[];
+  paymentRows: Row[];
+  reviewRows: Row[];
   notify: (message: string) => void;
   version31?: boolean;
 }) {
@@ -1432,12 +1422,50 @@ function TargetDashboard({
   const [videoPeriod, setVideoPeriod] = useState("MTD");
   const [videoTab, setVideoTab] = useState("video");
   const [expandedVideoGroups, setExpandedVideoGroups] = useState<Set<string>>(new Set());
-  const sourceRows = targetRows.length
+  const sourceRows = (targetRows.length
     ? targetRows
     : [
         { id: 1, product: "Tone Up Sunscreen", owner: "Nadia", qty: 38, qtyTarget: 52, actualCost: 17600000, budgetTarget: 43000000 },
         { id: 2, product: "Day Cream", owner: "Delvi", qty: 7, qtyTarget: 32, actualCost: 8500000, budgetTarget: 29000000 },
-      ];
+      ]).filter((row) => (
+        (!filters.country || String(row.country || "ID") === filters.country) &&
+        (!filters.month || String(row.targetMonth || "2026-08") === filters.month) &&
+        (!filters.brand || String(row.brand || "") === filters.brand) &&
+        (!filters.owner || String(row.owner || "") === filters.owner)
+      ));
+  const paidPayments = paymentRows.filter((payment) => {
+    const paymentMonth = String(payment.targetMonth || payment.paymentDate || payment.expectedPostDate || "").slice(0, 7);
+    return (String(payment.sendPayment || "") === "Yes" || Boolean(payment.paymentDate)) && (!filters.country || String(payment.country || "ID") === filters.country) && (!filters.month || paymentMonth === filters.month) && (!filters.brand || String(payment.brand || "") === filters.brand) && (!filters.owner || String(payment.owner || "") === filters.owner);
+  });
+  const paidPlanEntries = paidPayments.flatMap((payment) => {
+    const savedPlans = Array.isArray(payment.postPlans) ? payment.postPlans as Record<string, unknown>[] : [];
+    const plans = savedPlans.length
+      ? savedPlans
+      : Array.from({ length: Math.max(0, Math.floor(numeric(payment.qty))) }, (_, index) => ({
+          postNo: index + 1,
+          eachPrice: payment.unitPrice,
+          planningPostDate: payment.expectedPostDate,
+        }));
+    return plans.map((plan, index) => ({
+      ...plan,
+      paymentNo: String(payment.paymentNo || ""),
+      postNo: plan.postNo || index + 1,
+      eachPrice: plan.eachPrice ?? payment.unitPrice,
+      planningPostDate: plan.planningPostDate || payment.expectedPostDate,
+    }));
+  });
+  const publishedPlanKeys = new Set(reviewRows.filter((review) => String(review.postStatus || "") === "Published" || Boolean(review.actualPostDate || review.postDate)).map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
+  const publishedPaidPlans = paidPlanEntries.filter((plan) => publishedPlanKeys.has(`${plan.paymentNo}|${String(plan.postNo)}`));
+  const today = new Date().toISOString().slice(0, 10);
+  const delayedPaidPlans = paidPlanEntries.filter((plan) => Boolean(plan.planningPostDate) && String(plan.planningPostDate) < today && !publishedPlanKeys.has(`${plan.paymentNo}|${String(plan.postNo)}`));
+  const postPlanSummary = {
+    paidCount: paidPlanEntries.length,
+    paidAmount: paidPlanEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+    publishedCount: publishedPaidPlans.length,
+    publishedAmount: publishedPaidPlans.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+    delayedCount: delayedPaidPlans.length,
+    delayedAmount: delayedPaidPlans.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+  };
   const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
     name: String(row.product || "Product"),
     sub: `Glowsicha · ${String(row.owner || "All KOL Strategists")}`,
@@ -1504,18 +1532,6 @@ function TargetDashboard({
     ["strategist", "KOL Strategist", "KOL Strategist"],
     ...(version31 ? [["brand", "品牌", "Brand"]] as const : []),
   ] as const;
-  const publishCalendar = Array.from({ length: 36 }, (_, index) => {
-    const previousMonth = index < 5;
-    const day = previousMonth ? 27 + index : index - 4;
-    const lateMonth = !previousMonth && day >= 28;
-    return {
-      key: `${previousMonth ? "2026-07" : "2026-08"}-${day}`,
-      day,
-      muted: previousMonth,
-      post: lateMonth ? (day === 31 ? "10" : "20") : "15/20/57/75%",
-      price: lateMonth ? (day === 31 ? "8M" : "18M") : "12M/15M/4M/80%",
-    };
-  });
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -1551,6 +1567,7 @@ function TargetDashboard({
   const videoTabs = [
     ["video", "视频", "Video"],
     ["product", "产品", "Product"],
+    ["brand", "品牌", "Brand"],
     ["tier", "达人等级", "Creator Tier"],
     ["content", "内容类型", "Content Type"],
     ["strategist", "KOL Strategist", "KOL Strategist"],
@@ -1586,6 +1603,7 @@ function TargetDashboard({
     tier: videoMetadata[index][0],
     content: cells[3],
     strategist: videoMetadata[index][1],
+    brand: index % 2 === 0 ? "Glowsicha" : "Glad2Glow",
     cost: parseVideoMetric(cells[5]),
     gmv: parseVideoMetric(cells[6]),
     views: parseVideoMetric(cells[8]),
@@ -1594,6 +1612,7 @@ function TargetDashboard({
     if (videoTab === "tier") return record.tier;
     if (videoTab === "content") return record.content;
     if (videoTab === "strategist") return record.strategist;
+    if (videoTab === "brand") return record.brand;
     return record.product;
   };
   const groupedVideoRows = videoTab === "video" ? [] : Array.from(new Set(videoRecords.map(videoGroupValue))).map((name) => {
@@ -1609,6 +1628,8 @@ function TargetDashboard({
       ? label("内容类型", "Content Type", language)
       : videoTab === "strategist"
         ? "KOL Strategist"
+        : videoTab === "brand"
+          ? label("品牌", "Brand", language)
         : label("产品名称", "Product Name", language);
   const renderVideoDetailRows = (records: typeof videoRecords) => records.map((record) => <tr key={record.cells[0]}>{record.cells.map((value, index) => <td key={`${record.cells[0]}-${index}`}>{index < 2 ? <button className="video-data-link">{value}</button> : value}</td>)}</tr>);
 
@@ -1629,14 +1650,24 @@ function TargetDashboard({
         </div>
       </section>
 
+      {version31 && <section className="panel post-plan-summary-panel">
+        <div className="section-caption"><span />{label("已付款 Post Plan", "Paid Post Plan", language)}<small>{label("计划数据来自已付款 Payment；执行数据来自 Review", "Plan data comes from paid Payments; execution data comes from Reviews", language)}</small></div>
+        <div className="post-plan-summary-grid">
+          {[
+            ["已付款计划", "Paid Plans", postPlanSummary.paidCount, postPlanSummary.paidAmount],
+            ["已发布", "Published", postPlanSummary.publishedCount, postPlanSummary.publishedAmount],
+            ["延期", "Delayed", postPlanSummary.delayedCount, postPlanSummary.delayedAmount],
+          ].map(([zh, en, count, amount]) => <article className="post-plan-summary-card" key={String(en)}><span>{label(String(zh), String(en), language)}</span><strong>{count}</strong><small>IDR {compactNumber(Number(amount))}</small></article>)}
+        </div>
+      </section>}
+
       <div className="dashboard-section-row reference-dashboard-grid">
         <section className="panel progress-panel">
           <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
-            <ProgressSummary title={label("发布数量", "Post", language)} actual={version31 ? 589 : postMtd} target={version31 ? 660 : postTarget} tone="green" language={language} />
-            <ProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} actual={version31 ? 448200000 : budgetMtd} target={version31 ? 431500000 : budgetTarget} suffix="IDR " tone="amber" language={language} />
+            <ProgressSummary title={label("发布数量", "Post", language)} actual={postMtd} target={postTarget} tone="green" language={language} />
+            <ProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} actual={budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" language={language} />
           </div>
-          {version31 && <div className="publish-plan-calendar" aria-label={label("发布计划日历", "Publish plan calendar", language)}>{publishCalendar.map(day => <div className={day.muted ? "muted" : ""} key={day.key}><strong>{day.day}</strong><span>{day.post}</span><small>{day.price}</small></div>)}</div>}
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}
           </div>
@@ -1677,8 +1708,11 @@ function TargetDashboard({
                     {isOpen && children.map((child) => {
                       const childPostRate = percent(child.postMtd, child.postTarget);
                       const childBudgetRate = percent(child.budgetMtd, child.budgetTarget);
+                      const childKey = `${rowKey}-${child.name}`;
+                      const childOpen = expandedProgress.has(childKey);
+                      const grandChildren = tab === "brand" ? childrenFor("product", child) : [];
                       return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}>
-                        <td><strong>{child.name}</strong></td>
+                        <td><button className="expand-row-button nested" disabled={!grandChildren.length} onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(childKey) ? next.delete(childKey) : next.add(childKey); return next; })}><ChevronRight size={13} className={childOpen ? "rotate-90" : ""} /><strong>{child.name}</strong></button></td>
                         <td><b>{child.postMtd}/{child.postTarget}</b></td>
                         <td>{Math.max(child.postTarget - child.postMtd, 0)}</td>
                         <td><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td>
@@ -1687,13 +1721,29 @@ function TargetDashboard({
                         <td><div className="dashboard-rate"><span>MTD <b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></td>
                       </tr>;
                     })}
+                    {isOpen && tab === "brand" && children.flatMap((child) => {
+                      const childKey = `${rowKey}-${child.name}`;
+                      if (!expandedProgress.has(childKey)) return [];
+                      return childrenFor("product", child).map((grandChild) => {
+                        const grandPostRate = percent(grandChild.postMtd, grandChild.postTarget);
+                        const grandBudgetRate = percent(grandChild.budgetMtd, grandChild.budgetTarget);
+                        return <tr className="nested-breakdown depth-2" key={`${childKey}-${grandChild.name}`}>
+                          <td><strong>{grandChild.name}</strong></td>
+                          <td><b>{grandChild.postMtd}/{grandChild.postTarget}</b></td>
+                          <td>{Math.max(grandChild.postTarget - grandChild.postMtd, 0)}</td>
+                          <td><div className="dashboard-rate"><span>MTD <b>{grandPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(grandPostRate, 100)}%` }} /></div></td>
+                          <td><b>IDR {compactNumber(grandChild.budgetMtd)}/{compactNumber(grandChild.budgetTarget)}</b></td>
+                          <td>IDR {compactNumber(Math.max(grandChild.budgetTarget - grandChild.budgetMtd, 0))}</td>
+                          <td><div className="dashboard-rate"><span>MTD <b>{grandBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(grandBudgetRate, 100)}%` }} /></div></td>
+                        </tr>;
+                      });
+                    })}
                   </Fragment>;
                 })}
               </tbody>
             </table>
           </div>
         </section>
-        {version31 && <DashboardAnalysis language={language} copy={["发布计划当前完成 589/660，月底剩余 71 条；价格计划已达到 104%，建议优先关注后半月发布节奏。", "Publish plan is at 589/660 with 71 posts remaining. Price is at 104% of plan, so prioritize late-month publishing pace."]} />}
       </div>
 
       <div className="dashboard-section-row">
@@ -1757,6 +1807,88 @@ function TargetDashboard({
   );
 }
 
+type CreatorWorkspaceTab = "directory" | "selection" | "relationships" | "enablement";
+
+function CreatorManagementPage({
+  language,
+  rows,
+  setRows,
+  paymentRows,
+  reviewRows,
+  canEdit,
+  notify,
+  onNavigate,
+}: {
+  language: Language;
+  rows: Row[];
+  setRows: (next: Row[]) => void;
+  paymentRows: Row[];
+  reviewRows: Row[];
+  canEdit: boolean;
+  notify: (message: string) => void;
+  onNavigate: (page: PageKey) => void;
+}) {
+  const [activeTab, setActiveTab] = useState<CreatorWorkspaceTab>("directory");
+  const [scope, setScope] = useState("brand");
+  const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState({ country: "", brand: "", tier: "", platform: "", status: "" });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [detailId, setDetailId] = useState<string>(String(rows[0]?.id || ""));
+  const [addOpen, setAddOpen] = useState(false);
+  const [newCreator, setNewCreator] = useState({ creatorName: "", accountId: "", country: "ID", platform: "TikTok", tier: "A", brand: "Glowsicha", category: "Beauty" });
+  const fallbackCreators: Row[] = [
+    { id: "cr-1", country: "ID", avatar: "MA", accountId: "mamisikembar.1", creatorName: "Mami Si Kembar", brand: "Glowsicha", cooperationDate: "2026-07-21", creatorType: "KOL", category: "Beauty", tier: "A", platform: "TikTok", followersK: 82.6, engagementRate: "4.8%", status: "Active", riskLevel: "Low", relationshipScope: "Brand", candidateStatus: "Active", paymentCount: 4, reviewCount: 12, bankStatus: "Verified", complianceStatus: "Passed", source: "Echotik", lastContact: "2026-08-25", owner: "Delvi" },
+    { id: "cr-2", country: "ID", avatar: "PC", accountId: "parasceria", creatorName: "Paras Ceria", brand: "Glowsicha", cooperationDate: "2026-07-18", creatorType: "KOL", category: "Skincare", tier: "B", platform: "TikTok", followersK: 156.2, engagementRate: "3.6%", status: "Active", riskLevel: "Medium", relationshipScope: "Group", candidateStatus: "Candidate", paymentCount: 2, reviewCount: 6, bankStatus: "Pending", complianceStatus: "Review", source: "知虾", lastContact: "2026-08-21", owner: "Shafi" },
+    { id: "cr-3", country: "MY", avatar: "SA", accountId: "sharonatas", creatorName: "Sharon Atas", brand: "Glad2Glow", cooperationDate: "2026-06-12", creatorType: "KOL", category: "Makeup", tier: "S", platform: "Instagram", followersK: 482.4, engagementRate: "5.2%", status: "Active", riskLevel: "Low", relationshipScope: "Industry", candidateStatus: "Shortlisted", paymentCount: 6, reviewCount: 18, bankStatus: "Verified", complianceStatus: "Passed", source: "Fastmoss", lastContact: "2026-08-26", owner: "Nadia" },
+    { id: "cr-4", country: "ID", avatar: "ZZ", accountId: "zizaakarr", creatorName: "Zizaa Karr", brand: "Skintific", cooperationDate: "2026-05-03", creatorType: "KOC", category: "Beauty", tier: "B", platform: "YouTube", followersK: 64.1, engagementRate: "2.1%", status: "Dormant", riskLevel: "High", relationshipScope: "Brand", candidateStatus: "Hold", paymentCount: 1, reviewCount: 2, bankStatus: "Missing", complianceStatus: "Review", source: "Manual", lastContact: "2026-07-18", owner: "Cilla" },
+  ];
+  const directory = (rows.length ? rows : fallbackCreators).map((row, index) => ({ ...row, avatar: String(row.avatar || String(row.creatorName || "C").slice(0, 2).toUpperCase()), followersK: numeric(row.followersK), engagementRate: String(row.engagementRate || `${3 + (index % 4) * 0.6}%`), status: String(row.status || "Active"), riskLevel: String(row.riskLevel || "Low"), relationshipScope: String(row.relationshipScope || (index % 3 === 0 ? "Brand" : index % 3 === 1 ? "Group" : "Industry")), candidateStatus: String(row.candidateStatus || "Candidate"), paymentCount: numeric(row.paymentCount), reviewCount: numeric(row.reviewCount), bankStatus: String(row.bankStatus || "Pending"), complianceStatus: String(row.complianceStatus || "Review"), source: String(row.source || "Manual") }));
+  const filteredCreators = directory.filter((creator) => {
+    const haystack = `${creator.creatorName || ""} ${creator.accountId || ""} ${creator.category || ""}`.toLowerCase();
+    return (!scope || String(creator.relationshipScope).toLowerCase() === scope) && (!query || haystack.includes(query.toLowerCase())) && (!filters.country || String(creator.country) === filters.country) && (!filters.brand || String(creator.brand) === filters.brand) && (!filters.tier || String(creator.tier) === filters.tier) && (!filters.platform || String(creator.platform) === filters.platform) && (!filters.status || String(creator.status) === filters.status);
+  });
+  const selectedCreators = directory.filter((creator) => selected.has(String(creator.id)));
+  const selectedCreator = directory.find((creator) => String(creator.id) === detailId) || filteredCreators[0] || directory[0];
+  const paymentCountFor = (creator: Row) => paymentRows.filter((payment) => String(payment.creatorName || "").toLowerCase() === String(creator.creatorName || "").toLowerCase()).length || numeric(creator.paymentCount);
+  const reviewCountFor = (creator: Row) => reviewRows.filter((review) => String(review.creatorName || "").toLowerCase() === String(creator.creatorName || "").toLowerCase()).length || numeric(creator.reviewCount);
+  const activeCount = directory.filter((creator) => creator.status === "Active").length;
+  const riskCount = directory.filter((creator) => creator.riskLevel === "High" || creator.complianceStatus !== "Passed").length;
+  const candidateCount = directory.filter((creator) => ["Candidate", "Shortlisted"].includes(creator.candidateStatus)).length;
+  const toggleCreator = (id: string) => setSelected((current) => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  const runSelectionAction = (status: string) => {
+    if (!selectedCreators.length) return;
+    if (rows.length) setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, candidateStatus: status } : row));
+    setSelected(new Set());
+    notify(label(`已将 ${selectedCreators.length} 位达人标记为${status}`, `${selectedCreators.length} creator(s) marked ${status}`, language));
+  };
+  const saveNewCreator = (event: FormEvent) => {
+    event.preventDefault();
+    if (!newCreator.creatorName.trim() || !newCreator.accountId.trim()) return;
+    const next = { id: `creator-${Date.now()}`, ...newCreator, avatar: newCreator.creatorName.slice(0, 2).toUpperCase(), cooperationDate: new Date().toISOString().slice(0, 10), creatorType: "KOL", status: "Active", riskLevel: "Low", relationshipScope: "Brand", candidateStatus: "Candidate", source: "Manual", bankStatus: "Pending", complianceStatus: "Review", updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } as Row;
+    setRows([...rows, next]);
+    setDetailId(String(next.id));
+    setAddOpen(false);
+    setNewCreator({ creatorName: "", accountId: "", country: "ID", platform: "TikTok", tier: "A", brand: "Glowsicha", category: "Beauty" });
+    notify(label("达人档案已创建，等待合规补全", "Creator profile created; compliance completion is pending", language));
+  };
+  const workspaceTabs: [CreatorWorkspaceTab, string, string][] = [["directory", "达人库", "Directory"], ["selection", "选达人", "Selection"], ["relationships", "关系看板", "Relationships"], ["enablement", "赋能与财务", "Enablement & Finance"]];
+
+  return <div className="page-stack creator-workspace">
+    <section className="creator-workspace-header">
+      <div><span className="eyebrow">CRM / SRM · P1</span><h1>{label("达人管理", "Creator Management", language)}</h1><p>{label("从数据获取、筛选、合作到付款与风险治理的全生命周期工作台。", "One workspace for creator discovery, selection, collaboration, payment and risk governance.", language)}</p></div>
+      <div className="creator-header-actions"><button className="button ghost" onClick={() => notify(label("外部数据接入任务已进入队列", "External data ingestion queued", language))}><Download size={14}/>{label("同步数据", "Sync Data", language)}</button>{canEdit && <button className="button primary" onClick={() => setAddOpen(true)}><Plus size={14}/>{label("新增达人", "Add Creator", language)}</button>}</div>
+    </section>
+    <div className="creator-flow" aria-label={label("达人管理流程", "Creator lifecycle", language)}><div className="creator-flow-step active"><span>01</span><strong>{label("发现", "Discover", language)}</strong><small>{label("品牌内 · 集团内 · 行业内", "Brand · Group · Industry", language)}</small></div><ChevronRight size={15}/><div className="creator-flow-step"><span>02</span><strong>{label("筛选", "Select", language)}</strong><small>{label("数据、内容、合规", "Data, content, compliance", language)}</small></div><ChevronRight size={15}/><div className="creator-flow-step"><span>03</span><strong>Payment</strong><small>{label("赋能审批与付款", "Enablement approval and pay", language)}</small></div><ChevronRight size={15}/><div className="creator-flow-step"><span>04</span><strong>Review</strong><small>{label("计划、发布、复盘", "Plan, publish, review", language)}</small></div></div>
+    <div className="creator-kpi-grid"><MetricCard labelText={label("达人总数", "Total Creators", language)} value={String(directory.length)} note={label("去重后的主档案", "Deduplicated master profiles", language)} icon={Users}/><MetricCard labelText={label("活跃达人", "Active Creators", language)} value={String(activeCount)} note={label("近 90 天有合作或触达", "Collaborated or contacted in 90 days", language)} icon={Activity} tone="green"/><MetricCard labelText={label("候选池", "Candidate Pool", language)} value={String(candidateCount)} note={label("待选达人与已入围", "Candidates and shortlisted", language)} icon={Target} tone="purple"/><MetricCard labelText={label("风险待处理", "Risk Review", language)} value={String(riskCount)} note={label("银行、合规或重复风险", "Bank, compliance or duplicate risks", language)} icon={ShieldCheck} tone="amber"/></div>
+    <section className="creator-scope-panel panel"><div className="section-caption"><span/>{label("选达人范围", "Discovery Scope", language)}<small>{label("先确定数据范围，再进入候选池", "Set the source scope before shortlisting", language)}</small></div><div className="creator-scope-grid">{[["brand", "品牌内", "Brand", "当前品牌历史合作与复用"], ["group", "集团内", "Group", "集团其他品牌可复用达人"], ["industry", "行业内", "Industry", "外部市场与竞品池"]].map(([key, zh, en, note]) => <button key={key} className={scope === key ? "active" : ""} onClick={() => setScope(key)}><strong>{label(zh, en, language)}</strong><span>{label(note, key === "brand" ? "Current brand history and reuse" : key === "group" ? "Reuse creators across group brands" : "External market and competitor pool", language)}</span><b>{directory.filter((creator) => String(creator.relationshipScope).toLowerCase() === key).length}</b></button>)}</div></section>
+    <div className="creator-workspace-tabs">{workspaceTabs.map(([key, zh, en]) => <button key={key} className={activeTab === key ? "active" : ""} onClick={() => setActiveTab(key)}>{label(zh, en, language)}</button>)}</div>
+    {(activeTab === "directory" || activeTab === "selection") && <section className="creator-directory-layout"><div className="panel creator-directory-panel"><div className="creator-toolbar"><div className="creator-search"><Search size={14}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={label("搜索达人名、账号、品类", "Search creator, account or category", language)}/></div><div className="creator-filter-row"><select value={filters.country} onChange={(event) => setFilters((current) => ({ ...current, country: event.target.value }))}><option value="">{label("全部国家", "All Countries", language)}</option><option>ID</option><option>MY</option></select><select value={filters.brand} onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}><option value="">{label("全部品牌", "All Brands", language)}</option><option>Glowsicha</option><option>Glad2Glow</option><option>Skintific</option></select><select value={filters.tier} onChange={(event) => setFilters((current) => ({ ...current, tier: event.target.value }))}><option value="">{label("全部等级", "All Tiers", language)}</option><option>S</option><option>A</option><option>B</option></select><select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}><option value="">{label("全部状态", "All Status", language)}</option><option>Active</option><option>Dormant</option></select></div></div><div className="creator-table-wrap"><table className="data-table creator-table"><thead><tr><th className="select-column"><input type="checkbox" checked={filteredCreators.length > 0 && filteredCreators.every((creator) => selected.has(String(creator.id)))} onChange={(event) => setSelected(event.target.checked ? new Set(filteredCreators.map((creator) => String(creator.id))) : new Set())}/></th><th>{label("达人", "Creator", language)}</th><th>{label("来源范围", "Scope", language)}</th><th>{label("品牌", "Brand", language)}</th><th>Platform</th><th>Tier</th><th>{label("粉丝", "Followers", language)}</th><th>ER</th><th>{label("状态", "Status", language)}</th><th>{label("风险", "Risk", language)}</th></tr></thead><tbody>{filteredCreators.map((creator) => <tr key={String(creator.id)} className={detailId === String(creator.id) ? "selected" : ""} onClick={() => setDetailId(String(creator.id))}><td className="select-column"><input type="checkbox" checked={selected.has(String(creator.id))} onClick={(event) => event.stopPropagation()} onChange={() => toggleCreator(String(creator.id))}/></td><td><div className="creator-cell"><span className="creator-avatar">{String(creator.avatar)}</span><span><strong>{String(creator.creatorName)}</strong><small>@{String(creator.accountId)}</small></span></div></td><td><span className="creator-scope-tag">{String(creator.relationshipScope)}</span></td><td>{String(creator.brand || "—")}</td><td>{String(creator.platform || "—")}</td><td><b>{String(creator.tier || "—")}</b></td><td>{numeric(creator.followersK).toFixed(1)}K</td><td>{String(creator.engagementRate)}</td><td><span className={`status-badge ${String(creator.status).toLowerCase()}`}>{String(creator.status)}</span></td><td><span className={`risk-dot ${String(creator.riskLevel).toLowerCase()}`}>{String(creator.riskLevel)}</span></td></tr>)}</tbody></table>{!filteredCreators.length && <EmptyState language={language}/>}</div><footer className="creator-table-footer"><span>{label(`${filteredCreators.length} 位达人`, `${filteredCreators.length} creators`, language)}</span>{activeTab === "selection" && <div className="creator-selection-actions"><b>{label(`已选 ${selectedCreators.length} 位`, `${selectedCreators.length} selected`, language)}</b><button className="button ghost" disabled={!selectedCreators.length} onClick={() => runSelectionAction("Shortlisted")}>{label("加入候选池", "Shortlist", language)}</button><button className="button primary" disabled={!selectedCreators.length} onClick={() => runSelectionAction("Approved")}>{label("确认入选", "Approve", language)}</button></div>}</footer></div><aside className="panel creator-detail-panel">{selectedCreator ? <><div className="creator-detail-head"><div className="creator-cell"><span className="creator-avatar large">{String(selectedCreator.avatar)}</span><span><strong>{String(selectedCreator.creatorName)}</strong><small>@{String(selectedCreator.accountId)} · {String(selectedCreator.country)}</small></span></div><span className={`status-badge ${String(selectedCreator.status).toLowerCase()}`}>{String(selectedCreator.status)}</span></div><div className="creator-detail-actions"><button className="button primary" onClick={() => onNavigate("payment31")}><Plus size={13}/>Payment</button><button className="button ghost" onClick={() => onNavigate("review31b")}>Review</button></div><div className="creator-detail-stats"><div><strong>{numeric(selectedCreator.followersK).toFixed(1)}K</strong><small>Followers</small></div><div><strong>{String(selectedCreator.engagementRate)}</strong><small>Engagement</small></div><div><strong>{paymentCountFor(selectedCreator)}</strong><small>Payments</small></div><div><strong>{reviewCountFor(selectedCreator)}</strong><small>Reviews</small></div></div><dl className="creator-detail-list"><div><dt>{label("关系范围", "Scope", language)}</dt><dd>{String(selectedCreator.relationshipScope)}</dd></div><div><dt>{label("负责人", "Owner", language)}</dt><dd>{String(selectedCreator.owner || "—")}</dd></div><div><dt>{label("数据来源", "Source", language)}</dt><dd>{String(selectedCreator.source)}</dd></div><div><dt>{label("银行资料", "Bank", language)}</dt><dd>{String(selectedCreator.bankStatus)}</dd></div><div><dt>{label("合规状态", "Compliance", language)}</dt><dd>{String(selectedCreator.complianceStatus)}</dd></div></dl><div className="creator-detail-section"><strong>{label("下一步", "Next Action", language)}</strong><p>{selectedCreator.complianceStatus === "Passed" ? label("可进入 Payment 计划并继续维护 Review。", "Ready for Payment planning and Review maintenance.", language) : label("先完成银行资料与合规核验，再进入付款流程。", "Complete banking and compliance checks before payment.", language)}</p></div></> : <EmptyState language={language}/>}</aside></section>}
+    {activeTab === "relationships" && <section className="creator-relationship-grid"><div className="panel"><div className="section-caption"><span/>{label("品牌 / 集团关系看板", "Brand / Group Relationship Board", language)}</div><div className="relationship-board">{[["品牌内复用", "Brand Reuse", "同品牌历史合作达人", "Glowsicha", directory.filter((creator) => creator.relationshipScope === "Brand").length], ["集团内复用", "Group Reuse", "跨品牌可复用达人", "3 Brands", directory.filter((creator) => creator.relationshipScope === "Group").length], ["行业拓展", "Industry Expansion", "外部市场待验证达人", "External", directory.filter((creator) => creator.relationshipScope === "Industry").length]].map(([zh, en, note, badge, count]) => <article key={String(en)}><span>{label(String(zh), String(en), language)}</span><strong>{count}</strong><small>{label(String(note), String(note), language)}</small><b>{badge}</b></article>)}</div></div><div className="panel creator-source-panel"><div className="section-caption"><span/>{label("外部数据接入", "External Sources", language)}</div>{[["Echotik", "达人画像、粉丝与内容表现", "Connected"], ["知虾", "竞品合作与行业热度", "Ready"], ["Fastmoss", "TikTok 电商与 GMV 估算", "Ready"]].map(([name, note, status]) => <div className="source-connector" key={name}><div><strong>{name}</strong><small>{label(note, note, language)}</small></div><span>{status}</span><button className="text-button" onClick={() => notify(label(`${name} 数据接入任务已创建`, `${name} ingestion task created`, language))}>{label("接入", "Connect", language)}</button></div>)}</div><div className="panel creator-reuse-table"><div className="section-caption"><span/>{label("复用关系明细", "Reuse Relationship Detail", language)}</div><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Creator</th><th>{label("当前品牌", "Current Brand", language)}</th><th>{label("可复用品牌", "Reusable Brands", language)}</th><th>{label("关系状态", "Relationship", language)}</th></tr></thead><tbody>{directory.slice(0, 6).map((creator) => <tr key={String(creator.id)}><td>{String(creator.creatorName)}</td><td>{String(creator.brand || "—")}</td><td>{String(creator.relationshipScope) === "Group" ? "Glowsicha · Glad2Glow" : String(creator.relationshipScope) === "Industry" ? "待评估" : String(creator.brand || "—")}</td><td><span className="creator-scope-tag">{String(creator.relationshipScope)}</span></td></tr>)}</tbody></table></div></div></section>}
+    {activeTab === "enablement" && <section className="creator-enable-grid"><div className="panel"><div className="section-caption"><span/>{label("赋能审批队列", "Enablement Approval Queue", language)}<small>{label("合作、账号、报价与反腐控制", "Collaboration, account, pricing and anti-corruption controls", language)}</small></div><div className="enablement-list">{directory.slice(0, 5).map((creator) => <div className="enablement-row" key={String(creator.id)}><div className="creator-cell"><span className="creator-avatar">{String(creator.avatar)}</span><span><strong>{String(creator.creatorName)}</strong><small>{String(creator.brand || "—")} · {String(creator.tier || "—")} Tier</small></span></div><div><small>{label("合规", "Compliance", language)}</small><b>{String(creator.complianceStatus)}</b></div><div><small>{label("银行", "Bank", language)}</small><b>{String(creator.bankStatus)}</b></div><button className="text-button" onClick={() => notify(label("已打开赋能审批记录", "Enablement approval record opened", language))}>{label("查看", "View", language)}</button></div>)}</div></div><div className="panel creator-control-panel"><div className="section-caption"><span/>{label("流程控制", "Process Controls", language)}</div><ul className="creator-control-list"><li><CheckCircle2 size={15}/><span><strong>{label("主档去重", "Master deduplication", language)}</strong><small>{label("账号、平台、联系方式和收款信息联合识别", "Match account, platform, contact and payment identity", language)}</small></span></li><li><ShieldCheck size={15}/><span><strong>{label("付款前核验", "Pre-payment checks", language)}</strong><small>{label("审批、报价、银行资料与附件齐全后才能付款", "Approval, pricing, bank data and files must pass before pay", language)}</small></span></li><li><LockKeyholeOpen size={15}/><span><strong>{label("反腐留痕", "Anti-corruption audit", language)}</strong><small>{label("报价变更、复用关系和手工覆盖保留操作记录", "Keep an audit trail for price changes, reuse and overrides", language)}</small></span></li></ul><button className="button ghost" onClick={() => notify(label("风控规则检查已完成", "Control rule check completed", language))}>{label("运行风控检查", "Run Control Check", language)}</button></div></section>}
+    {addOpen && <Modal title={label("新增达人", "Add Creator", language)} onClose={() => setAddOpen(false)}><form onSubmit={saveNewCreator}><div className="modal-scroll-area"><div className="v11-grid creator-add-grid"><label className="form-field"><span>{label("达人名称", "Creator Name", language)}</span><input required value={newCreator.creatorName} onChange={(event) => setNewCreator((current) => ({ ...current, creatorName: event.target.value }))}/></label><label className="form-field"><span>Account ID</span><input required value={newCreator.accountId} onChange={(event) => setNewCreator((current) => ({ ...current, accountId: event.target.value }))}/></label><label className="form-field"><span>Country</span><select value={newCreator.country} onChange={(event) => setNewCreator((current) => ({ ...current, country: event.target.value }))}><option>ID</option><option>MY</option><option>VN</option></select></label><label className="form-field"><span>Platform</span><select value={newCreator.platform} onChange={(event) => setNewCreator((current) => ({ ...current, platform: event.target.value }))}><option>TikTok</option><option>Instagram</option><option>YouTube</option></select></label><label className="form-field"><span>Tier</span><select value={newCreator.tier} onChange={(event) => setNewCreator((current) => ({ ...current, tier: event.target.value }))}><option>S</option><option>A</option><option>B</option><option>C</option></select></label><label className="form-field"><span>Brand</span><select value={newCreator.brand} onChange={(event) => setNewCreator((current) => ({ ...current, brand: event.target.value }))}><option>Glowsicha</option><option>Glad2Glow</option><option>Skintific</option></select></label><label className="form-field"><span>{label("品类", "Category", language)}</span><input value={newCreator.category} onChange={(event) => setNewCreator((current) => ({ ...current, category: event.target.value }))}/></label></div></div><footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setAddOpen(false)}>{label("取消", "Cancel", language)}</button><button className="button primary" type="submit"><Check size={14}/>{label("保存", "Save", language)}</button></footer></form></Modal>}
+  </div>;
+}
+
 function BudgetRulePage({
   language,
   store,
@@ -1813,7 +1945,7 @@ export default function MarketingSystem() {
   const [language, setLanguage] = useStored<Language>("marketing-v8-language", "zh");
   const [theme, setTheme] = useStored<Theme>("marketing-v8-theme", "dark");
   const [role, setRole] = useStored<RoleKey>("marketing-v8-role", "admin");
-  const [rows, setRows] = useStored<RowStore>("marketing-v8-records", initialRows);
+  const [rows, setRows] = useStored<RowStore>("marketing-v9-records", initialRows);
   const [budgetRules, setBudgetRules] = useStored<Record<string, Row[]>>("marketing-v8-budget-rules", budgetRuleSeeds);
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["versions"]));
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1829,6 +1961,7 @@ export default function MarketingSystem() {
   const activeItem = activeGroup.pages.find((page) => page.key === activePage) || activeGroup.pages[0];
   const canEdit = roleConfig.canEdit.includes(pageGroup(activePage));
   const canApprove = roleConfig.canApprove.includes(pageGroup(activePage));
+  const approvalPermissions = { supervisor: roleConfig.approvalTypes.includes("supervisor"), ceo: roleConfig.approvalTypes.includes("ceo") };
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1882,11 +2015,55 @@ export default function MarketingSystem() {
   const activeConfig = pageConfigs[activePage];
   const pageRows = rows[activePage] || [];
 
+  function savePageRows(page: PageKey, next: Row[]) {
+    setRows((current) => {
+      const nextStore = { ...current, [page]: next };
+      if (page !== "payment31") return nextStore;
+
+      const generated = next.flatMap((payment) => {
+        if (!Array.isArray(payment.generatedReviews)) return [];
+        return payment.generatedReviews.map((review, index) => {
+          const reviewRow = review as Row;
+          const paymentNo = String(payment.paymentNo || reviewRow.paymentNo || "");
+          return {
+            id: reviewRow.id || `${payment.id}-review-${index + 1}`,
+            country: payment.country,
+            creatorName: payment.creatorName,
+            brand: payment.brand,
+            owner: payment.owner,
+            supervisor: payment.supervisor,
+            submitter: payment.submitter,
+            department: payment.department,
+            unitPrice: payment.unitPrice,
+            totalPrice: payment.totalPrice,
+            expectedPostDate: payment.expectedPostDate,
+            ...reviewRow,
+            paymentNo,
+            reviewNo: String(reviewRow.reviewNo || `RID${Date.now()}${index + 1}`),
+            postPlans: payment.postPlans,
+          } as Row;
+        });
+      });
+      if (!generated.length) return nextStore;
+
+      const reviewRows = [...(current.review31b || [])];
+      generated.forEach((generatedRow) => {
+        const existingIndex = reviewRows.findIndex((review) => String(review.reviewNo || "") === String(generatedRow.reviewNo) || (String(review.paymentNo || "") === String(generatedRow.paymentNo) && String(review.postNo || "") === String(generatedRow.postNo)));
+        if (existingIndex === -1) reviewRows.push(generatedRow);
+        else reviewRows[existingIndex] = { ...generatedRow, ...reviewRows[existingIndex], postPlans: generatedRow.postPlans };
+      });
+      nextStore.review31b = reviewRows;
+      return nextStore;
+    });
+  }
+
   let pageContent: ReactNode;
   if (activePage === "home") {
     pageContent = <HomePage language={language} onNavigate={navigate} />;
   } else if (activePage === "targetDashboard" || activePage === "dashboard31") {
-    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} notify={notify} version31={activePage === "dashboard31"} />;
+    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} version31={activePage === "dashboard31"} />;
+  } else if (activePage === "creator") {
+    pageContent = <CreatorManagementPage language={language} rows={rows.creator || []} setRows={(next) => savePageRows("creator", next)} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} canEdit={canEdit} notify={notify} onNavigate={navigate} />;
   } else if (activePage === "budgetRule") {
     pageContent = <BudgetRulePage language={language} store={budgetRules} setStore={setBudgetRules} canEdit={canEdit} notify={notify} />;
   } else if (activeConfig) {
@@ -1895,10 +2072,12 @@ export default function MarketingSystem() {
         key={activePage}
         config={activeConfig}
         rows={pageRows}
-        setRows={(next) => setRows((current) => ({ ...current, [activePage]: next }))}
+        setRows={(next) => savePageRows(activePage, next)}
         language={language}
         canEdit={canEdit}
         canApprove={canApprove}
+        approvalPermissions={approvalPermissions}
+        relatedRows={rows.payment31 || []}
         notify={notify}
       />
     );

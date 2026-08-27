@@ -1782,13 +1782,13 @@ function BudgetRulePage({
 }
 
 export default function MarketingSystem() {
-  const [activePage, setActivePage] = useStored<PageKey>("marketing-v8-active-page", "targetDashboard");
+  const [activePage, setActivePage] = useState<PageKey>("payment31");
   const [language, setLanguage] = useStored<Language>("marketing-v8-language", "zh");
   const [theme, setTheme] = useStored<Theme>("marketing-v8-theme", "dark");
   const [role, setRole] = useStored<RoleKey>("marketing-v8-role", "admin");
   const [rows, setRows] = useStored<RowStore>("marketing-v8-records", initialRows);
   const [budgetRules, setBudgetRules] = useStored<Record<string, Row[]>>("marketing-v8-budget-rules", budgetRuleSeeds);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(["target"]));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(["versions"]));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [quickSearchOpen, setQuickSearchOpen] = useState(false);

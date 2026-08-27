@@ -437,7 +437,6 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
     yellowCart: row?.yellowCart || "", owning: row?.owning || "", postId: row?.postId || "", postLink: row?.postLink || "", boostCode: row?.boostCode || "",
     actualPostDate: row?.actualPostDate || "", expiredDate: row?.expiredDate || "", sparkAdsStatus: row?.sparkAdsStatus || "None", notes: row?.notes || "",
   }));
-  const isPaymentLocked = isPayment && Boolean(row) && [String(form.supervisorApproval || ""), String(form.ceoApproval || "")].includes("Approved");
   const [plans, setPlans] = useState<PostPlan[]>(() => isPayment ? (linkedPlans[String(row?.paymentNo)] || linkedPlans.PID20260824000028).map(item => ({ ...item })) : []);
   const set = (key: string, value: unknown) => setForm(current => ({ ...current, [key]: value }));
   const qty = plans.length;
@@ -471,7 +470,7 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
   </Modal>;
 }
 
-type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string };
+type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string; createdAfterApproval?: boolean };
 type BatchPlanKey = "strategist" | "platform" | "contentType" | "contentAngle" | "planningPostDate" | "eachPrice" | "product" | "yellowCart" | "owning";
 const plan31Seed: PostPlan31[] = [
   { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "Required", owning: "", sparkStatus: "Required" },
@@ -493,8 +492,12 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || (isPayment ? "ID" : ""), creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || "350000", notes: row?.notes || "",
     reviewPlatform: row?.platform || selected.platform, reviewContentType: row?.contentType || selected.contentType, reviewContentAngle: row?.contentAngle || selected.contentAngle, reviewProduct: row?.product || selected.product, reviewPlanningPost: row?.planningPostDate || selected.planningPostDate, reviewEachPrice: row?.unitPrice || selected.eachPrice, reviewRate: row?.rate || selected.rate, reviewYellowCart: row?.yellowCart || selected.yellowCart, reviewOwning: row?.owning || selected.owning, reviewSparkStatus: row?.sparkStatus || selected.sparkStatus, reviewBoostCode: row?.boostCode || selected.boostCode,
     postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
-    paymentBank: row?.paymentBank || "GST", bankName: row?.bankName || "Seabank", accountName: row?.accountName || "Alkkna Creator", bankAccount: row?.bankAccount || "901804750996", idNumber: row?.idNumber || "6305044607080001", idName: row?.idName || "Alkkna", sendPayment: row?.sendPayment || "No", invoiceChecked: row?.invoiceChecked || "Pending", paymentDate: row?.paymentDate || "", financeNote: row?.financeNote || "", supervisorApproval: row?.supervisorApproval || "Pending", ceoApproval: row?.ceoApproval || "Pending",
+    paymentBank: row?.paymentBank || "GST", bankName: row?.bankName || "Seabank", accountName: row?.accountName || "Alkkna Creator", bankAccount: row?.bankAccount || "901804750996", idNumber: row?.idNumber || "6305044607080001", idName: row?.idName || "Alkkna", invoiceFile: row?.invoiceFile || "", paymentReceipt: row?.paymentReceipt || "", sendPayment: row?.sendPayment || "No", invoiceChecked: row?.invoiceChecked || "Pending", paymentDate: row?.paymentDate || "", financeNote: row?.financeNote || "", supervisorApproval: row?.supervisorApproval || "Pending", ceoApproval: row?.ceoApproval || "Pending",
   }));
+  const isPaymentLocked = isPayment && Boolean(row) && [String(form.supervisorApproval || ""), String(form.ceoApproval || "")].includes("Approved");
+  const isPaymentPaid = isPayment && Boolean(row) && (String(form.sendPayment || "") === "Yes" || Boolean(form.paymentDate));
+  const financeFieldKeys = new Set(["paymentBank", "bankName", "accountName", "bankAccount", "idNumber", "idName", "invoiceFile", "sendPayment", "invoiceChecked", "paymentDate", "paymentReceipt", "financeNote"]);
+  const isFinanceFieldLocked = (key: string) => isPaymentPaid && financeFieldKeys.has(key);
   const set = (key: string, value: unknown) => setForm(current => ({ ...current, [key]: value }));
   const creatorProfiles: Record<string, { country: string; brand: string; owner: string; department: string }> = {
     alkkna: { country: "ID", brand: "Glowsicha", owner: "Ajeng Salma Nadhifa Fitriani", department: "Marketing ID" },
@@ -552,24 +555,30 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
   };
   const addPlan = () => {
     const nextNo = Math.max(0, ...plans.map(item => item.postNo)) + 1;
-    setPlans(current => [...current, { ...plan31Seed[0], postNo: nextNo, reviewId: "", eachPrice: String(form.unitPrice || plan31Seed[0].eachPrice), rate: rateFromPrice(String(form.unitPrice || plan31Seed[0].eachPrice)), contentAngle: "", planningPostDate: "", boostCode: "No" }]);
+    const createdAfterApproval = isPayment && isPaymentLocked;
+    const eachPrice = createdAfterApproval ? "0" : String(form.unitPrice || plan31Seed[0].eachPrice);
+    setPlans(current => [...current, { ...plan31Seed[0], postNo: nextNo, reviewId: "", eachPrice, rate: createdAfterApproval ? "C" : rateFromPrice(eachPrice), contentAngle: "", planningPostDate: "", boostCode: "No", createdAfterApproval }]);
     setSelectedPlan(nextNo);
     if (isPayment) setSelectedPlanRows(new Set([nextNo]));
   };
   const copyPlan = () => {
     const nextNo = Math.max(0, ...plans.map(item => item.postNo)) + 1;
-    setPlans(current => [...current, { ...(current.find(item => item.postNo === selectedPlan) || current[0]), postNo: nextNo, reviewId: "", boostCode: "No" }]);
+    const createdAfterApproval = isPayment && isPaymentLocked;
+    const source = plans.find(item => item.postNo === selectedPlan) || plans[0];
+    setPlans(current => [...current, { ...source, postNo: nextNo, reviewId: "", eachPrice: createdAfterApproval ? "0" : source.eachPrice, rate: createdAfterApproval ? "C" : source.rate, boostCode: "No", createdAfterApproval }]);
     setSelectedPlan(nextNo);
     if (isPayment) setSelectedPlanRows(new Set([nextNo]));
   };
-  const field = (key: string, title: string, type = "text", readOnly = false) => <label className="form-field"><span>{title}</span><input type={type} value={String(form[key] ?? "")} readOnly={readOnly || isPaymentLocked} onChange={event => set(key, event.target.value)} /></label>;
-  const choice = (key: string, title: string, options: string[]) => <label className="form-field"><span>{title}</span><select value={String(form[key] ?? "")} disabled={isPaymentLocked} onChange={event => set(key, event.target.value)}>{options.map(option => <option key={option}>{option}</option>)}</select></label>;
+  const field = (key: string, title: string, type = "text", readOnly = false) => <label className="form-field"><span>{title}</span><input type={type} value={String(form[key] ?? "")} readOnly={readOnly || isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)} /></label>;
+  const choice = (key: string, title: string, options: string[]) => <label className="form-field"><span>{title}</span><select value={String(form[key] ?? "")} disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)}>{options.map(option => <option key={option}>{option}</option>)}</select></label>;
+  const attachment = (key: string, title: string) => <label className="form-field"><span>{title}</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.files?.[0]?.name || "")} />{form[key] ? <small className="attachment-name">{String(form[key])}</small> : <small className="attachment-hint">付款时上传附件</small>}</label>;
   const section = (title: string) => <div className="form-section-title"><i />{title}</div>;
   const updatePlan = (index: number, key: keyof PostPlan31, value: string) => setPlans(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value, ...(key === "eachPrice" ? { rate: rateFromPrice(value) } : {}) } : item));
   const togglePlanRow = (postNo: number) => setSelectedPlanRows(current => { const next = new Set(current); if (next.has(postNo)) next.delete(postNo); else next.add(postNo); return next; });
   const toggleAllPlanRows = () => setSelectedPlanRows(current => current.size === plans.length ? new Set() : new Set(plans.map(item => item.postNo)));
   const openBatchPlanEdit = () => { setBatchPlanValues({ ...emptyBatchPlan }); setBatchPlanEditOpen(true); };
   const applyBatchPlanEdit = () => {
+    if (isPaymentLocked) return;
     setPlans(current => current.map(item => {
       if (!selectedPlanRows.has(item.postNo)) return item;
       const updates = Object.fromEntries(Object.entries(batchPlanValues).filter(([, value]) => value !== "")) as Partial<PostPlan31>;
@@ -578,7 +587,7 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
     }));
     setBatchPlanEditOpen(false);
   };
-  const showEditablePlans = (isPayment || scheme === "B") && !isPaymentLocked;
+  const showEditablePlans = isPayment || scheme === "B";
   const planOptions: Partial<Record<keyof PostPlan31, string[]>> = {
     strategist: ["Ajeng Salma Nadhifa Fitriani", "Nadia", "Delvi", "Shafi", "Cilla"],
     platform: ["TikTok", "Instagram", "YouTube"],
@@ -615,7 +624,6 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
   const updateSingleReviewPlan = (key: string, value: string) => setForm(current => ({ ...current, [key]: value, ...(key === "reviewEachPrice" ? { reviewRate: rateFromPrice(value) } : {}) }));
   const save = (event: FormEvent) => {
     event.preventDefault();
-    if (isPaymentLocked) return;
     const linked = plans.find(item => item.postNo === selectedPlan) || plans[0];
     const createsUnplannedReview = !isPayment && !reviewValue;
     const generatedReviewNo = `RID${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
@@ -624,14 +632,15 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
   };
 
   const renderPlanControl = (item: PostPlan31, index: number, key: keyof PostPlan31) => {
-    if (!showEditablePlans || isPaymentLocked) return <span>{item[key] || "—"}</span>;
+    if (!showEditablePlans || (isPaymentLocked && !item.createdAfterApproval)) return <span>{item[key] || "—"}</span>;
+    if (isPaymentLocked && item.createdAfterApproval && key === "eachPrice") return <input className="plan-system-field" value="0" readOnly title={label("审批后新增计划单价固定为 0，不可编辑", "Post-approval plans have a fixed price of 0 and cannot be edited", language)} />;
     if (["reviewId", "rate", "boostCode"].includes(String(key))) return <input className="plan-system-field" value={item[key]} readOnly placeholder={key === "reviewId" ? label("创建 Review 后自动生成", "Generated after Review is created", language) : label("系统自动带出", "Auto-filled", language)} title={key === "reviewId" ? label("Review 创建成功后生成并回写，不可编辑", "Generated and written back after Review creation; read-only", language) : label("系统字段，不可编辑", "System field; read-only", language)} />;
     const options = planOptions[key];
     if (options) return <select required={["strategist", "platform"].includes(String(key))} value={String(item[key])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{options.map(option => <option key={option}>{option}</option>)}</select>;
     return <input required={key === "planningPostDate" || key === "eachPrice"} type={key === "planningPostDate" ? "date" : key === "eachPrice" ? "number" : "text"} min={key === "eachPrice" ? 0 : undefined} value={item[key]} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)} />;
   };
   const planTable = <div className="plan-table-wrap v31-plan-wrap"><table className="plan-table v31-plan-table"><thead><tr>{isPayment && <th className="plan-check-cell"><input type="checkbox" aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>}{!isPayment && scheme === "C" && <th /> }<th>No.</th><th>Review ID</th><th>KOL Strategist *</th><th>Platform *</th><th>Planning Post *</th><th>Each Price *</th><th>Content Type</th><th>Content Angles</th><th>Rate</th><th>Product</th><th>YC</th><th>Boost Code</th><th>Owning</th></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo} className={selectedPlan === item.postNo ? "selected-plan" : ""}>{isPayment && <td className="plan-check-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} Post No. ${item.postNo}`} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>}{!isPayment && scheme === "C" && <td><input type="radio" disabled={!reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}<td><b>{item.postNo}</b></td>{(["reviewId","strategist","platform","planningPostDate","eachPrice","contentType","contentAngle","rate","product","yellowCart","boostCode","owning"] as const).map(key => <td key={key}>{renderPlanControl(item, index, key)}</td>)}</tr>)}</tbody></table></div>;
-  const postPlanSection = <>{section(isPayment ? "Post Plan" : scheme === "A" ? label("Payment Post Plan（只读参考）", "Payment Post Plan (Reference Only)", language) : "Post Plan")}<div className="post-plan-title"><div><strong>{isPayment ? label("付款内发布计划", "Payment Post Plan", language) : scheme === "A" ? label("对应 Payment 的 Post Plan", "Post Plans for the Selected Payment", language) : scheme === "B" ? label("可修改的现有 Post Plan", "Editable Existing Post Plan", language) : label("选择现有 Post Plan", "Select Existing Post Plan", language)}</strong><span>{isPayment ? label(`已选择 ${selectedPlanRows.size} 行；支持新增、复制和批量修改，不提供删除`, `${selectedPlanRows.size} selected; add, copy and batch edit are available; deletion is disabled`, language) : scheme === "A" ? label("仅用于查看，不影响上方当前 Review 的输入与保存", "For reference only; it does not affect the current Review fields or save", language) : reviewValue ? label("第一步：先确认或修改现有 Post Plan，再填写 Post Info", "Step 1: confirm or edit the existing Post Plan before Post Info", language) : label("除 Payment 中的必填项外，其余字段均可修改", "All fields except Payment-required fields are editable", language)}</span></div>{showEditablePlans && <div className="v31-plan-actions">{isPayment && <button type="button" className="button secondary" disabled={selectedPlanRows.size === 0} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button>}<button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div>}</div>{!isPayment && !paymentValue ? <div className="review-plan-locked"><LockKeyholeOpen size={18}/><b>{label("请先选择 Creator，再选择关联的 Payment", "Select a Creator, then the linked Payment", language)}</b></div> : planTable}</>;
+  const postPlanSection = <>{section(isPayment ? "Post Plan" : scheme === "A" ? label("Payment Post Plan（只读参考）", "Payment Post Plan (Reference Only)", language) : "Post Plan")}<div className="post-plan-title"><div><strong>{isPayment ? label("付款内发布计划", "Payment Post Plan", language) : scheme === "A" ? label("对应 Payment 的 Post Plan", "Post Plans for the Selected Payment", language) : scheme === "B" ? label("可修改的现有 Post Plan", "Editable Existing Post Plan", language) : label("选择现有 Post Plan", "Select Existing Post Plan", language)}</strong><span>{isPayment ? label(`已选择 ${selectedPlanRows.size} 行；支持新增、复制和批量修改，不提供删除`, `${selectedPlanRows.size} selected; add, copy and batch edit are available; deletion is disabled`, language) : scheme === "A" ? label("仅用于查看，不影响上方当前 Review 的输入与保存", "For reference only; it does not affect the current Review fields or save", language) : reviewValue ? label("第一步：先确认或修改现有 Post Plan，再填写 Post Info", "Step 1: confirm or edit the existing Post Plan before Post Info", language) : label("除 Payment 中的必填项外，其余字段均可修改", "All fields except Payment-required fields are editable", language)}</span></div>{showEditablePlans && <div className="v31-plan-actions">{isPayment && <button type="button" className="button secondary" disabled={selectedPlanRows.size === 0 || isPaymentLocked} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button>}<button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div>}</div>{!isPayment && !paymentValue ? <div className="review-plan-locked"><LockKeyholeOpen size={18}/><b>{label("请先选择 Creator，再选择关联的 Payment", "Select a Creator, then the linked Payment", language)}</b></div> : planTable}</>;
 
   return <><Modal title={<span className="review-dialog-heading"><b>{isPayment ? "Payment3.1" : "Review3.1-Add"}</b><strong>{String(isPayment ? form.paymentNo : (form.reviewNo || label("新建 Review", "New Review", language)))}</strong></span>} onClose={onClose} wide variant="v11-modal v31-modal">
     <form onSubmit={save} className="v11-form v31-form"><div className="modal-scroll-area">
@@ -640,8 +649,8 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
       {!isPayment && scheme !== "A" && postPlanSection}
       {!isPayment && <>{section(label("发布信息", "Post Info", language))}<div className="post-info-step-note"><span>{label("第二步", "Step 2", language)}</span><b>{label("确认 Post Plan 后填写实际发布信息", "Enter actual publishing information after confirming Post Plan", language)}</b></div><div className="v11-grid">{field("postId", "Post ID")}{field("postDate", "Post Date", "date")}{field("actualPostNo", "Post No.")}<label className="form-field"><span>Post Link</span><input value={String(form.postLink || "")} onChange={event => setForm(current => ({ ...current, postLink: event.target.value, qrCode: event.target.value ? label("已根据 Post Link 生成", "Generated from Post Link", language) : "" }))} /></label><label className="form-field review-plan-readonly"><span>QR Code</span><input value={String(form.qrCode || "")} readOnly /></label>{field("contentTag", "Content Tag")}{field("actualPrice", "Actual Price", "number")}{field("rate", "Rate")}{choice("postStatus", "Reviews Status", ["Pending","Published","Video Removed"])}{field("sampleDate", "Date of Send Product", "date")}{choice("slideProject", "Slide Project", ["No","Yes"])}{choice("ranking", "Ranking", ["Normal","Top"])}{field("notes", "Note")}</div></>}
       {(isPayment || (!isPayment && scheme === "A")) && postPlanSection}
-      {isPayment && <>{section(label("财务信息", "Finance Info", language))}<div className="v11-grid">{choice("paymentBank", "Payment Bank", ["GST","GIA","Private"])}{field("bankName", "Bank Name")}{field("accountName", "Account Name")}{field("bankAccount", "Bank Account")}{field("idNumber", "ID (NPW/KTP)")}{field("idName", "ID Name")}{field("invoiceFile", "Invoice & ID File")}</div>{row && <>{section("Pay Info")}<div className="v11-grid">{choice("sendPayment", "Send Payment", ["No","Yes"])}{choice("invoiceChecked", "Invoice Checked", ["Pending","Approved","Rejected"])}{field("paymentDate", "Date of Payment", "date")}{field("paymentReceipt", "Payment Receipt")}{field("financeNote", "Finance Note")}</div>{section("Approvals")}<div className="v11-grid">{choice("supervisorApproval", "Supervisor", ["Pending","Approved","Rejected"])}{choice("ceoApproval", "CEO Approval", ["Pending","Approved","Rejected"])}</div></>}</>}
-    </div><footer className="modal-footer"><button type="button" className="button ghost" onClick={onClose}>{label("取消", "Cancel", language)}</button><button className="button primary" type="submit" disabled={isPaymentLocked}><Check size={14}/>{label("保存", "Save", language)}</button></footer></form>
+      {isPayment && <>{section(label("财务信息", "Finance Info", language))}<div className="v11-grid">{choice("paymentBank", "Payment Bank", ["GST","GIA","Private"])}{field("bankName", "Bank Name")}{field("accountName", "Account Name")}{field("bankAccount", "Bank Account")}{field("idNumber", "ID (NPW/KTP)")}{field("idName", "ID Name")}{attachment("invoiceFile", "Invoice & ID File")}</div>{row && <>{section("Pay Info")}<div className="v11-grid">{choice("sendPayment", "Send Payment", ["No","Yes"])}{choice("invoiceChecked", "Invoice Checked", ["Pending","Approved","Rejected"])}{field("paymentDate", "Date of Payment", "date")}{attachment("paymentReceipt", "Payment Receipt")}{attachment("financeNote", "Finance Note")}</div>{section("Approvals")}<div className="v11-grid">{choice("supervisorApproval", "Supervisor", ["Pending","Approved","Rejected"])}{choice("ceoApproval", "CEO Approval", ["Pending","Approved","Rejected"])}</div></>}</>}
+    </div><footer className="modal-footer"><button type="button" className="button ghost" onClick={onClose}>{label("取消", "Cancel", language)}</button><button className="button primary" type="submit"><Check size={14}/>{label("保存", "Save", language)}</button></footer></form>
   </Modal>{batchPlanEditOpen && <Modal title={label("批量修改 Post Plan", "Batch Edit Post Plan", language)} onClose={() => setBatchPlanEditOpen(false)} wide variant="v11-modal batch-plan-modal"><form onSubmit={event => { event.preventDefault(); applyBatchPlanEdit(); }}><div className="modal-scroll-area"><div className="batch-plan-note"><b>{label(`将修改已选择的 ${selectedPlanRows.size} 行`, `Editing ${selectedPlanRows.size} selected rows`, language)}</b><span>{label("留空或选择“不修改”将保留原值；Review ID、Rate、Boost Code 为系统字段。", "Blank or No change keeps the original value. Review ID, Rate and Boost Code are system fields.", language)}</span></div><div className="v11-grid batch-plan-grid">
     {(["strategist", "platform", "contentType", "contentAngle", "product", "yellowCart", "owning"] as BatchPlanKey[]).map(key => <label className="form-field" key={key}><span>{{ strategist: "KOL Strategist", platform: "Platform", contentType: "Content Type", contentAngle: "Content Angles", product: "Product", yellowCart: "Yellow Cart / YC", owning: "Owning" }[key]}</span><select value={batchPlanValues[key]} onChange={event => setBatchPlanValues(current => ({ ...current, [key]: event.target.value }))}><option value="">{label("不修改", "No change", language)}</option>{(planOptions[key] || []).map(option => <option key={option}>{option}</option>)}</select></label>)}
     <label className="form-field"><span>Planning Post</span><input type="date" value={batchPlanValues.planningPostDate} onChange={event => setBatchPlanValues(current => ({ ...current, planningPostDate: event.target.value }))} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" placeholder={label("留空则不修改", "Blank keeps original", language)} value={batchPlanValues.eachPrice} onChange={event => setBatchPlanValues(current => ({ ...current, eachPrice: event.target.value }))} /></label>
@@ -1404,16 +1413,6 @@ function ProgressSummary({
   );
 }
 
-function DashboardAnalysis({ language, copy }: { language: Language; copy: [string, string] }) {
-  const [analysis, setAnalysis] = useState("");
-  return (
-    <aside className="panel analysis-panel section-analysis">
-      <div className="section-caption"><span />{label("分析说明", "Analysis", language)}<button className="ai-button" onClick={() => setAnalysis(label(copy[0], copy[1], language))}>AI</button></div>
-      {analysis ? <p className="analysis-copy">{analysis}</p> : <div className="analysis-empty analysis-prompt"><span>{label("点击右上角 AI 生成分析", "Click AI in the top-right to generate analysis", language)}</span></div>}
-    </aside>
-  );
-}
-
 function TargetDashboard({
   language,
   targetRows,
@@ -1506,18 +1505,6 @@ function TargetDashboard({
     ["strategist", "KOL Strategist", "KOL Strategist"],
     ...(version31 ? [["brand", "品牌", "Brand"]] as const : []),
   ] as const;
-  const publishCalendar = Array.from({ length: 36 }, (_, index) => {
-    const previousMonth = index < 5;
-    const day = previousMonth ? 27 + index : index - 4;
-    const lateMonth = !previousMonth && day >= 28;
-    return {
-      key: `${previousMonth ? "2026-07" : "2026-08"}-${day}`,
-      day,
-      muted: previousMonth,
-      post: lateMonth ? (day === 31 ? "10" : "20") : "15/20/57/75%",
-      price: lateMonth ? (day === 31 ? "8M" : "18M") : "12M/15M/4M/80%",
-    };
-  });
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -1635,10 +1622,9 @@ function TargetDashboard({
         <section className="panel progress-panel">
           <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
-            <ProgressSummary title={label("发布数量", "Post", language)} actual={version31 ? 589 : postMtd} target={version31 ? 660 : postTarget} tone="green" language={language} />
-            <ProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} actual={version31 ? 448200000 : budgetMtd} target={version31 ? 431500000 : budgetTarget} suffix="IDR " tone="amber" language={language} />
+            <ProgressSummary title={label("发布数量", "Post", language)} actual={postMtd} target={postTarget} tone="green" language={language} />
+            <ProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} actual={budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" language={language} />
           </div>
-          {version31 && <div className="publish-plan-calendar" aria-label={label("发布计划日历", "Publish plan calendar", language)}>{publishCalendar.map(day => <div className={day.muted ? "muted" : ""} key={day.key}><strong>{day.day}</strong><span>{day.post}</span><small>{day.price}</small></div>)}</div>}
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}
           </div>
@@ -1695,7 +1681,6 @@ function TargetDashboard({
             </table>
           </div>
         </section>
-        {version31 && <DashboardAnalysis language={language} copy={["发布计划当前完成 589/660，月底剩余 71 条；价格计划已达到 104%，建议优先关注后半月发布节奏。", "Publish plan is at 589/660 with 71 posts remaining. Price is at 104% of plan, so prioritize late-month publishing pace."]} />}
       </div>
 
       <div className="dashboard-section-row">

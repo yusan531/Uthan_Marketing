@@ -478,10 +478,14 @@ const plan31Seed: PostPlan31[] = [
   { postNo: 3, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", eachPrice: "350000", rate: "A", product: "Body Scrub", yellowCart: "No", boostCode: "No", owning: "", sparkStatus: "None" },
 ];
 
-function Version31Modal({ config, row, language, onSave, onClose }: { config: PageConfig; row: Row | null; language: Language; onSave: (row: Row) => void; onClose: () => void }) {
+function Version31Modal({ config, row, language, relatedRows, onSave, onClose }: { config: PageConfig; row: Row | null; language: Language; relatedRows: Row[]; onSave: (row: Row) => void; onClose: () => void }) {
   const isPayment = config.key === "payment31";
   const scheme = config.key === "review31a" ? "A" : config.key === "review31b" ? "B" : "C";
-  const [plans, setPlans] = useState<PostPlan31[]>(() => plan31Seed.map(item => ({ ...item })));
+  const relatedPayment = !isPayment && row?.paymentNo ? relatedRows.find(payment => String(payment.paymentNo || "") === String(row.paymentNo)) : undefined;
+  const [plans, setPlans] = useState<PostPlan31[]>(() => {
+    const savedPlans = Array.isArray(row?.postPlans) ? row.postPlans as PostPlan31[] : Array.isArray(relatedPayment?.postPlans) ? relatedPayment.postPlans as PostPlan31[] : plan31Seed;
+    return savedPlans.map(item => ({ ...item }));
+  });
   const [selectedPlan, setSelectedPlan] = useState(Number(row?.postNo || (isPayment ? 1 : 0)));
   const [selectedPlanRows, setSelectedPlanRows] = useState<Set<number>>(() => new Set([Number(row?.postNo || 1)]));
   const emptyBatchPlan: Record<BatchPlanKey, string> = { strategist: "", platform: "", contentType: "", contentAngle: "", planningPostDate: "", eachPrice: "", product: "", yellowCart: "", owning: "" };
@@ -491,7 +495,7 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || (isPayment ? "ID" : ""), creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || "350000", notes: row?.notes || "",
     reviewPlatform: row?.platform || selected.platform, reviewContentType: row?.contentType || selected.contentType, reviewContentAngle: row?.contentAngle || selected.contentAngle, reviewProduct: row?.product || selected.product, reviewPlanningPost: row?.planningPostDate || selected.planningPostDate, reviewEachPrice: row?.unitPrice || selected.eachPrice, reviewRate: row?.rate || selected.rate, reviewYellowCart: row?.yellowCart || selected.yellowCart, reviewOwning: row?.owning || selected.owning, reviewSparkStatus: row?.sparkStatus || selected.sparkStatus, reviewBoostCode: row?.boostCode || selected.boostCode,
-    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
+    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", sparkCode: row?.sparkCode || "", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
     paymentBank: row?.paymentBank || "GST", bankName: row?.bankName || "Seabank", accountName: row?.accountName || "Alkkna Creator", bankAccount: row?.bankAccount || "901804750996", idNumber: row?.idNumber || "6305044607080001", idName: row?.idName || "Alkkna", invoiceFile: row?.invoiceFile || "", paymentReceipt: row?.paymentReceipt || "", sendPayment: row?.sendPayment || "No", invoiceChecked: row?.invoiceChecked || "Pending", paymentDate: row?.paymentDate || "", financeNote: row?.financeNote || "", supervisorApproval: row?.supervisorApproval || "Pending", ceoApproval: row?.ceoApproval || "Pending",
   }));
   const isPaymentLocked = isPayment && Boolean(row) && [String(form.supervisorApproval || ""), String(form.ceoApproval || "")].includes("Approved");
@@ -526,7 +530,10 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
     setSelectedPlan(0);
   };
   const changeReviewPayment = (value: string) => {
-    setForm(current => ({ ...current, paymentNo: value, reviewNo: "", reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
+    const payment = relatedRows.find(item => String(item.paymentNo || "") === value);
+    const paymentPlans = Array.isArray(payment?.postPlans) ? payment.postPlans as PostPlan31[] : plan31Seed;
+    setPlans(paymentPlans.map(item => ({ ...item })));
+    setForm(current => ({ ...current, paymentNo: value, reviewNo: "", country: String(payment?.country || current.country || ""), creatorName: String(payment?.creatorName || current.creatorName || ""), brand: String(payment?.brand || current.brand || ""), owner: String(payment?.owner || current.owner || ""), supervisor: String(payment?.supervisor || current.supervisor || ""), submitter: String(payment?.submitter || current.submitter || ""), department: String(payment?.department || current.department || ""), unitPrice: payment?.unitPrice || current.unitPrice, reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
     setSelectedPlan(0);
   };
   const changeReviewLink = (value: string) => {
@@ -625,14 +632,15 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
   const save = (event: FormEvent) => {
     event.preventDefault();
     const linked = plans.find(item => item.postNo === selectedPlan) || plans[0];
-    const createsUnplannedReview = !isPayment && !reviewValue;
+    const createsUnplannedReview = !isPayment && !row?.reviewNo;
     const generatedReviewNo = `RID${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
     const singleReviewPlan = !isPayment && scheme === "A" ? { platform: String(form.reviewPlatform || ""), contentType: String(form.reviewContentType || ""), contentAngle: String(form.reviewContentAngle || ""), product: String(form.reviewProduct || ""), planningPostDate: String(form.reviewPlanningPost || ""), eachPrice: String(form.reviewEachPrice || ""), rate: String(form.reviewRate || ""), yellowCart: String(form.reviewYellowCart || ""), owning: String(form.reviewOwning || ""), sparkStatus: String(form.reviewSparkStatus || ""), boostCode: String(form.reviewBoostCode || "") } : linked;
-    onSave({ ...(row || {}), ...form, reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: isPayment ? plans : undefined, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || "RID" + Date.now(), creatorName: form.creatorName, owner: form.owner, brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, postStatus: "Pending" })) : undefined });
+    onSave({ ...(row || {}), ...form, reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: isPayment ? plans : row?.postPlans, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || `RID${Date.now()}${item.postNo}`, creatorName: form.creatorName, owner: form.owner, brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, product: item.product, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, sparkStatus: item.sparkStatus, boostCode: item.boostCode, postStatus: "Pending", linkStatus: "Linked", postPlans: plans })) : undefined });
   };
 
   const renderPlanControl = (item: PostPlan31, index: number, key: keyof PostPlan31) => {
-    if (!showEditablePlans || (isPaymentLocked && !item.createdAfterApproval)) return <span>{item[key] || "—"}</span>;
+    const inheritedPaymentField = !isPayment && ["strategist", "platform", "planningPostDate", "eachPrice"].includes(String(key));
+    if (!showEditablePlans || inheritedPaymentField || (isPaymentLocked && !item.createdAfterApproval)) return <span>{item[key] || "—"}</span>;
     if (isPaymentLocked && item.createdAfterApproval && key === "eachPrice") return <input className="plan-system-field" value="0" readOnly title={label("审批后新增计划单价固定为 0，不可编辑", "Post-approval plans have a fixed price of 0 and cannot be edited", language)} />;
     if (["reviewId", "rate", "boostCode"].includes(String(key))) return <input className="plan-system-field" value={item[key]} readOnly placeholder={key === "reviewId" ? label("创建 Review 后自动生成", "Generated after Review is created", language) : label("系统自动带出", "Auto-filled", language)} title={key === "reviewId" ? label("Review 创建成功后生成并回写，不可编辑", "Generated and written back after Review creation; read-only", language) : label("系统字段，不可编辑", "System field; read-only", language)} />;
     const options = planOptions[key];
@@ -640,15 +648,22 @@ function Version31Modal({ config, row, language, onSave, onClose }: { config: Pa
     return <input required={key === "planningPostDate" || key === "eachPrice"} type={key === "planningPostDate" ? "date" : key === "eachPrice" ? "number" : "text"} min={key === "eachPrice" ? 0 : undefined} value={item[key]} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)} />;
   };
   const planTable = <div className="plan-table-wrap v31-plan-wrap"><table className="plan-table v31-plan-table"><thead><tr>{isPayment && <th className="plan-check-cell"><input type="checkbox" aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>}{!isPayment && scheme === "C" && <th /> }<th>No.</th><th>Review ID</th><th>KOL Strategist *</th><th>Platform *</th><th>Planning Post *</th><th>Each Price *</th><th>Content Type</th><th>Content Angles</th><th>Rate</th><th>Product</th><th>YC</th><th>Boost Code</th><th>Owning</th></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo} className={selectedPlan === item.postNo ? "selected-plan" : ""}>{isPayment && <td className="plan-check-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} Post No. ${item.postNo}`} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>}{!isPayment && scheme === "C" && <td><input type="radio" disabled={!reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}<td><b>{item.postNo}</b></td>{(["reviewId","strategist","platform","planningPostDate","eachPrice","contentType","contentAngle","rate","product","yellowCart","boostCode","owning"] as const).map(key => <td key={key}>{renderPlanControl(item, index, key)}</td>)}</tr>)}</tbody></table></div>;
-  const postPlanSection = <>{section(isPayment ? "Post Plan" : scheme === "A" ? label("Payment Post Plan（只读参考）", "Payment Post Plan (Reference Only)", language) : "Post Plan")}<div className="post-plan-title"><div><strong>{isPayment ? label("付款内发布计划", "Payment Post Plan", language) : scheme === "A" ? label("对应 Payment 的 Post Plan", "Post Plans for the Selected Payment", language) : scheme === "B" ? label("可修改的现有 Post Plan", "Editable Existing Post Plan", language) : label("选择现有 Post Plan", "Select Existing Post Plan", language)}</strong><span>{isPayment ? label(`已选择 ${selectedPlanRows.size} 行；支持新增、复制和批量修改，不提供删除`, `${selectedPlanRows.size} selected; add, copy and batch edit are available; deletion is disabled`, language) : scheme === "A" ? label("仅用于查看，不影响上方当前 Review 的输入与保存", "For reference only; it does not affect the current Review fields or save", language) : reviewValue ? label("第一步：先确认或修改现有 Post Plan，再填写 Post Info", "Step 1: confirm or edit the existing Post Plan before Post Info", language) : label("除 Payment 中的必填项外，其余字段均可修改", "All fields except Payment-required fields are editable", language)}</span></div>{showEditablePlans && <div className="v31-plan-actions">{isPayment && <button type="button" className="button secondary" disabled={selectedPlanRows.size === 0 || isPaymentLocked} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button>}<button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div>}</div>{!isPayment && !paymentValue ? <div className="review-plan-locked"><LockKeyholeOpen size={18}/><b>{label("请先选择 Creator，再选择关联的 Payment", "Select a Creator, then the linked Payment", language)}</b></div> : planTable}</>;
+  const reviewSectionedPlan = !isPayment && paymentValue ? <>
+    {section("Payment")}
+    <div className="v11-grid review-payment-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name", "text", true)}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist", "text", true)}{field("supervisor", "Supervisor", "text", true)}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input value={plans.length} readOnly /></label>{field("unitPrice", "Each Price", "number", true)}<label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label></div>
+    {planTable}
+    {section("Post")}
+    <div className="v11-grid review-post-grid">{field("postId", "Post ID")}{field("postLink", "Post Link")}{field("postDate", "Post Date", "date")}</div>
+    {section("Ads")}
+    <div className="v11-grid review-ads-grid">{field("sparkCode", "Spark Code")}{field("boostCode", "Boost Code")}{field("expiredDate", "Expired Date", "date")}{choice("sparkAdsStatus", "Spark Ads Status", ["None", "Active", "Expired", "Code Deleted"])}</div>
+  </> : null;
+  const postPlanSection = <>{section("Post Plan")}<div className="post-plan-title"><div><strong>{label("付款内发布计划", "Payment Post Plan", language)}</strong><span>{label(`已选择 ${selectedPlanRows.size} 行；支持新增、复制和批量修改，不提供删除`, `${selectedPlanRows.size} selected; add, copy and batch edit are available; deletion is disabled`, language)}</span></div><div className="v31-plan-actions"><button type="button" className="button secondary" disabled={selectedPlanRows.size === 0 || isPaymentLocked} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button><button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div></div>{planTable}</>;
 
   return <><Modal title={<span className="review-dialog-heading"><b>{isPayment ? "Payment3.1" : "Review3.1-Add"}</b><strong>{String(isPayment ? form.paymentNo : (form.reviewNo || label("新建 Review", "New Review", language)))}</strong></span>} onClose={onClose} wide variant="v11-modal v31-modal">
     <form onSubmit={save} className="v11-form v31-form"><div className="modal-scroll-area">
-      {section(label("基础信息", "Base Info", language))}{isPayment ? <div className="v11-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name")}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist")}{field("supervisor", "Supervisor")}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input type="number" min="0" value={plans.length} readOnly={isPaymentLocked} onChange={event => updateQuantity(event.target.value)} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" value={String(form.unitPrice || "")} readOnly={isPaymentLocked} onChange={event => updateBasePrice(event.target.value)} /></label><label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label><label className="form-field"><span>Expected Finish All Post Date</span><input value={planExpectedFinish} readOnly /></label></div> : <><div className="v11-grid review-link-grid"><label className="form-field"><span>Country</span><select required value={String(form.country || "")} onChange={event => set("country", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{["ID", "MY", "VN", "TH", "PH", "SG", "MX"].map(value => <option key={value}>{value}</option>)}</select></label><label className="form-field"><span>Creator Name *</span><input required value={creatorValue} onChange={event => set("creatorName", event.target.value)} /></label><label className="form-field"><span>Payment ID *</span><select required disabled={!creatorValue} value={paymentValue} onChange={event => changeReviewPayment(event.target.value)}><option value="">{creatorValue ? label("请选择关联 Payment", "Select linked Payment", language) : label("请先填写 Creator", "Enter Creator first", language)}</option>{availablePayments.map(payment => <option key={payment}>{payment}</option>)}</select></label><label className="form-field"><span>Review ID</span><select disabled={!paymentValue} value={reviewValue} onChange={event => changeReviewLink(event.target.value)}><option value="">{paymentValue ? label("请选择已有 Review（可选）", "Select existing Review (optional)", language) : label("请先选择 Payment", "Select Payment first", language)}</option>{availableReviews.map(review => <option key={review}>{review}</option>)}</select></label><label className="form-field"><span>Brand</span><input value={String(form.brand || "")} onChange={event => set("brand", event.target.value)} /></label><label className="form-field"><span>KOL Strategist</span><input value={String(form.owner || "")} onChange={event => set("owner", event.target.value)} /></label><label className="form-field"><span>Submitter</span><input value={String(form.submitter || "")} onChange={event => set("submitter", event.target.value)} /></label><label className="form-field"><span>Initiator Department</span><input value={String(form.department || "")} onChange={event => set("department", event.target.value)} /></label></div></>}
-      {!isPayment && scheme === "A" && paymentValue && <><div className={`single-review-plan-heading ${reviewValue ? "planned" : "unplanned"}`}><div><span>{label("第一步", "Step 1", language)}</span><b>{reviewValue ? label("现有 Post Plan", "Existing Post Plan", language) : label("计划外 Post Plan", "Unplanned Post Plan", language)}</b></div><small>{reviewValue ? label("先显示现有计划；带“可修改”的字段允许在 Review 页面调整。", "The existing plan is shown first; fields marked Editable can be changed on the Review page.", language) : label("未选择 Review；填写新的计划外 Post Plan 后再录入 Post Info。", "No Review selected; complete the unplanned Post Plan before Post Info.", language)}</small></div>{section(label("现有 Post Plan", "Existing Post Plan", language))}<div className="v11-grid single-review-plan-grid"><label className="form-field review-plan-readonly"><span>Platform</span><input value={String(form.reviewPlatform || "")} readOnly /></label><label className="form-field review-plan-editable"><span>Content Type <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewContentType || "")} onChange={event => updateSingleReviewPlan("reviewContentType", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{(planOptions.contentType || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Content Angles <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewContentAngle || "")} onChange={event => updateSingleReviewPlan("reviewContentAngle", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{(planOptions.contentAngle || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Product <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewProduct || "")} onChange={event => updateSingleReviewPlan("reviewProduct", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{(planOptions.product || []).map(option => <option key={option}>{option}</option>)}</select></label><label className={`form-field ${reviewValue ? "review-plan-readonly" : "review-plan-editable"}`}><span>Planning Post {!reviewValue && <em>{label("可修改", "Editable", language)}</em>}</span><input type="date" value={String(form.reviewPlanningPost || "")} readOnly={Boolean(reviewValue)} onChange={event => updateSingleReviewPlan("reviewPlanningPost", event.target.value)} /></label><label className={`form-field ${reviewValue ? "review-plan-readonly" : "review-plan-editable"}`}><span>Each Price {!reviewValue && <em>{label("可修改", "Editable", language)}</em>}</span><input type="number" min="0" value={String(form.reviewEachPrice || "")} readOnly={Boolean(reviewValue)} onChange={event => updateSingleReviewPlan("reviewEachPrice", event.target.value)} /></label><label className="form-field review-plan-readonly"><span>Rate</span><input value={String(form.reviewRate || "")} readOnly /></label><label className="form-field review-plan-editable"><span>Yellow Cart <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewYellowCart || "")} onChange={event => updateSingleReviewPlan("reviewYellowCart", event.target.value)}>{(planOptions.yellowCart || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Owning <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewOwning || "")} onChange={event => updateSingleReviewPlan("reviewOwning", event.target.value)}>{(planOptions.owning || []).map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Spark Code Status <em>{label("可修改", "Editable", language)}</em></span><select value={String(form.reviewSparkStatus || "")} onChange={event => updateSingleReviewPlan("reviewSparkStatus", event.target.value)}>{["None","Required","Provided","Expired"].map(option => <option key={option}>{option}</option>)}</select></label><label className="form-field review-plan-editable"><span>Boost Code <em>{label("可修改", "Editable", language)}</em></span><input value={String(form.reviewBoostCode || "")} onChange={event => updateSingleReviewPlan("reviewBoostCode", event.target.value)} /></label></div></>}
-      {!isPayment && scheme !== "A" && postPlanSection}
-      {!isPayment && <>{section(label("发布信息", "Post Info", language))}<div className="post-info-step-note"><span>{label("第二步", "Step 2", language)}</span><b>{label("确认 Post Plan 后填写实际发布信息", "Enter actual publishing information after confirming Post Plan", language)}</b></div><div className="v11-grid">{field("postId", "Post ID")}{field("postDate", "Post Date", "date")}{field("actualPostNo", "Post No.")}<label className="form-field"><span>Post Link</span><input value={String(form.postLink || "")} onChange={event => setForm(current => ({ ...current, postLink: event.target.value, qrCode: event.target.value ? label("已根据 Post Link 生成", "Generated from Post Link", language) : "" }))} /></label><label className="form-field review-plan-readonly"><span>QR Code</span><input value={String(form.qrCode || "")} readOnly /></label>{field("contentTag", "Content Tag")}{field("actualPrice", "Actual Price", "number")}{field("rate", "Rate")}{choice("postStatus", "Reviews Status", ["Pending","Published","Video Removed"])}{field("sampleDate", "Date of Send Product", "date")}{choice("slideProject", "Slide Project", ["No","Yes"])}{choice("ranking", "Ranking", ["Normal","Top"])}{field("notes", "Note")}</div></>}
-      {(isPayment || (!isPayment && scheme === "A")) && postPlanSection}
+      {section(label("基础信息", "Base Info", language))}{isPayment ? <div className="v11-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name")}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist")}{field("supervisor", "Supervisor")}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input type="number" min="0" value={plans.length} readOnly={isPaymentLocked} onChange={event => updateQuantity(event.target.value)} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" value={String(form.unitPrice || "")} readOnly={isPaymentLocked} onChange={event => updateBasePrice(event.target.value)} /></label><label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label><label className="form-field"><span>Expected Finish All Post Date</span><input value={planExpectedFinish} readOnly /></label></div> : <><div className="v11-grid review-link-grid"><label className="form-field"><span>Country</span><select required disabled={Boolean(paymentValue)} value={String(form.country || "")} onChange={event => set("country", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{["ID", "MY", "VN", "TH", "PH", "SG", "MX"].map(value => <option key={value}>{value}</option>)}</select></label><label className="form-field"><span>Creator Name *</span><input required readOnly={Boolean(paymentValue)} value={creatorValue} onChange={event => set("creatorName", event.target.value)} /></label><label className="form-field"><span>Payment ID *</span><select required disabled={!creatorValue} value={paymentValue} onChange={event => changeReviewPayment(event.target.value)}><option value="">{creatorValue ? label("请选择关联 Payment", "Select linked Payment", language) : label("请先填写 Creator", "Enter Creator first", language)}</option>{availablePayments.map(payment => <option key={payment}>{payment}</option>)}</select></label></div></>}
+      {!isPayment && reviewSectionedPlan}
+      {isPayment && postPlanSection}
       {isPayment && <>{section(label("财务信息", "Finance Info", language))}<div className="v11-grid">{choice("paymentBank", "Payment Bank", ["GST","GIA","Private"])}{field("bankName", "Bank Name")}{field("accountName", "Account Name")}{field("bankAccount", "Bank Account")}{field("idNumber", "ID (NPW/KTP)")}{field("idName", "ID Name")}{attachment("invoiceFile", "Invoice & ID File")}</div>{row && <>{section("Pay Info")}<div className="v11-grid">{choice("sendPayment", "Send Payment", ["No","Yes"])}{choice("invoiceChecked", "Invoice Checked", ["Pending","Approved","Rejected"])}{field("paymentDate", "Date of Payment", "date")}{attachment("paymentReceipt", "Payment Receipt")}{attachment("financeNote", "Finance Note")}</div>{section("Approvals")}<div className="v11-grid">{choice("supervisorApproval", "Supervisor", ["Pending","Approved","Rejected"])}{choice("ceoApproval", "CEO Approval", ["Pending","Approved","Rejected"])}</div></>}</>}
     </div><footer className="modal-footer"><button type="button" className="button ghost" onClick={onClose}>{label("取消", "Cancel", language)}</button><button className="button primary" type="submit"><Check size={14}/>{label("保存", "Save", language)}</button></footer></form>
   </Modal>{batchPlanEditOpen && <Modal title={label("批量修改 Post Plan", "Batch Edit Post Plan", language)} onClose={() => setBatchPlanEditOpen(false)} wide variant="v11-modal batch-plan-modal"><form onSubmit={event => { event.preventDefault(); applyBatchPlanEdit(); }}><div className="modal-scroll-area"><div className="batch-plan-note"><b>{label(`将修改已选择的 ${selectedPlanRows.size} 行`, `Editing ${selectedPlanRows.size} selected rows`, language)}</b><span>{label("留空或选择“不修改”将保留原值；Review ID、Rate、Boost Code 为系统字段。", "Blank or No change keeps the original value. Review ID, Rate and Boost Code are system fields.", language)}</span></div><div className="v11-grid batch-plan-grid">
@@ -661,12 +676,14 @@ function RecordModal({
   config,
   row,
   language,
+  relatedRows = [],
   onSave,
   onClose,
 }: {
   config: PageConfig;
   row: Row | null;
   language: Language;
+  relatedRows?: Row[];
   onSave: (row: Row) => void;
   onClose: () => void;
 }) {
@@ -693,7 +710,7 @@ function RecordModal({
   );
 
   if (["payment11", "reviews11"].includes(String(config.key))) return <Version11Modal config={config} row={row} language={language} onSave={onSave} onClose={onClose} />;
-  if (["payment31", "review31a", "review31b", "review31c"].includes(String(config.key))) return <Version31Modal config={config} row={row} language={language} onSave={onSave} onClose={onClose} />;
+  if (["payment31", "review31a", "review31b", "review31c"].includes(String(config.key))) return <Version31Modal config={config} row={row} language={language} relatedRows={relatedRows} onSave={onSave} onClose={onClose} />;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -847,6 +864,7 @@ function TablePage({
   language,
   canEdit,
   canApprove,
+  relatedRows = [],
   notify,
 }: {
   config: PageConfig;
@@ -855,6 +873,7 @@ function TablePage({
   language: Language;
   canEdit: boolean;
   canApprove: boolean;
+  relatedRows?: Row[];
   notify: (message: string) => void;
 }) {
   const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>({});
@@ -1239,7 +1258,7 @@ function TablePage({
       </section>
 
       {editing !== undefined && (
-        <RecordModal config={config} row={editing} language={language} onSave={saveRow} onClose={() => setEditing(undefined)} />
+        <RecordModal config={config} row={editing} language={language} relatedRows={relatedRows} onSave={saveRow} onClose={() => setEditing(undefined)} />
       )}
       {batchApprovalOpen && (
         <Modal title={label("批量修改审批状态", "Batch Update Approval Status", language)} onClose={() => setBatchApprovalOpen(false)}>
@@ -1869,6 +1888,48 @@ export default function MarketingSystem() {
   const activeConfig = pageConfigs[activePage];
   const pageRows = rows[activePage] || [];
 
+  function savePageRows(page: PageKey, next: Row[]) {
+    setRows((current) => {
+      const nextStore = { ...current, [page]: next };
+      if (page !== "payment31") return nextStore;
+
+      const generated = next.flatMap((payment) => {
+        if (!Array.isArray(payment.generatedReviews)) return [];
+        return payment.generatedReviews.map((review, index) => {
+          const reviewRow = review as Row;
+          const paymentNo = String(payment.paymentNo || reviewRow.paymentNo || "");
+          return {
+            id: reviewRow.id || `${payment.id}-review-${index + 1}`,
+            country: payment.country,
+            creatorName: payment.creatorName,
+            brand: payment.brand,
+            owner: payment.owner,
+            supervisor: payment.supervisor,
+            submitter: payment.submitter,
+            department: payment.department,
+            unitPrice: payment.unitPrice,
+            totalPrice: payment.totalPrice,
+            expectedPostDate: payment.expectedPostDate,
+            ...reviewRow,
+            paymentNo,
+            reviewNo: String(reviewRow.reviewNo || `RID${Date.now()}${index + 1}`),
+            postPlans: payment.postPlans,
+          } as Row;
+        });
+      });
+      if (!generated.length) return nextStore;
+
+      const reviewRows = [...(current.review31b || [])];
+      generated.forEach((generatedRow) => {
+        const existingIndex = reviewRows.findIndex((review) => String(review.reviewNo || "") === String(generatedRow.reviewNo) || (String(review.paymentNo || "") === String(generatedRow.paymentNo) && String(review.postNo || "") === String(generatedRow.postNo)));
+        if (existingIndex === -1) reviewRows.push(generatedRow);
+        else reviewRows[existingIndex] = { ...generatedRow, ...reviewRows[existingIndex], postPlans: generatedRow.postPlans };
+      });
+      nextStore.review31b = reviewRows;
+      return nextStore;
+    });
+  }
+
   let pageContent: ReactNode;
   if (activePage === "home") {
     pageContent = <HomePage language={language} onNavigate={navigate} />;
@@ -1882,10 +1943,11 @@ export default function MarketingSystem() {
         key={activePage}
         config={activeConfig}
         rows={pageRows}
-        setRows={(next) => setRows((current) => ({ ...current, [activePage]: next }))}
+        setRows={(next) => savePageRows(activePage, next)}
         language={language}
         canEdit={canEdit}
         canApprove={canApprove}
+        relatedRows={rows.payment31 || []}
         notify={notify}
       />
     );

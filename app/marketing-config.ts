@@ -367,7 +367,7 @@ pageConfigs.payment31 = {
   seed: [{ id: 3001, paymentNo: "PID20260826000031", creatorName: "alkkna", brand: "Glowsicha", owner: "Ajeng Salma Nadhifa Fitriani", qty: 3, unitPrice: 350000, totalPrice: 1050000, expectedPostDate: "2026-09-18", reviewQty: 1, supervisorApproval: "Approved", ceoApproval: "Pending" }],
 };
 pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed };
-pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "方案 B：Post Info 与可编辑 Post Plan 明细集中维护，支持新增和复制计划行。", descEn: "Option B: maintain Post Info and editable Post Plan rows together, with add and copy actions.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: 3201 })) };
+pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "从 Payment 带出计划信息，并分区维护 Payment、Post 与广告发布信息。", descEn: "Bring planned information from Payment and maintain Payment, Post and Ads details in separate sections.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: 3201 })) };
 pageConfigs.review31c = { key: "review31c", titleZh: "Review3.1-C · 计划选择", titleEn: "Review3.1-C · Plan Selection", descZh: "方案 C：先填写发布结果，再从 Payment 的 Post Plan 表中选择待关联明细。", descEn: "Option C: enter publishing results first, then select the linked row from Payment Post Plan.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: 3301 })) };
 
 export const menuGroups: { key: string; zh: string; en: string; pages: { key: PageKey; zh: string; en: string }[] }[] = [
@@ -394,4 +394,3 @@ export const roles: { key: RoleKey; zh: string; en: string; groups: string[]; ca
 ];
 
 export const pageGroup = (page: PageKey) => menuGroups.find(group => group.pages.some(item => item.key === page))?.key || "home";
-

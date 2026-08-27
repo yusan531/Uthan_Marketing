@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --sidebar-width: 168px;
+  --sidebar-width: 240px;
   --bg: #eef1f5;
   --surface: #ffffff;
   --surface-2: #f7f8fa;
@@ -2726,7 +2726,7 @@ thead .operation-column {
 
 @media (max-width: 1180px) {
   :root {
-    --sidebar-width: 168px;
+    --sidebar-width: 240px;
   }
 
   .result-metrics {

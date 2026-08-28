@@ -1707,17 +1707,10 @@ function TargetDashboard({
 
       {version31 && <div className="dashboard-section-row reference-dashboard-grid single-dashboard-column post-plan-dashboard-grid">
         <section className="panel progress-panel post-plan-summary-panel">
-          <div className="section-caption"><span />{label("已付款 Post Plan", "Paid Post Plan", language)}<small>{label("计划数据来自已付款 Payment；执行数据来自 Review", "Plan data comes from paid Payments; execution data comes from Reviews", language)}</small></div>
+          <div className="section-caption"><span />Post Plan</div>
           <div className="progress-pair">
             <ProgressSummary title={label("已发布数量", "Published Posts", language)} actual={postPlanSummary.publishedCount} target={postPlanSummary.paidCount} tone="green" language={language} />
             <ProgressSummary title={label("已发布金额", "Published Amount", language)} actual={postPlanSummary.publishedAmount} target={postPlanSummary.paidAmount} suffix="IDR " tone="amber" language={language} />
-          </div>
-          <div className="post-plan-summary-grid">
-            {[
-              ["已付款计划", "Paid Plans", postPlanSummary.paidCount, postPlanSummary.paidAmount],
-              ["已发布", "Published", postPlanSummary.publishedCount, postPlanSummary.publishedAmount],
-              ["延期", "Delayed", postPlanSummary.delayedCount, postPlanSummary.delayedAmount],
-            ].map(([zh, en, count, amount]) => <article className="post-plan-summary-card" key={String(en)}><span>{label(String(zh), String(en), language)}</span><strong>{count}</strong><small>IDR {compactNumber(Number(amount))}</small></article>)}
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}

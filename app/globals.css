@@ -3259,7 +3259,20 @@ thead .operation-column {
 }
 
 .target-dashboard .post-plan-summary-panel .section-caption {
-  min-height: 54px;
+  min-height: 46px;
+}
+
+.target-dashboard .post-plan-dashboard-grid .progress-pair {
+  padding: 8px 18px 10px;
+}
+
+.target-dashboard .post-plan-dashboard-grid .progress-summary {
+  min-height: 110px;
+  padding: 10px 18px;
+}
+
+.target-dashboard .post-plan-dashboard-grid .summary-values {
+  margin: 9px 0 7px;
 }
 
 .target-dashboard .post-plan-summary-panel .section-caption small {

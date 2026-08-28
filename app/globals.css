@@ -3231,3 +3231,178 @@ thead .operation-column {
 @media (max-width: 1180px) {
   .target-dashboard .breakdown-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Dashboard 3.1 compact card rhythm and mirrored Post Plan section */
+.target-dashboard .reference-dashboard-grid.single-dashboard-column {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.target-dashboard .reference-dashboard-grid .progress-pair {
+  padding: 12px 18px 14px;
+}
+
+.target-dashboard .reference-dashboard-grid .progress-summary {
+  min-height: 126px;
+  padding: 14px 18px;
+}
+
+.target-dashboard .reference-dashboard-grid .summary-values {
+  margin: 14px 0 11px;
+}
+
+.target-dashboard .reference-dashboard-grid .summary-values b {
+  font-size: clamp(25px, 2.35vw, 34px);
+}
+
+.target-dashboard .post-plan-summary-panel {
+  padding: 0 0 16px;
+}
+
+.target-dashboard .post-plan-summary-panel .section-caption {
+  min-height: 54px;
+}
+
+.target-dashboard .post-plan-summary-panel .section-caption small {
+  margin-left: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.target-dashboard .post-plan-summary-grid {
+  margin: 0 18px 12px;
+}
+
+.target-dashboard .post-plan-summary-card {
+  min-height: 72px;
+  padding: 10px 13px;
+}
+
+.target-dashboard .post-plan-summary-card strong {
+  margin-top: 5px;
+  font-size: 21px;
+}
+
+.target-dashboard .result-metric-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 12px 18px 14px;
+}
+
+.target-dashboard .result-metric-card {
+  min-height: 104px;
+  padding: 10px 11px;
+}
+
+.target-dashboard .result-metric-card > strong {
+  margin: 6px 0 3px;
+  font-size: 18px;
+}
+
+.target-dashboard .result-metric-card > div {
+  margin: 6px 0 4px;
+}
+
+.target-dashboard .breakdown-metric {
+  min-height: 90px;
+  padding: 9px 10px;
+}
+
+.target-dashboard .breakdown-metric strong {
+  margin: 5px 0 3px;
+  font-size: 15px;
+}
+
+.target-dashboard .breakdown-metric > div {
+  margin-top: 6px;
+}
+
+.target-dashboard .result-child-list {
+  padding: 9px;
+  display: grid;
+  gap: 8px;
+}
+
+.target-dashboard .result-child-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 16%, var(--surface));
+}
+
+.target-dashboard .result-child-card > header {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid var(--line);
+}
+
+.target-dashboard .result-child-card > header svg {
+  flex: 0 0 auto;
+  color: var(--dashboard-primary);
+}
+
+.target-dashboard .result-child-card > header strong,
+.target-dashboard .result-child-card > header small {
+  display: block;
+}
+
+.target-dashboard .result-child-card > header small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.target-dashboard .child-breakdown-metrics {
+  padding: 8px;
+}
+
+.target-dashboard .meeting-period {
+  padding: 10px 18px;
+  gap: 8px;
+}
+
+.target-dashboard .meeting-period button {
+  min-height: 46px;
+  padding: 5px 7px;
+}
+
+.target-dashboard .video-kpi-strip {
+  margin-bottom: 10px;
+}
+
+.target-dashboard .video-kpi-strip > div {
+  min-height: 66px;
+  padding: 10px 8px;
+}
+
+.target-dashboard .video-kpi-strip strong {
+  margin-top: 5px;
+  font-size: 16px;
+}
+
+@media (max-width: 1180px) {
+  .target-dashboard .result-metric-grid,
+  .target-dashboard .breakdown-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .target-dashboard .result-metric-grid,
+  .target-dashboard .breakdown-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .target-dashboard .post-plan-summary-panel .section-caption small {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .target-dashboard .result-metric-grid,
+  .target-dashboard .breakdown-metrics,
+  .target-dashboard .post-plan-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

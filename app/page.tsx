@@ -1414,9 +1414,11 @@ function TargetDashboard({
   version31?: boolean;
 }) {
   const [tab, setTab] = useState<DashboardDimension>("product");
+  const [postPlanTab, setPostPlanTab] = useState<DashboardDimension>("product");
   const [resultTab, setResultTab] = useState<DashboardDimension>("product");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
   const [expandedProgress, setExpandedProgress] = useState<Set<string>>(new Set());
+  const [expandedPostPlans, setExpandedPostPlans] = useState<Set<string>>(new Set());
   const [resultOpen, setResultOpen] = useState(true);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [videoPeriod, setVideoPeriod] = useState("MTD");
@@ -1452,6 +1454,10 @@ function TargetDashboard({
       postNo: plan.postNo || index + 1,
       eachPrice: plan.eachPrice ?? payment.unitPrice,
       planningPostDate: plan.planningPostDate || payment.expectedPostDate,
+      product: plan.product || payment.product || label("未分配产品", "Unassigned Product", language),
+      owner: payment.owner || label("未分配负责人", "Unassigned Strategist", language),
+      brand: payment.brand || label("未分配品牌", "Unassigned Brand", language),
+      tier: plan.rate || payment.rate || label("未分级", "Unrated", language),
     }));
   });
   const publishedPlanKeys = new Set(reviewRows.filter((review) => String(review.postStatus || "") === "Published" || Boolean(review.actualPostDate || review.postDate)).map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
@@ -1465,6 +1471,52 @@ function TargetDashboard({
     publishedAmount: publishedPaidPlans.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
     delayedCount: delayedPaidPlans.length,
     delayedAmount: delayedPaidPlans.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+  };
+  const buildPaidPlanBreakdowns = (dimension: DashboardDimension): DashboardBreakdown[] => {
+    const groups = new Map<string, DashboardBreakdown>();
+    paidPlanEntries.forEach((plan) => {
+      const name = dimension === "product"
+        ? String(plan.product)
+        : dimension === "tier"
+          ? String(plan.tier)
+          : dimension === "strategist"
+            ? String(plan.owner)
+            : String(plan.brand);
+      const current = groups.get(name) || {
+        name,
+        sub: dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("已付款 Post Plan", "Paid Post Plan", language),
+        postMtd: 0,
+        postTarget: 0,
+        budgetMtd: 0,
+        budgetTarget: 0,
+      };
+      const planKey = `${String(plan.paymentNo)}|${String(plan.postNo)}`;
+      const isPublished = publishedPlanKeys.has(planKey);
+      current.postTarget += 1;
+      current.budgetTarget += numeric(plan.eachPrice);
+      if (isPublished) {
+        current.postMtd += 1;
+        current.budgetMtd += numeric(plan.eachPrice);
+      }
+      groups.set(name, current);
+    });
+    return Array.from(groups.values());
+  };
+  const paidRowsByDimension: Record<DashboardDimension, DashboardBreakdown[]> = {
+    product: buildPaidPlanBreakdowns("product"),
+    tier: buildPaidPlanBreakdowns("tier"),
+    strategist: buildPaidPlanBreakdowns("strategist"),
+    brand: buildPaidPlanBreakdowns("brand"),
+  };
+  const paidPlanRows = paidRowsByDimension[postPlanTab];
+  const paidPlanChildrenFor = (dimension: DashboardDimension, row: DashboardBreakdown) => {
+    if (dimension === "product") {
+      return buildPaidPlanBreakdowns("tier").filter((child) => child.postTarget > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.paidCount, 1)));
+    }
+    const productPlans = paidRowsByDimension.product;
+    if (dimension === "brand") return productPlans.filter((product) => product.sub.includes(row.name));
+    if (dimension === "strategist") return productPlans.filter((product) => product.sub.includes(row.name));
+    return productPlans.map((product) => scaleBreakdown(row, product.name, row.name, product.postTarget / Math.max(postPlanSummary.paidCount, 1)));
   };
   const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
     name: String(row.product || "Product"),
@@ -1650,18 +1702,48 @@ function TargetDashboard({
         </div>
       </section>
 
-      {version31 && <section className="panel post-plan-summary-panel">
-        <div className="section-caption"><span />{label("已付款 Post Plan", "Paid Post Plan", language)}<small>{label("计划数据来自已付款 Payment；执行数据来自 Review", "Plan data comes from paid Payments; execution data comes from Reviews", language)}</small></div>
-        <div className="post-plan-summary-grid">
-          {[
-            ["已付款计划", "Paid Plans", postPlanSummary.paidCount, postPlanSummary.paidAmount],
-            ["已发布", "Published", postPlanSummary.publishedCount, postPlanSummary.publishedAmount],
-            ["延期", "Delayed", postPlanSummary.delayedCount, postPlanSummary.delayedAmount],
-          ].map(([zh, en, count, amount]) => <article className="post-plan-summary-card" key={String(en)}><span>{label(String(zh), String(en), language)}</span><strong>{count}</strong><small>IDR {compactNumber(Number(amount))}</small></article>)}
-        </div>
-      </section>}
+      {version31 && <div className="dashboard-section-row reference-dashboard-grid single-dashboard-column post-plan-dashboard-grid">
+        <section className="panel progress-panel post-plan-summary-panel">
+          <div className="section-caption"><span />{label("已付款 Post Plan", "Paid Post Plan", language)}<small>{label("计划数据来自已付款 Payment；执行数据来自 Review", "Plan data comes from paid Payments; execution data comes from Reviews", language)}</small></div>
+          <div className="progress-pair">
+            <ProgressSummary title={label("已发布数量", "Published Posts", language)} actual={postPlanSummary.publishedCount} target={postPlanSummary.paidCount} tone="green" language={language} />
+            <ProgressSummary title={label("已发布金额", "Published Amount", language)} actual={postPlanSummary.publishedAmount} target={postPlanSummary.paidAmount} suffix="IDR " tone="amber" language={language} />
+          </div>
+          <div className="post-plan-summary-grid">
+            {[
+              ["已付款计划", "Paid Plans", postPlanSummary.paidCount, postPlanSummary.paidAmount],
+              ["已发布", "Published", postPlanSummary.publishedCount, postPlanSummary.publishedAmount],
+              ["延期", "Delayed", postPlanSummary.delayedCount, postPlanSummary.delayedAmount],
+            ].map(([zh, en, count, amount]) => <article className="post-plan-summary-card" key={String(en)}><span>{label(String(zh), String(en), language)}</span><strong>{count}</strong><small>IDR {compactNumber(Number(amount))}</small></article>)}
+          </div>
+          <div className="dashboard-tabs">
+            {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
+          </div>
+          <div className="data-table-wrap dashboard-table-wrap">
+            <table className="data-table dashboard-table">
+              <colgroup><col className="breakdown-col" /><col className="post-target-col" /><col className="post-remaining-col" /><col className="post-pace-col" /><col className="budget-target-col" /><col className="budget-remaining-col" /><col className="budget-pace-col" /></colgroup>
+              <thead><tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Price</th></tr><tr><th>{label("已发布 / 计划", "Published / Plan", language)}</th><th>{label("未发布", "Remaining", language)}</th><th>{label("完成率", "Completion", language)}</th><th>{label("已发布 / 计划", "Published / Plan", language)}</th><th>{label("未发布金额", "Remaining", language)}</th><th>{label("完成率", "Completion", language)}</th></tr></thead>
+              <tbody>{paidPlanRows.map((row) => {
+                const postRate = percent(row.postMtd, row.postTarget);
+                const budgetRate = percent(row.budgetMtd, row.budgetTarget);
+                const rowKey = `paid-${postPlanTab}-${row.name}`;
+                const isOpen = expandedPostPlans.has(rowKey);
+                const children = paidPlanChildrenFor(postPlanTab, row);
+                return <Fragment key={rowKey}>
+                  <tr className="dashboard-parent-row"><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><td><b>{row.postMtd}/{row.postTarget}</b></td><td>{Math.max(row.postTarget - row.postMtd, 0)}</td><td><div className="dashboard-rate"><span><b>{postRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td><td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td><td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td><td><div className="dashboard-rate"><span><b>{budgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td></tr>
+                  {isOpen && children.map((child) => {
+                    const childPostRate = percent(child.postMtd, child.postTarget);
+                    const childBudgetRate = percent(child.budgetMtd, child.budgetTarget);
+                    return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}><td><strong>{child.name}</strong></td><td><b>{child.postMtd}/{child.postTarget}</b></td><td>{Math.max(child.postTarget - child.postMtd, 0)}</td><td><div className="dashboard-rate"><span><b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td><td><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b></td><td>IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</td><td><div className="dashboard-rate"><span><b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></td></tr>;
+                  })}
+                </Fragment>;
+              })}</tbody>
+            </table>
+          </div>
+        </section>
+      </div>}
 
-      <div className="dashboard-section-row reference-dashboard-grid">
+      <div className="dashboard-section-row reference-dashboard-grid single-dashboard-column">
         <section className="panel progress-panel">
           <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
@@ -1766,7 +1848,7 @@ function TargetDashboard({
               return <article className="breakdown-result-card" key={resultKey}>
                 <header><h4>{row.name}</h4><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(resultKey) ? next.delete(resultKey) : next.add(resultKey); return next; })}>{isExpanded ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={isExpanded ? "rotate" : ""} /></button></header>
                 <div className="breakdown-metrics">{breakdownMetrics(row).map((metric) => <div className={`breakdown-metric ${metricTone(metric.rate)}`} key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>
-                {isExpanded && <div className="result-child-list">{childrenFor(resultTab, row).map((child) => <div className="result-child-row" key={`${resultKey}-${child.name}`}><div><strong>{child.name}</strong><small>{child.sub}</small></div>{breakdownMetrics(child).map((metric) => <span key={metric.name}><small>{metric.name}</small><b>{metric.value}</b></span>)}</div>)}</div>}
+                {isExpanded && <div className="result-child-list">{childrenFor(resultTab, row).map((child) => <article className="result-child-card" key={`${resultKey}-${child.name}`}><header><ChevronRight size={14} /><div><strong>{child.name}</strong><small>{child.sub}</small></div></header><div className="breakdown-metrics child-breakdown-metrics">{breakdownMetrics(child).map((metric) => <div className={`breakdown-metric ${metricTone(metric.rate)}`} key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div></article>)}</div>}
               </article>;
             })}</div>
           </div>

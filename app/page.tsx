@@ -1397,10 +1397,10 @@ function ProgressSummary({
       </div>
       <div className="summary-values">
         <div><b>{suffix}{compactNumber(actual)}</b><em>/ {suffix}{compactNumber(target)}</em><small>MTD / {label("月度目标", "Target", language)}</small></div>
-        <div><b>{suffix}{compactNumber(Math.max(target - actual, 0))}</b><small>{label("剩余", "Remaining", language)}</small></div>
+        <div><b>{suffix}{compactNumber(Math.max(target - actual, 0))}</b><small>GAP</small></div>
       </div>
       <div className="progress-track"><i style={{ width: `${Math.min(rate, 100)}%` }} /></div>
-      <div className="summary-foot"><span>MTD&nbsp; <b>{rate}%</b></span><span>{label("节奏差", "Pace", language)} <b>{pace > 0 ? "+" : ""}{pace}%</b></span></div>
+      <div className="summary-foot"><span>MTD / Pace&nbsp; <b>{rate}%</b></span><span>GAP <b>{pace > 0 ? "+" : ""}{pace}%</b></span></div>
     </article>
   );
 }
@@ -1472,6 +1472,8 @@ function TargetDashboard({
   const today = new Date().toISOString().slice(0, 10);
   const delayedPaidPlans = paidPlanEntries.filter((plan) => Boolean(plan.planningPostDate) && String(plan.planningPostDate) < today && !publishedPlanKeys.has(`${plan.paymentNo}|${String(plan.postNo)}`));
   const postPlanSummary = {
+    targetCount: sourceRows.reduce((sum, row) => sum + numeric(row.qtyTarget || row.qty), 0),
+    targetAmount: sourceRows.reduce((sum, row) => sum + numeric(row.budgetTarget), 0),
     paidCount: paidPlanEntries.length,
     paidAmount: paidPlanEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
     publishedCount: publishedPaidPlans.length,
@@ -1481,6 +1483,19 @@ function TargetDashboard({
   };
   const buildPaidPlanBreakdowns = (dimension: DashboardDimension): DashboardBreakdown[] => {
     const groups = new Map<string, DashboardBreakdown>();
+    sourceRows.forEach((target) => {
+      const name = dimension === "product"
+        ? String(target.product || label("未分配产品", "Unassigned Product", language))
+        : dimension === "tier"
+          ? String(target.rate || target.tier || label("未分级", "Unrated", language))
+          : dimension === "strategist"
+            ? String(target.owner || label("未分配负责人", "Unassigned Strategist", language))
+            : String(target.brand || label("未分配品牌", "Unassigned Brand", language));
+      const current = groups.get(name) || { name, sub: dimension === "product" ? `${String(target.brand || "")} · ${String(target.owner || "")}` : label("Target 页面", "Target page", language), postMtd: 0, postTarget: 0, budgetMtd: 0, budgetTarget: 0 };
+      current.postTarget += numeric(target.qtyTarget || target.qty);
+      current.budgetTarget += numeric(target.budgetTarget);
+      groups.set(name, current);
+    });
     paidPlanEntries.forEach((plan) => {
       const name = dimension === "product"
         ? String(plan.product)
@@ -1497,14 +1512,8 @@ function TargetDashboard({
         budgetMtd: 0,
         budgetTarget: 0,
       };
-      const planKey = `${String(plan.paymentNo)}|${String(plan.postNo)}`;
-      const isPublished = publishedPlanKeys.has(planKey);
-      current.postTarget += 1;
-      current.budgetTarget += numeric(plan.eachPrice);
-      if (isPublished) {
-        current.postMtd += 1;
-        current.budgetMtd += numeric(plan.eachPrice);
-      }
+      current.postMtd += 1;
+      current.budgetMtd += numeric(plan.eachPrice);
       groups.set(name, current);
     });
     return Array.from(groups.values());
@@ -1518,12 +1527,12 @@ function TargetDashboard({
   const paidPlanRows = paidRowsByDimension[postPlanTab];
   const paidPlanChildrenFor = (dimension: DashboardDimension, row: DashboardBreakdown) => {
     if (dimension === "product") {
-      return buildPaidPlanBreakdowns("tier").filter((child) => child.postTarget > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.paidCount, 1)));
+      return buildPaidPlanBreakdowns("tier").filter((child) => child.postTarget > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.targetCount, 1)));
     }
     const productPlans = paidRowsByDimension.product;
     if (dimension === "brand") return productPlans.filter((product) => product.sub.includes(row.name));
     if (dimension === "strategist") return productPlans.filter((product) => product.sub.includes(row.name));
-    return productPlans.map((product) => scaleBreakdown(row, product.name, row.name, product.postTarget / Math.max(postPlanSummary.paidCount, 1)));
+    return productPlans.map((product) => scaleBreakdown(row, product.name, row.name, product.postTarget / Math.max(postPlanSummary.targetCount, 1)));
   };
   const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
     name: String(row.product || "Product"),
@@ -1719,8 +1728,8 @@ function TargetDashboard({
         <section className="panel progress-panel post-plan-summary-panel">
           <div className="section-caption"><span />Post Plan</div>
           <div className="progress-pair">
-            <ProgressSummary title={label("已发布数量", "Published Posts", language)} actual={postPlanSummary.publishedCount} target={postPlanSummary.paidCount} tone="green" language={language} />
-            <ProgressSummary title={label("已发布金额", "Published Amount", language)} actual={postPlanSummary.publishedAmount} target={postPlanSummary.paidAmount} suffix="IDR " tone="amber" language={language} />
+            <ProgressSummary title="Payment Qty" actual={postPlanSummary.paidCount} target={postPlanSummary.targetCount} tone="green" language={language} />
+            <ProgressSummary title="Payment Amount" actual={postPlanSummary.paidAmount} target={postPlanSummary.targetAmount} suffix="IDR " tone="amber" language={language} />
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
@@ -1728,7 +1737,7 @@ function TargetDashboard({
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
               <colgroup><col className="breakdown-col" /><col className="post-target-col" /><col className="post-remaining-col" /><col className="post-pace-col" /><col className="budget-target-col" /><col className="budget-remaining-col" /><col className="budget-pace-col" /></colgroup>
-              <thead><tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Price</th></tr><tr><th>{label("已发布 / 计划", "Published / Plan", language)}</th><th>{label("未发布", "Remaining", language)}</th><th>{label("完成率", "Completion", language)}</th><th>{label("已发布 / 计划", "Published / Plan", language)}</th><th>{label("未发布金额", "Remaining", language)}</th><th>{label("完成率", "Completion", language)}</th></tr></thead>
+              <thead><tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Payment Qty</th><th colSpan={3}>Payment Amount</th></tr><tr><th>MTD / Target</th><th>GAP</th><th>MTD / Pace</th><th>MTD / Target</th><th>GAP</th><th>MTD / Pace</th></tr></thead>
               <tbody>{paidPlanRows.map((row) => {
                 const postRate = percent(row.postMtd, row.postTarget);
                 const budgetRate = percent(row.budgetMtd, row.budgetTarget);

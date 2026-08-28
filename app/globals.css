@@ -3451,3 +3451,4 @@ thead .operation-column {
 .creator-directory-layout { grid-template-columns: 1fr; }
 .creator-directory-layout > .creator-detail-panel { display: none !important; }
 .creator-directory-panel .creator-table tbody tr.selected td { background: var(--surface); }
+.creator-directory-actions { display: flex; justify-content: flex-end; gap: 8px; }

@@ -470,7 +470,7 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
   </Modal>;
 }
 
-type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string; createdAfterApproval?: boolean };
+type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string; postId?: string; postDate?: string; postLink?: string; postStatus?: string; sparkAdsStatus?: string; createdAfterApproval?: boolean };
 type BatchPlanKey = "strategist" | "platform" | "contentType" | "contentAngle" | "planningPostDate" | "eachPrice" | "product" | "yellowCart" | "owning";
 const plan31Seed: PostPlan31[] = [
   { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "Required", owning: "", sparkStatus: "Required" },
@@ -484,7 +484,7 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose }:
   const relatedPayment = !isPayment && row?.paymentNo ? relatedRows.find(payment => String(payment.paymentNo || "") === String(row.paymentNo)) : undefined;
   const [plans, setPlans] = useState<PostPlan31[]>(() => {
     const savedPlans = Array.isArray(row?.postPlans) ? row.postPlans as PostPlan31[] : Array.isArray(relatedPayment?.postPlans) ? relatedPayment.postPlans as PostPlan31[] : plan31Seed;
-    return savedPlans.map(item => ({ ...item }));
+    return savedPlans.map(item => ({ ...item, ...(Number(row?.postNo) === item.postNo ? { postId: String(row?.postId || ""), postDate: String(row?.postDate || ""), postLink: String(row?.postLink || ""), postStatus: String(row?.postStatus || "Pending"), sparkAdsStatus: String(row?.sparkAdsStatus || "None") } : {}) }));
   });
   const [selectedPlan, setSelectedPlan] = useState(Number(row?.postNo || (isPayment ? 1 : 0)));
   const [selectedPlanRows, setSelectedPlanRows] = useState<Set<number>>(() => new Set([Number(row?.postNo || 1)]));
@@ -492,11 +492,12 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose }:
   const [batchPlanEditOpen, setBatchPlanEditOpen] = useState(false);
   const [batchPlanValues, setBatchPlanValues] = useState<Record<BatchPlanKey, string>>(emptyBatchPlan);
   const [batchPlanTouched, setBatchPlanTouched] = useState<Set<BatchPlanKey>>(new Set());
+  const [reviewPlanModule, setReviewPlanModule] = useState<"payment" | "post" | "ads">("payment");
   const selected = plans.find(item => item.postNo === selectedPlan) || plans[0];
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || (isPayment ? "ID" : ""), creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || "350000", notes: row?.notes || "",
     reviewPlatform: row?.platform || selected.platform, reviewContentType: row?.contentType || selected.contentType, reviewContentAngle: row?.contentAngle || selected.contentAngle, reviewProduct: row?.product || selected.product, reviewPlanningPost: row?.planningPostDate || selected.planningPostDate, reviewEachPrice: row?.unitPrice || selected.eachPrice, reviewRate: row?.rate || selected.rate, reviewYellowCart: row?.yellowCart || selected.yellowCart, reviewOwning: row?.owning || selected.owning, reviewSparkStatus: row?.sparkStatus || selected.sparkStatus, reviewBoostCode: row?.boostCode || selected.boostCode,
-    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", sparkCode: row?.sparkCode || "", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
+    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", sparkCode: row?.sparkCode || "", boostCode: row?.boostCode || "", expiredDate: row?.expiredDate || "", sparkAdsStatus: row?.sparkAdsStatus || "None", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
     paymentBank: row?.paymentBank || "GST", bankName: row?.bankName || "Seabank", accountName: row?.accountName || "Alkkna Creator", bankAccount: row?.bankAccount || "901804750996", idNumber: row?.idNumber || "6305044607080001", idName: row?.idName || "Alkkna", invoiceFile: row?.invoiceFile || "", paymentReceipt: row?.paymentReceipt || "", sendPayment: row?.sendPayment || "No", invoiceChecked: row?.invoiceChecked || "Pending", paymentDate: row?.paymentDate || "", financeNote: row?.financeNote || "", supervisorApproval: row?.supervisorApproval || "Pending", ceoApproval: row?.ceoApproval || "Pending",
   }));
   const isPaymentLocked = isPayment && Boolean(row) && [String(form.supervisorApproval || ""), String(form.ceoApproval || "")].includes("Approved");
@@ -507,13 +508,25 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose }:
   const creatorValue = String(form.creatorName || "");
   const paymentValue = String(form.paymentNo || "");
   const reviewValue = String(form.reviewNo || "");
+  const availableCreators = Array.from(new Set([...relatedRows.map(payment => String(payment.creatorName || "")).filter(Boolean), ...(creatorValue ? [creatorValue] : [])]));
   const availablePayments = Array.from(new Set([...relatedRows.filter(payment => !creatorValue || String(payment.creatorName || "").toLowerCase() === creatorValue.toLowerCase()).map(payment => String(payment.paymentNo || "")).filter(Boolean), ...(paymentValue ? [paymentValue] : [])]));
+  const availableReviews = Array.from(new Set([...plans.map(plan => String(plan.reviewId || "")).filter(Boolean), ...(reviewValue ? [reviewValue] : [])]));
+  const changeReviewCreator = (value: string) => {
+    const firstPayment = relatedRows.find(payment => String(payment.creatorName || "").toLowerCase() === value.toLowerCase());
+    setForm(current => ({ ...current, creatorName: value, paymentNo: "", reviewNo: "", country: String(firstPayment?.country || current.country || ""), brand: "", owner: "", supervisor: "", department: "", reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
+    setSelectedPlan(0);
+  };
   const changeReviewPayment = (value: string) => {
     const payment = relatedRows.find(item => String(item.paymentNo || "") === value);
-    const paymentPlans = Array.isArray(payment?.postPlans) ? payment.postPlans as PostPlan31[] : plan31Seed;
+    const paymentPlans = value ? (Array.isArray(payment?.postPlans) ? payment.postPlans as PostPlan31[] : plan31Seed) : [];
     setPlans(paymentPlans.map(item => ({ ...item })));
     setForm(current => ({ ...current, paymentNo: value, reviewNo: "", country: String(payment?.country || current.country || ""), creatorName: String(payment?.creatorName || current.creatorName || ""), brand: String(payment?.brand || current.brand || ""), owner: String(payment?.owner || current.owner || ""), supervisor: String(payment?.supervisor || current.supervisor || ""), submitter: String(payment?.submitter || current.submitter || ""), department: String(payment?.department || current.department || ""), unitPrice: payment?.unitPrice || current.unitPrice, reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
     setSelectedPlan(0);
+  };
+  const changeReviewLink = (value: string) => {
+    const linkedPlan = plans.find(item => item.reviewId === value);
+    setForm(current => ({ ...current, reviewNo: value }));
+    setSelectedPlan(linkedPlan?.postNo || 0);
   };
   const rateFromPrice = (value: string) => { const price = numeric(value); return price >= 1000000 ? "S" : price >= 300000 ? "A" : price >= 150000 ? "B" : "C"; };
   const updateBasePrice = (value: string) => {
@@ -539,7 +552,14 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose }:
   const field = (key: string, title: string, type = "text", readOnly = false) => <label className="form-field"><span>{title}</span><input type={type} value={String(form[key] ?? "")} readOnly={readOnly || isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)} /></label>;
   const choice = (key: string, title: string, options: string[]) => <label className="form-field"><span>{title}</span><select value={String(form[key] ?? "")} disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)}>{options.map(option => <option key={option}>{option}</option>)}</select></label>;
   const attachment = (key: string, title: string) => <label className="form-field"><span>{title}</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.files?.[0]?.name || "")} />{form[key] ? <small className="attachment-name">{String(form[key])}</small> : <small className="attachment-hint">付款时上传附件</small>}</label>;
-  const section = (title: string) => <div className="form-section-title"><i />{title}</div>;
+  const jumpToReviewPlanModule = (module: "payment" | "post" | "ads") => {
+    setReviewPlanModule(module);
+    const wrap = document.querySelector<HTMLElement>(".v31-modal .review-grouped-plan-table")?.closest<HTMLElement>(".v31-plan-wrap");
+    if (!wrap) return;
+    const maxScroll = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+    wrap.scrollTo({ left: module === "payment" ? 0 : module === "post" ? maxScroll * 0.72 : maxScroll, behavior: "smooth" });
+  };
+  const section = (title: string) => <div className="form-section-title"><i />{title}{!isPayment && title === "Post Plan" && <div className="review-plan-jump" aria-label={label("快速定位表格模块", "Jump to table module", language)}>{(["payment", "post", "ads"] as const).map(module => <button type="button" key={module} className={reviewPlanModule === module ? "active" : ""} onClick={() => jumpToReviewPlanModule(module)}>{module === "payment" ? "Payment Info" : module === "post" ? "Post Info" : "Ads Info"}</button>)}</div>}</div>;
   const updatePlan = (index: number, key: keyof PostPlan31, value: string) => setPlans(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value, ...(key === "eachPrice" ? { rate: rateFromPrice(value) } : {}) } : item));
   const togglePlanRow = (postNo: number) => setSelectedPlanRows(current => { const next = new Set(current); if (next.has(postNo)) next.delete(postNo); else next.add(postNo); return next; });
   const toggleAllPlanRows = () => setSelectedPlanRows(current => current.size === plans.length ? new Set() : new Set(plans.map(item => item.postNo)));
@@ -596,38 +616,33 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose }:
   const save = (event: FormEvent) => {
     event.preventDefault();
     const linked = plans.find(item => item.postNo === selectedPlan) || plans[0];
-    const createsUnplannedReview = !isPayment && !row?.reviewNo;
+    const createsUnplannedReview = !isPayment && !reviewValue;
     const generatedReviewNo = `RID${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
     const singleReviewPlan = !isPayment && scheme === "A" ? { platform: String(form.reviewPlatform || ""), contentType: String(form.reviewContentType || ""), contentAngle: String(form.reviewContentAngle || ""), product: String(form.reviewProduct || ""), planningPostDate: String(form.reviewPlanningPost || ""), eachPrice: String(form.reviewEachPrice || ""), rate: String(form.reviewRate || ""), yellowCart: String(form.reviewYellowCart || ""), owning: String(form.reviewOwning || ""), sparkStatus: String(form.reviewSparkStatus || ""), boostCode: String(form.reviewBoostCode || "") } : linked;
-    onSave({ ...(row || {}), ...form, reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: isPayment ? plans : row?.postPlans, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || `RID${Date.now()}${item.postNo}`, creatorName: form.creatorName, owner: form.owner, brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, product: item.product, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, sparkStatus: item.sparkStatus, boostCode: item.boostCode, postStatus: "Pending", linkStatus: "Linked", postPlans: plans })) : undefined });
+    onSave({ ...(row || {}), ...form, ...(!isPayment ? { postId: linked.postId || "", postDate: linked.postDate || "", postLink: linked.postLink || "", postStatus: linked.postStatus || "Pending", sparkAdsStatus: linked.sparkAdsStatus || "None" } : {}), reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: isPayment ? plans : row?.postPlans, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || `RID${Date.now()}${item.postNo}`, creatorName: form.creatorName, owner: form.owner, brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, product: item.product, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, sparkStatus: item.sparkStatus, boostCode: item.boostCode, postStatus: "Pending", linkStatus: "Linked", postPlans: plans })) : undefined });
   };
 
   const renderPlanControl = (item: PostPlan31, index: number, key: keyof PostPlan31) => {
     const inheritedPaymentField = !isPayment && ["strategist", "platform", "planningPostDate", "eachPrice"].includes(String(key));
     if (!showEditablePlans || inheritedPaymentField || (isPaymentLocked && !item.createdAfterApproval)) return <span>{item[key] || "—"}</span>;
     if (isPaymentLocked && item.createdAfterApproval && key === "eachPrice") return <input className="plan-system-field" value="0" readOnly title={label("审批后新增计划单价固定为 0，不可编辑", "Post-approval plans have a fixed price of 0 and cannot be edited", language)} />;
-    if (["reviewId", "rate", "boostCode"].includes(String(key))) return <input className="plan-system-field" value={item[key]} readOnly placeholder={key === "reviewId" ? label("创建 Review 后自动生成", "Generated after Review is created", language) : label("系统自动带出", "Auto-filled", language)} title={key === "reviewId" ? label("Review 创建成功后生成并回写，不可编辑", "Generated and written back after Review creation; read-only", language) : label("系统字段，不可编辑", "System field; read-only", language)} />;
+    if (["reviewId", "rate"].includes(String(key)) || (isPayment && key === "boostCode")) return <input className="plan-system-field" value={item[key]} readOnly placeholder={key === "reviewId" ? label("创建 Review 后自动生成", "Generated after Review is created", language) : label("系统自动带出", "Auto-filled", language)} title={key === "reviewId" ? label("Review 创建成功后生成并回写，不可编辑", "Generated and written back after Review creation; read-only", language) : label("系统字段，不可编辑", "System field; read-only", language)} />;
     const options = planOptions[key];
     if (options) return <select required={["strategist", "platform"].includes(String(key))} value={String(item[key])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{options.map(option => <option key={option}>{option}</option>)}</select>;
     return <input required={key === "planningPostDate" || key === "eachPrice"} type={key === "planningPostDate" ? "date" : key === "eachPrice" ? "number" : "text"} min={key === "eachPrice" ? 0 : undefined} value={item[key]} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)} />;
   };
-  const planTable = <div className="plan-table-wrap v31-plan-wrap"><table className="plan-table v31-plan-table"><thead><tr>{isPayment && <th className="plan-check-cell"><input type="checkbox" aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>}{!isPayment && scheme === "C" && <th /> }<th>No.</th><th>Review ID</th><th>KOL Strategist *</th><th>Platform *</th><th>Planning Post *</th><th>Each Price *</th><th>Content Type</th><th>Content Angles</th><th>Rate</th><th>Product</th><th>YC</th><th>Boost Code</th><th>Owning</th></tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo} className={selectedPlan === item.postNo ? "selected-plan" : ""}>{isPayment && <td className="plan-check-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} Post No. ${item.postNo}`} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>}{!isPayment && scheme === "C" && <td><input type="radio" disabled={!reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}<td><b>{item.postNo}</b></td>{(["reviewId","strategist","platform","planningPostDate","eachPrice","contentType","contentAngle","rate","product","yellowCart","boostCode","owning"] as const).map(key => <td key={key}>{renderPlanControl(item, index, key)}</td>)}</tr>)}</tbody></table></div>;
-  const reviewSectionedPlan = !isPayment && paymentValue ? <>
-    {section("Payment")}
-    <div className="v11-grid review-payment-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name", "text", true)}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist", "text", true)}{field("supervisor", "Supervisor", "text", true)}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input value={plans.length} readOnly /></label>{field("unitPrice", "Each Price", "number", true)}<label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label></div>
-    {planTable}
-    {section("Post")}
-    <div className="v11-grid review-post-grid">{field("postId", "Post ID")}{field("postLink", "Post Link")}{field("postDate", "Post Date", "date")}</div>
-    {section("Ads")}
-    <div className="v11-grid review-ads-grid">{field("sparkCode", "Spark Code")}{field("boostCode", "Boost Code")}{field("expiredDate", "Expired Date", "date")}{choice("sparkAdsStatus", "Spark Ads Status", ["None", "Active", "Expired", "Code Deleted"])}</div>
-  </> : null;
-  const postPlanSection = <>{section("Post Plan")}<div className="post-plan-title"><div><strong>{label("付款内发布计划", "Payment Post Plan", language)}</strong><span>{label(`已选择 ${selectedPlanRows.size} 行；支持新增、复制和批量修改，不提供删除`, `${selectedPlanRows.size} selected; add, copy and batch edit are available; deletion is disabled`, language)}</span></div><div className="v31-plan-actions"><button type="button" className="button secondary" disabled={selectedPlanRows.size === 0 || isPaymentLocked} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button><button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div></div>{planTable}</>;
+  const reviewInlineControl = (item: PostPlan31, index: number, key: "postId" | "postDate" | "postLink" | "postStatus" | "sparkAdsStatus") => {
+    const options = key === "postStatus" ? ["Pending", "Published", "Video Removed"] : key === "sparkAdsStatus" ? ["None", "Active", "Expired", "Code Deleted"] : null;
+    if (options) return <select value={String(item[key] || options[0])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => { setSelectedPlan(item.postNo); updatePlan(index, key, event.target.value); }}>{options.map(option => <option key={option}>{option}</option>)}</select>;
+    return <input type={key === "postDate" ? "date" : "text"} value={String(item[key] || "")} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => { setSelectedPlan(item.postNo); updatePlan(index, key, event.target.value); }} />;
+  };
+  const planTable = <div className="plan-table-wrap v31-plan-wrap"><table className={`plan-table v31-plan-table ${!isPayment ? "review-grouped-plan-table" : ""}`}><thead>{!isPayment && <tr className="plan-module-head"><th colSpan={14}>Payment Info</th><th colSpan={3}>Post Info</th><th colSpan={2}>Ads Info</th></tr>}<tr>{isPayment && <th className="plan-check-cell"><input type="checkbox" aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>}{!isPayment && scheme === "C" && <th /> }<th>No.</th><th>Review ID</th><th>KOL Strategist *</th><th>Platform *</th><th>Planning Post *</th><th>Each Price *</th><th>Content Type</th><th>Content Angles</th><th>Rate</th><th>Product</th><th>YC</th><th>Boost Code</th><th>Owning</th>{!isPayment && <><th>Post ID</th><th>Post Date</th><th>Post Link</th><th>Review Status</th><th>Spark Ads Status</th></>}</tr></thead><tbody>{plans.map((item, index) => <tr key={item.postNo} className={selectedPlan === item.postNo ? "selected-plan" : ""}>{isPayment && <td className="plan-check-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} Post No. ${item.postNo}`} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>}{!isPayment && scheme === "C" && <td><input type="radio" disabled={!reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}<td><b>{item.postNo}</b></td>{(["reviewId","strategist","platform","planningPostDate","eachPrice","contentType","contentAngle","rate","product","yellowCart","boostCode","owning"] as const).map(key => <td key={key}>{renderPlanControl(item, index, key)}</td>)}{!isPayment && <>{(["postId","postDate","postLink","postStatus","sparkAdsStatus"] as const).map(key => <td key={key}>{reviewInlineControl(item, index, key)}</td>)}</>}</tr>)}</tbody></table></div>;
+  const postPlanSection = <>{section("Post Plan")}{isPayment && <div className="post-plan-title"><div><strong>{label("付款内发布计划", "Payment Post Plan", language)}</strong></div><div className="v31-plan-actions"><button type="button" className="button secondary" disabled={selectedPlanRows.size === 0 || isPaymentLocked} onClick={openBatchPlanEdit}><Edit3 size={14}/>{label("批量修改", "Batch Edit", language)}</button><button type="button" className="button primary" onClick={addPlan}><Plus size={14}/>{label("新增", "Add", language)}</button><button type="button" className="button ghost" onClick={copyPlan}><ClipboardList size={14}/>{label("复制", "Copy", language)}</button></div></div>}{!isPayment && !paymentValue ? <div className="review-plan-locked"><LockKeyholeOpen size={18}/><b>{label("请先选择 Creator，再选择关联的 Payment", "Select a Creator, then the linked Payment", language)}</b></div> : planTable}</>;
 
-  return <><Modal title={<span className="review-dialog-heading"><b>{isPayment ? "Payment3.1" : "Review3.1-Add"}</b><strong>{String(isPayment ? form.paymentNo : (form.reviewNo || label("新建 Review", "New Review", language)))}</strong></span>} onClose={onClose} wide variant="v11-modal v31-modal">
-    <form onSubmit={save} className="v11-form v31-form"><div className="modal-scroll-area">
-      {section(label("基础信息", "Base Info", language))}{isPayment ? <div className="v11-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name")}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist")}{field("supervisor", "Supervisor")}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input type="number" min="0" value={plans.length} readOnly={isPaymentLocked} onChange={event => updateQuantity(event.target.value)} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" value={String(form.unitPrice || "")} readOnly={isPaymentLocked} onChange={event => updateBasePrice(event.target.value)} /></label><label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label><label className="form-field"><span>Expected Finish All Post Date</span><input value={planExpectedFinish} readOnly /></label></div> : <><div className="v11-grid review-link-grid"><label className="form-field"><span>Country</span><select required disabled={Boolean(paymentValue)} value={String(form.country || "")} onChange={event => set("country", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{["ID", "MY", "VN", "TH", "PH", "SG", "MX"].map(value => <option key={value}>{value}</option>)}</select></label><label className="form-field"><span>Creator Name *</span><input required readOnly={Boolean(paymentValue)} value={creatorValue} onChange={event => set("creatorName", event.target.value)} /></label><label className="form-field"><span>Payment ID *</span><select required disabled={!creatorValue} value={paymentValue} onChange={event => changeReviewPayment(event.target.value)}><option value="">{creatorValue ? label("请选择关联 Payment", "Select linked Payment", language) : label("请先填写 Creator", "Enter Creator first", language)}</option>{availablePayments.map(payment => <option key={payment}>{payment}</option>)}</select></label></div></>}
-      {!isPayment && reviewSectionedPlan}
-      {isPayment && postPlanSection}
+  return <><Modal title={<span className="review-dialog-heading"><b>{isPayment ? "Payment3.1" : form.reviewNo ? "Review3.1-Edit" : "Review3.1-Add"}</b>{(isPayment || form.reviewNo) && <strong>{String(isPayment ? form.paymentNo : form.reviewNo)}</strong>}</span>} onClose={onClose} wide variant="v11-modal v31-modal">
+    <form onSubmit={save} className={`v11-form v31-form ${!isPayment && row ? "review-edit-mode" : ""}`}><div className="modal-scroll-area">
+      {section(label("基础信息", "Base Info", language))}{isPayment ? <div className="v11-grid">{field("paymentNo", "Payment ID", "text", true)}{field("country", "Country", "text", true)}{field("creatorName", "Creator Name")}{field("brand", "Brand", "text", true)}{field("owner", "KOL Strategist")}{field("supervisor", "Supervisor")}{field("submitter", "Submitter", "text", true)}{field("department", "Initiator Department", "text", true)}<label className="form-field"><span>Quantity</span><input type="number" min="0" value={plans.length} readOnly={isPaymentLocked} onChange={event => updateQuantity(event.target.value)} /></label><label className="form-field"><span>Each Price</span><input type="number" min="0" value={String(form.unitPrice || "")} readOnly={isPaymentLocked} onChange={event => updateBasePrice(event.target.value)} /></label><label className="form-field"><span>Total Price</span><input value={planTotal} readOnly /></label><label className="form-field"><span>Expected Finish All Post Date</span><input value={planExpectedFinish} readOnly /></label></div> : <div className="v11-grid review-link-grid"><label className="form-field"><span>Country</span><select required value={String(form.country || "")} onChange={event => set("country", event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{["ID", "MY", "VN", "TH", "PH", "SG", "MX"].map(value => <option key={value}>{value}</option>)}</select></label><label className="form-field"><span>Creator Name *</span><select required value={creatorValue} onChange={event => changeReviewCreator(event.target.value)}><option value="">{label("请选择 Creator", "Select Creator", language)}</option>{availableCreators.map(creator => <option key={creator}>{creator}</option>)}</select></label><label className="form-field"><span>Payment ID *</span><select required disabled={!creatorValue} value={paymentValue} onChange={event => changeReviewPayment(event.target.value)}><option value="">{creatorValue ? label("请选择关联 Payment", "Select linked Payment", language) : label("请先选择 Creator", "Select Creator first", language)}</option>{availablePayments.map(payment => <option key={payment}>{payment}</option>)}</select></label><label className="form-field"><span>{label("Review ID（可选）", "Review ID (Optional)", language)}</span><select disabled={!paymentValue} value={reviewValue} onChange={event => changeReviewLink(event.target.value)}><option value="">{paymentValue ? label("不选择（保存时新建计划外 Review）", "None (create an unplanned Review on save)", language) : label("请先选择 Payment", "Select Payment first", language)}</option>{availableReviews.map(review => <option key={review}>{review}</option>)}</select></label><label className="form-field"><span>Brand</span><input value={String(form.brand || "")} readOnly /></label><label className="form-field"><span>KOL Strategist</span><input value={String(form.owner || "")} readOnly /></label><label className="form-field"><span>Submitter</span><input value={String(form.submitter || "")} readOnly /></label><label className="form-field"><span>Initiator Department</span><input value={String(form.department || "")} readOnly /></label></div>}
+      {postPlanSection}
       {isPayment && <>{section(label("财务信息", "Finance Info", language))}<div className="v11-grid">{choice("paymentBank", "Payment Bank", ["GST","GIA","Private"])}{field("bankName", "Bank Name")}{field("accountName", "Account Name")}{field("bankAccount", "Bank Account")}{field("idNumber", "ID (NPW/KTP)")}{field("idName", "ID Name")}{attachment("invoiceFile", "Invoice & ID File")}</div>{row && <>{section("Pay Info")}<div className="v11-grid">{choice("sendPayment", "Send Payment", ["No","Yes"])}{choice("invoiceChecked", "Invoice Checked", ["Pending","Approved","Rejected"])}{field("paymentDate", "Date of Payment", "date")}{attachment("paymentReceipt", "Payment Receipt")}{attachment("financeNote", "Finance Note")}</div>{section("Approvals")}<div className="v11-grid">{choice("supervisorApproval", "Supervisor", ["Pending","Approved","Rejected"])}{choice("ceoApproval", "CEO Approval", ["Pending","Approved","Rejected"])}</div></>}</>}
     </div><footer className="modal-footer"><button type="button" className="button ghost" onClick={onClose}>{label("取消", "Cancel", language)}</button><button className="button primary" type="submit"><Check size={14}/>{label("保存", "Save", language)}</button></footer></form>
   </Modal>{batchPlanEditOpen && <Modal title={label("批量修改 Post Plan", "Batch Edit Post Plan", language)} onClose={() => setBatchPlanEditOpen(false)} wide variant="v11-modal batch-plan-modal"><form onSubmit={event => { event.preventDefault(); applyBatchPlanEdit(); }}><div className="modal-scroll-area"><div className="batch-plan-note"><b>{label(`将修改已选择的 ${selectedPlanRows.size} 行`, `Editing ${selectedPlanRows.size} selected rows`, language)}</b><span>{label("留空或选择“不修改”将保留原值；Review ID、Rate、Boost Code 为系统字段。", "Blank or No change keeps the original value. Review ID, Rate and Boost Code are system fields.", language)}</span></div><div className="v11-grid batch-plan-grid">
@@ -1390,10 +1405,10 @@ function ProgressSummary({
       </div>
       <div className="summary-values">
         <div><b>{suffix}{compactNumber(actual)}</b><em>/ {suffix}{compactNumber(target)}</em><small>MTD / {label("月度目标", "Target", language)}</small></div>
-        <div><b>{suffix}{compactNumber(Math.max(target - actual, 0))}</b><small>{label("剩余", "Remaining", language)}</small></div>
+        <div><b>{suffix}{compactNumber(Math.max(target - actual, 0))}</b><small>GAP</small></div>
       </div>
       <div className="progress-track"><i style={{ width: `${Math.min(rate, 100)}%` }} /></div>
-      <div className="summary-foot"><span>MTD&nbsp; <b>{rate}%</b></span><span>{label("节奏差", "Pace", language)} <b>{pace > 0 ? "+" : ""}{pace}%</b></span></div>
+      <div className="summary-foot"><span>MTD / Pace&nbsp; <b>{rate}%</b></span><span>GAP <b>{pace > 0 ? "+" : ""}{pace}%</b></span></div>
     </article>
   );
 }
@@ -1414,9 +1429,11 @@ function TargetDashboard({
   version31?: boolean;
 }) {
   const [tab, setTab] = useState<DashboardDimension>("product");
+  const [postPlanTab, setPostPlanTab] = useState<DashboardDimension>("product");
   const [resultTab, setResultTab] = useState<DashboardDimension>("product");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
   const [expandedProgress, setExpandedProgress] = useState<Set<string>>(new Set());
+  const [expandedPostPlans, setExpandedPostPlans] = useState<Set<string>>(new Set());
   const [resultOpen, setResultOpen] = useState(true);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [videoPeriod, setVideoPeriod] = useState("MTD");
@@ -1452,6 +1469,10 @@ function TargetDashboard({
       postNo: plan.postNo || index + 1,
       eachPrice: plan.eachPrice ?? payment.unitPrice,
       planningPostDate: plan.planningPostDate || payment.expectedPostDate,
+      product: plan.product || payment.product || label("未分配产品", "Unassigned Product", language),
+      owner: payment.owner || label("未分配负责人", "Unassigned Strategist", language),
+      brand: payment.brand || label("未分配品牌", "Unassigned Brand", language),
+      tier: plan.rate || payment.rate || label("未分级", "Unrated", language),
     }));
   });
   const publishedPlanKeys = new Set(reviewRows.filter((review) => String(review.postStatus || "") === "Published" || Boolean(review.actualPostDate || review.postDate)).map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
@@ -1459,12 +1480,67 @@ function TargetDashboard({
   const today = new Date().toISOString().slice(0, 10);
   const delayedPaidPlans = paidPlanEntries.filter((plan) => Boolean(plan.planningPostDate) && String(plan.planningPostDate) < today && !publishedPlanKeys.has(`${plan.paymentNo}|${String(plan.postNo)}`));
   const postPlanSummary = {
+    targetCount: sourceRows.reduce((sum, row) => sum + numeric(row.qtyTarget || row.qty), 0),
+    targetAmount: sourceRows.reduce((sum, row) => sum + numeric(row.budgetTarget), 0),
     paidCount: paidPlanEntries.length,
     paidAmount: paidPlanEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
     publishedCount: publishedPaidPlans.length,
     publishedAmount: publishedPaidPlans.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
     delayedCount: delayedPaidPlans.length,
     delayedAmount: delayedPaidPlans.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+  };
+  const buildPaidPlanBreakdowns = (dimension: DashboardDimension): DashboardBreakdown[] => {
+    const groups = new Map<string, DashboardBreakdown>();
+    sourceRows.forEach((target) => {
+      const name = dimension === "product"
+        ? String(target.product || label("未分配产品", "Unassigned Product", language))
+        : dimension === "tier"
+          ? String(target.rate || target.tier || label("未分级", "Unrated", language))
+          : dimension === "strategist"
+            ? String(target.owner || label("未分配负责人", "Unassigned Strategist", language))
+            : String(target.brand || label("未分配品牌", "Unassigned Brand", language));
+      const current = groups.get(name) || { name, sub: dimension === "product" ? `${String(target.brand || "")} · ${String(target.owner || "")}` : label("Target 页面", "Target page", language), postMtd: 0, postTarget: 0, budgetMtd: 0, budgetTarget: 0 };
+      current.postTarget += numeric(target.qtyTarget || target.qty);
+      current.budgetTarget += numeric(target.budgetTarget);
+      groups.set(name, current);
+    });
+    paidPlanEntries.forEach((plan) => {
+      const name = dimension === "product"
+        ? String(plan.product)
+        : dimension === "tier"
+          ? String(plan.tier)
+          : dimension === "strategist"
+            ? String(plan.owner)
+            : String(plan.brand);
+      const current = groups.get(name) || {
+        name,
+        sub: dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("已付款 Post Plan", "Paid Post Plan", language),
+        postMtd: 0,
+        postTarget: 0,
+        budgetMtd: 0,
+        budgetTarget: 0,
+      };
+      current.postMtd += 1;
+      current.budgetMtd += numeric(plan.eachPrice);
+      groups.set(name, current);
+    });
+    return Array.from(groups.values());
+  };
+  const paidRowsByDimension: Record<DashboardDimension, DashboardBreakdown[]> = {
+    product: buildPaidPlanBreakdowns("product"),
+    tier: buildPaidPlanBreakdowns("tier"),
+    strategist: buildPaidPlanBreakdowns("strategist"),
+    brand: buildPaidPlanBreakdowns("brand"),
+  };
+  const paidPlanRows = paidRowsByDimension[postPlanTab];
+  const paidPlanChildrenFor = (dimension: DashboardDimension, row: DashboardBreakdown) => {
+    if (dimension === "product") {
+      return buildPaidPlanBreakdowns("tier").filter((child) => child.postTarget > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.targetCount, 1)));
+    }
+    const productPlans = paidRowsByDimension.product;
+    if (dimension === "brand") return productPlans.filter((product) => product.sub.includes(row.name));
+    if (dimension === "strategist") return productPlans.filter((product) => product.sub.includes(row.name));
+    return productPlans.map((product) => scaleBreakdown(row, product.name, row.name, product.postTarget / Math.max(postPlanSummary.targetCount, 1)));
   };
   const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
     name: String(row.product || "Product"),
@@ -1622,6 +1698,12 @@ function TargetDashboard({
     const views = items.reduce((sum, record) => sum + record.views, 0);
     return { name, items, cost, gmv, views, roi: gmv / Math.max(cost, 1), cpm: (cost / Math.max(views, 1)) * 1000 };
   });
+  const summarizeVideoItems = (items: typeof videoRecords) => {
+    const cost = items.reduce((sum, record) => sum + record.cost, 0);
+    const gmv = items.reduce((sum, record) => sum + record.gmv, 0);
+    const views = items.reduce((sum, record) => sum + record.views, 0);
+    return { cost, gmv, views, roi: gmv / Math.max(cost, 1), cpm: (cost / Math.max(views, 1)) * 1000 };
+  };
   const videoGroupHeading = videoTab === "tier"
     ? label("达人等级", "Creator Tier", language)
     : videoTab === "content"
@@ -1650,18 +1732,41 @@ function TargetDashboard({
         </div>
       </section>
 
-      {version31 && <section className="panel post-plan-summary-panel">
-        <div className="section-caption"><span />{label("已付款 Post Plan", "Paid Post Plan", language)}<small>{label("计划数据来自已付款 Payment；执行数据来自 Review", "Plan data comes from paid Payments; execution data comes from Reviews", language)}</small></div>
-        <div className="post-plan-summary-grid">
-          {[
-            ["已付款计划", "Paid Plans", postPlanSummary.paidCount, postPlanSummary.paidAmount],
-            ["已发布", "Published", postPlanSummary.publishedCount, postPlanSummary.publishedAmount],
-            ["延期", "Delayed", postPlanSummary.delayedCount, postPlanSummary.delayedAmount],
-          ].map(([zh, en, count, amount]) => <article className="post-plan-summary-card" key={String(en)}><span>{label(String(zh), String(en), language)}</span><strong>{count}</strong><small>IDR {compactNumber(Number(amount))}</small></article>)}
-        </div>
-      </section>}
+      {version31 && <div className="dashboard-section-row reference-dashboard-grid single-dashboard-column post-plan-dashboard-grid">
+        <section className="panel progress-panel post-plan-summary-panel">
+          <div className="section-caption"><span />Post Plan</div>
+          <div className="progress-pair">
+            <ProgressSummary title="Payment Qty" actual={postPlanSummary.paidCount} target={postPlanSummary.targetCount} tone="green" language={language} />
+            <ProgressSummary title="Payment Amount" actual={postPlanSummary.paidAmount} target={postPlanSummary.targetAmount} suffix="IDR " tone="amber" language={language} />
+          </div>
+          <div className="dashboard-tabs">
+            {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
+          </div>
+          <div className="data-table-wrap dashboard-table-wrap">
+            <table className="data-table dashboard-table">
+              <colgroup><col className="breakdown-col" /><col className="post-target-col" /><col className="post-remaining-col" /><col className="post-pace-col" /><col className="budget-target-col" /><col className="budget-remaining-col" /><col className="budget-pace-col" /></colgroup>
+              <thead><tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Payment Qty</th><th colSpan={3}>Payment Amount</th></tr><tr><th>MTD / Target</th><th>GAP</th><th>MTD / Pace</th><th>MTD / Target</th><th>GAP</th><th>MTD / Pace</th></tr></thead>
+              <tbody>{paidPlanRows.map((row) => {
+                const postRate = percent(row.postMtd, row.postTarget);
+                const budgetRate = percent(row.budgetMtd, row.budgetTarget);
+                const rowKey = `paid-${postPlanTab}-${row.name}`;
+                const isOpen = expandedPostPlans.has(rowKey);
+                const children = paidPlanChildrenFor(postPlanTab, row);
+                return <Fragment key={rowKey}>
+                  <tr className="dashboard-parent-row"><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><td><b>{row.postMtd}/{row.postTarget}</b></td><td>{Math.max(row.postTarget - row.postMtd, 0)}</td><td><div className="dashboard-rate"><span><b>{postRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td><td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td><td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td><td><div className="dashboard-rate"><span><b>{budgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td></tr>
+                  {isOpen && children.map((child) => {
+                    const childPostRate = percent(child.postMtd, child.postTarget);
+                    const childBudgetRate = percent(child.budgetMtd, child.budgetTarget);
+                    return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}><td><strong>{child.name}</strong></td><td><b>{child.postMtd}/{child.postTarget}</b></td><td>{Math.max(child.postTarget - child.postMtd, 0)}</td><td><div className="dashboard-rate"><span><b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td><td><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b></td><td>IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</td><td><div className="dashboard-rate"><span><b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></td></tr>;
+                  })}
+                </Fragment>;
+              })}</tbody>
+            </table>
+          </div>
+        </section>
+      </div>}
 
-      <div className="dashboard-section-row reference-dashboard-grid">
+      <div className="dashboard-section-row reference-dashboard-grid single-dashboard-column">
         <section className="panel progress-panel">
           <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
@@ -1766,7 +1871,7 @@ function TargetDashboard({
               return <article className="breakdown-result-card" key={resultKey}>
                 <header><h4>{row.name}</h4><button onClick={() => setExpandedResults((current) => { const next = new Set(current); next.has(resultKey) ? next.delete(resultKey) : next.add(resultKey); return next; })}>{isExpanded ? label("收起", "Collapse", language) : label("展开", "Expand", language)}<ChevronDown size={14} className={isExpanded ? "rotate" : ""} /></button></header>
                 <div className="breakdown-metrics">{breakdownMetrics(row).map((metric) => <div className={`breakdown-metric ${metricTone(metric.rate)}`} key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div>
-                {isExpanded && <div className="result-child-list">{childrenFor(resultTab, row).map((child) => <div className="result-child-row" key={`${resultKey}-${child.name}`}><div><strong>{child.name}</strong><small>{child.sub}</small></div>{breakdownMetrics(child).map((metric) => <span key={metric.name}><small>{metric.name}</small><b>{metric.value}</b></span>)}</div>)}</div>}
+                {isExpanded && <div className="result-child-list">{childrenFor(resultTab, row).map((child) => <article className="result-child-card" key={`${resultKey}-${child.name}`}><header><ChevronRight size={14} /><div><strong>{child.name}</strong><small>{child.sub}</small></div></header><div className="breakdown-metrics child-breakdown-metrics">{breakdownMetrics(child).map((metric) => <div className={`breakdown-metric ${metricTone(metric.rate)}`} key={metric.name}><small>{metric.name}</small><strong>{metric.value}</strong><span>Target {metric.target}</span><div><b>{metric.rate}%</b><div className="micro-progress"><i style={{ width: `${Math.min(metric.rate, 100)}%` }} /></div></div></div>)}</div></article>)}</div>}
               </article>;
             })}</div>
           </div>
@@ -1796,7 +1901,22 @@ function TargetDashboard({
                     <td><button className="video-group-toggle" aria-label={label(`展开 ${group.name}`, `Expand ${group.name}`, language)} aria-expanded={isExpanded} onClick={() => setExpandedVideoGroups((current) => { const next = new Set(current); next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey); return next; })}><ChevronRight size={14} className={isExpanded ? "rotate-90" : ""} /></button></td>
                     <td><strong>{group.name}</strong></td><td>{compactNumber(group.cost)}</td><td>{compactNumber(group.gmv)}</td><td>{group.roi.toFixed(2)}</td><td>{compactNumber(group.views)}</td><td>{compactNumber(group.cpm)}</td>
                   </tr>
-                  {isExpanded && <tr className="video-group-detail-row"><td colSpan={7}><div className="video-group-detail"><table className="data-table video-publishing-table"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead><tbody>{renderVideoDetailRows(group.items)}</tbody></table></div></td></tr>}
+                  {isExpanded && <tr className="video-group-detail-row"><td colSpan={7}><div className="video-group-detail">
+                    {videoTab === "product" ? <table className="data-table video-group-table video-tier-table">
+                      <colgroup><col /><col /><col /><col /><col /><col /><col /></colgroup>
+                      <thead><tr><th aria-label={label("展开", "Expand", language)} /><th>{label("达人等级", "Creator Tier", language)}</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead>
+                      <tbody>{Array.from(new Set(group.items.map((record) => record.tier))).map((tier) => {
+                        const tierItems = group.items.filter((record) => record.tier === tier);
+                        const tierMetrics = summarizeVideoItems(tierItems);
+                        const tierKey = `${groupKey}:tier:${tier}`;
+                        const tierExpanded = expandedVideoGroups.has(tierKey);
+                        return <Fragment key={tierKey}>
+                          <tr className="video-group-row video-tier-row"><td><button className="video-group-toggle" aria-label={label(`展开 ${tier}`, `Expand ${tier}`, language)} aria-expanded={tierExpanded} onClick={() => setExpandedVideoGroups((current) => { const next = new Set(current); next.has(tierKey) ? next.delete(tierKey) : next.add(tierKey); return next; })}><ChevronRight size={14} className={tierExpanded ? "rotate-90" : ""} /></button></td><td><strong>{tier}</strong></td><td>{compactNumber(tierMetrics.cost)}</td><td>{compactNumber(tierMetrics.gmv)}</td><td>{tierMetrics.roi.toFixed(2)}</td><td>{compactNumber(tierMetrics.views)}</td><td>{compactNumber(tierMetrics.cpm)}</td></tr>
+                          {tierExpanded && <tr className="video-tier-detail-row"><td colSpan={7}><div className="video-tier-detail"><table className="data-table video-publishing-table"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead><tbody>{renderVideoDetailRows(tierItems)}</tbody></table></div></td></tr>}
+                        </Fragment>;
+                      })}</tbody>
+                    </table> : <table className="data-table video-publishing-table"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead><tbody>{renderVideoDetailRows(group.items)}</tbody></table>}
+                  </div></td></tr>}
                 </Fragment>;
               })}</tbody>
             </table>}

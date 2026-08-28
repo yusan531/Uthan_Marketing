@@ -363,8 +363,8 @@ pageConfigs.reviews11 = {
   ],
 };
 
-const review31Columns = [column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("postNo", "Post No.", "Post No."), column("creatorName", "达人", "Creator"), column("platform", "平台", "Platform"), column("contentType", "内容类型", "Content Type"), column("contentAngle", "内容角度", "Content Angles"), column("product", "产品", "Product"), column("planningPostDate", "计划发布日期", "Planning Post"), column("postId", "Post ID", "Post ID"), column("postStatus", "Review 状态", "Review Status")];
-const review31Filters = [country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), text("postNo", "Post No.", "Post No."), text("creatorName", "达人", "Creator"), brand(), select("postStatus", "Review 状态", "Review Status", statusOptions)];
+const review31Columns = [column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("creatorName", "达人", "Creator"), column("platform", "平台", "Platform"), column("contentType", "内容类型", "Content Type"), column("contentAngle", "内容角度", "Content Angles"), column("product", "产品", "Product"), column("planningPostDate", "计划发布日期", "Planning Post"), column("postId", "Post ID", "Post ID"), column("postStatus", "Review 状态", "Review Status")];
+const review31Filters = [country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), text("creatorName", "达人", "Creator"), brand(), select("postStatus", "Review 状态", "Review Status", statusOptions)];
 const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   const number = 31 + index;
   const paymentNo = `PID20260826${String(number).padStart(6, "0")}`;

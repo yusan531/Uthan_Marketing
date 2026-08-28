@@ -1677,6 +1677,12 @@ function TargetDashboard({
     const views = items.reduce((sum, record) => sum + record.views, 0);
     return { name, items, cost, gmv, views, roi: gmv / Math.max(cost, 1), cpm: (cost / Math.max(views, 1)) * 1000 };
   });
+  const summarizeVideoItems = (items: typeof videoRecords) => {
+    const cost = items.reduce((sum, record) => sum + record.cost, 0);
+    const gmv = items.reduce((sum, record) => sum + record.gmv, 0);
+    const views = items.reduce((sum, record) => sum + record.views, 0);
+    return { cost, gmv, views, roi: gmv / Math.max(cost, 1), cpm: (cost / Math.max(views, 1)) * 1000 };
+  };
   const videoGroupHeading = videoTab === "tier"
     ? label("达人等级", "Creator Tier", language)
     : videoTab === "content"
@@ -1874,7 +1880,22 @@ function TargetDashboard({
                     <td><button className="video-group-toggle" aria-label={label(`展开 ${group.name}`, `Expand ${group.name}`, language)} aria-expanded={isExpanded} onClick={() => setExpandedVideoGroups((current) => { const next = new Set(current); next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey); return next; })}><ChevronRight size={14} className={isExpanded ? "rotate-90" : ""} /></button></td>
                     <td><strong>{group.name}</strong></td><td>{compactNumber(group.cost)}</td><td>{compactNumber(group.gmv)}</td><td>{group.roi.toFixed(2)}</td><td>{compactNumber(group.views)}</td><td>{compactNumber(group.cpm)}</td>
                   </tr>
-                  {isExpanded && <tr className="video-group-detail-row"><td colSpan={7}><div className="video-group-detail"><table className="data-table video-publishing-table"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead><tbody>{renderVideoDetailRows(group.items)}</tbody></table></div></td></tr>}
+                  {isExpanded && <tr className="video-group-detail-row"><td colSpan={7}><div className="video-group-detail">
+                    {videoTab === "product" ? <table className="data-table video-group-table video-tier-table">
+                      <colgroup><col /><col /><col /><col /><col /><col /><col /></colgroup>
+                      <thead><tr><th aria-label={label("展开", "Expand", language)} /><th>{label("达人等级", "Creator Tier", language)}</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead>
+                      <tbody>{Array.from(new Set(group.items.map((record) => record.tier))).map((tier) => {
+                        const tierItems = group.items.filter((record) => record.tier === tier);
+                        const tierMetrics = summarizeVideoItems(tierItems);
+                        const tierKey = `${groupKey}:tier:${tier}`;
+                        const tierExpanded = expandedVideoGroups.has(tierKey);
+                        return <Fragment key={tierKey}>
+                          <tr className="video-group-row video-tier-row"><td><button className="video-group-toggle" aria-label={label(`展开 ${tier}`, `Expand ${tier}`, language)} aria-expanded={tierExpanded} onClick={() => setExpandedVideoGroups((current) => { const next = new Set(current); next.has(tierKey) ? next.delete(tierKey) : next.add(tierKey); return next; })}><ChevronRight size={14} className={tierExpanded ? "rotate-90" : ""} /></button></td><td><strong>{tier}</strong></td><td>{compactNumber(tierMetrics.cost)}</td><td>{compactNumber(tierMetrics.gmv)}</td><td>{tierMetrics.roi.toFixed(2)}</td><td>{compactNumber(tierMetrics.views)}</td><td>{compactNumber(tierMetrics.cpm)}</td></tr>
+                          {tierExpanded && <tr className="video-tier-detail-row"><td colSpan={7}><div className="video-tier-detail"><table className="data-table video-publishing-table"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead><tbody>{renderVideoDetailRows(tierItems)}</tbody></table></div></td></tr>}
+                        </Fragment>;
+                      })}</tbody>
+                    </table> : <table className="data-table video-publishing-table"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>Video ID</th><th>{label("达人名称", "Creator Name", language)}</th><th>{label("产品名称", "Product Name", language)}</th><th>Content</th><th>Post Date</th><th>Video Cost</th><th>GMV</th><th>ROI</th><th>VV</th><th>CPM</th></tr></thead><tbody>{renderVideoDetailRows(group.items)}</tbody></table>}
+                  </div></td></tr>}
                 </Fragment>;
               })}</tbody>
             </table>}

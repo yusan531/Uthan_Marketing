@@ -2841,6 +2841,12 @@ thead .operation-column {
 .v31-plan-actions { display: flex; gap: 8px; }
 .v31-plan-wrap { max-height: 310px; }
 .v31-plan-table { min-width: 1420px; }
+.review-grouped-plan-table { min-width: 1960px; }
+.review-grouped-plan-table .plan-module-head th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; color: var(--primary); text-align: left; background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border-bottom: 1px solid var(--line); }
+.review-grouped-plan-table .plan-module-head + tr th { top: 34px; }
+.review-grouped-plan-table th:nth-last-child(5), .review-grouped-plan-table td:nth-last-child(5),
+.review-grouped-plan-table th:nth-last-child(2), .review-grouped-plan-table td:nth-last-child(2) { border-left: 2px solid var(--primary); }
+.review-grouped-plan-table td:nth-last-child(3) input { min-width: 220px; }
 .v31-plan-table th { position: sticky; top: 0; z-index: 1; }
 .v31-plan-table tr.selected-plan td { background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
 .v31-plan-table td > span { display: block; min-width: 88px; padding: 7px 5px; white-space: nowrap; }

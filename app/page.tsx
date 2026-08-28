@@ -492,6 +492,7 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose }:
   const [batchPlanEditOpen, setBatchPlanEditOpen] = useState(false);
   const [batchPlanValues, setBatchPlanValues] = useState<Record<BatchPlanKey, string>>(emptyBatchPlan);
   const [batchPlanTouched, setBatchPlanTouched] = useState<Set<BatchPlanKey>>(new Set());
+  const [reviewPlanModule, setReviewPlanModule] = useState<"payment" | "post" | "ads">("payment");
   const selected = plans.find(item => item.postNo === selectedPlan) || plans[0];
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || (isPayment ? "ID" : ""), creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || "350000", notes: row?.notes || "",
@@ -551,7 +552,14 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose }:
   const field = (key: string, title: string, type = "text", readOnly = false) => <label className="form-field"><span>{title}</span><input type={type} value={String(form[key] ?? "")} readOnly={readOnly || isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)} /></label>;
   const choice = (key: string, title: string, options: string[]) => <label className="form-field"><span>{title}</span><select value={String(form[key] ?? "")} disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.value)}>{options.map(option => <option key={option}>{option}</option>)}</select></label>;
   const attachment = (key: string, title: string) => <label className="form-field"><span>{title}</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" disabled={isPaymentLocked || isFinanceFieldLocked(key)} onChange={event => set(key, event.target.files?.[0]?.name || "")} />{form[key] ? <small className="attachment-name">{String(form[key])}</small> : <small className="attachment-hint">付款时上传附件</small>}</label>;
-  const section = (title: string) => <div className="form-section-title"><i />{title}</div>;
+  const jumpToReviewPlanModule = (module: "payment" | "post" | "ads") => {
+    setReviewPlanModule(module);
+    const wrap = document.querySelector<HTMLElement>(".v31-modal .review-grouped-plan-table")?.closest<HTMLElement>(".v31-plan-wrap");
+    if (!wrap) return;
+    const maxScroll = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+    wrap.scrollTo({ left: module === "payment" ? 0 : module === "post" ? maxScroll * 0.72 : maxScroll, behavior: "smooth" });
+  };
+  const section = (title: string) => <div className="form-section-title"><i />{title}{!isPayment && title === "Post Plan" && <div className="review-plan-jump" aria-label={label("快速定位表格模块", "Jump to table module", language)}>{(["payment", "post", "ads"] as const).map(module => <button type="button" key={module} className={reviewPlanModule === module ? "active" : ""} onClick={() => jumpToReviewPlanModule(module)}>{module === "payment" ? "Payment Info" : module === "post" ? "Post Info" : "Ads Info"}</button>)}</div>}</div>;
   const updatePlan = (index: number, key: keyof PostPlan31, value: string) => setPlans(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value, ...(key === "eachPrice" ? { rate: rateFromPrice(value) } : {}) } : item));
   const togglePlanRow = (postNo: number) => setSelectedPlanRows(current => { const next = new Set(current); if (next.has(postNo)) next.delete(postNo); else next.add(postNo); return next; });
   const toggleAllPlanRows = () => setSelectedPlanRows(current => current.size === plans.length ? new Set() : new Set(plans.map(item => item.postNo)));

@@ -2694,9 +2694,9 @@ thead .operation-column {
   min-height: 82px;
   padding: 14px 10px;
   border: 1px solid var(--line);
-  border-top: 3px solid var(--dashboard-primary);
-  border-radius: 9px;
+  border-radius: 6px;
   background: var(--surface);
+  box-shadow: none;
 }
 
 .target-dashboard .video-kpi-strip > div:first-child {

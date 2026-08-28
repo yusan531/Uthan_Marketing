@@ -29,6 +29,7 @@
 /* Creator CRM / SRM workspace */
 .creator-workspace { gap: 12px; }
 .creator-workspace-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 2px 2px 4px; }
+.creator-header-actions-only { justify-content: flex-end; }
 .creator-workspace-header h1 { margin: 5px 0 4px; font-size: 22px; letter-spacing: -0.4px; }
 .creator-workspace-header p { margin: 0; color: var(--muted); font-size: 11px; }
 .creator-header-actions { display: flex; gap: 8px; }

@@ -2224,29 +2224,46 @@ export default function MarketingSystem() {
       const payments = current.payment31;
       if (!payments?.length) return current;
       const specialists = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"];
-      const nextPayments = payments.map((payment, index) => ({
-        ...payment,
-        createdAt: payment.createdAt || `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
-        kolSpecialist: payment.kolSpecialist || specialists[index % specialists.length],
-        invoiceVerified: payment.invoiceVerified || payment.invoiceChecked || "Pending",
-        financeNotes: payment.financeNotes || payment.financeNote || "",
-        process: payment.process || (String(payment.sendPayment || "") === "Yes" || Boolean(payment.paymentDate) ? "Paid" : "Planning"),
-        paymentBank: payment.paymentBank || "GST",
-        source: payment.source || "Manual",
-        picIsMe: payment.picIsMe ?? String(payment.owner || "") === "Ajeng Salma Nadhifa Fitriani",
-        supervisorIsMe: payment.supervisorIsMe ?? String(payment.supervisor || "") === "Desy Chintya",
-      }));
-      const changed = nextPayments.some((payment, index) => (
-        payment.createdAt !== payments[index].createdAt ||
-        payment.kolSpecialist !== payments[index].kolSpecialist ||
-        payment.invoiceVerified !== payments[index].invoiceVerified ||
-        payment.financeNotes !== payments[index].financeNotes ||
-        payment.process !== payments[index].process ||
-        payment.paymentBank !== payments[index].paymentBank ||
-        payment.source !== payments[index].source ||
-        payment.picIsMe !== payments[index].picIsMe ||
-        payment.supervisorIsMe !== payments[index].supervisorIsMe
-      ));
+      const nextPayments = payments.map((payment, index) => {
+        const paid = String(payment.sendPayment || payment.paid || "") === "Yes" || Boolean(payment.paymentDate);
+        return {
+          ...payment,
+          createdAt: payment.createdAt || `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
+          kolSpecialist: payment.kolSpecialist || specialists[index % specialists.length],
+          supervisor: payment.supervisor || "Desy Chintya",
+          department: payment.department || "Marketing ID",
+          followersK: payment.followersK || 42.5 + index * 18.4,
+          ownContent: payment.ownContent || "No",
+          platform: payment.platform || ["TikTok", "Instagram", "YouTube"][index % 3],
+          contentType: payment.contentType || ["Vlog", "TTS", "Photoslide", "Livetalk"][index % 4],
+          rateTier: payment.rateTier || ["A", "B", "S", "C"][index % 4],
+          gracePeriod: payment.gracePeriod || 15,
+          actualPostDate: payment.actualPostDate || (paid ? `2026-08-${String(12 + index).padStart(2, "0")}` : ""),
+          qtyMismatch: payment.qtyMismatch || "No",
+          progress: payment.progress || (paid ? "Published" : "Planning"),
+          notes: payment.notes ?? "",
+          paymentBank: payment.paymentBank || "GST",
+          bankName: payment.bankName || ["Seabank", "BCA", "BRI"][index % 3],
+          accountName: payment.accountName || `${String(payment.creatorName || "Creator")} Creator`,
+          bankAccount: payment.bankAccount || `901804750${String(996 + index).padStart(3, "0")}`,
+          idNumber: payment.idNumber || `6305044607080${String(8000 + index).padStart(4, "0")}`,
+          idName: payment.idName || payment.creatorName || "Creator",
+          invoiceFiles: payment.invoiceFiles || (index % 2 === 0 ? "PDF" : "-"),
+          paid: payment.paid || (paid ? "Yes" : "No"),
+          paymentProof: payment.paymentProof || (paid ? "PDF" : "-"),
+          agreement: payment.agreement || (index % 3 === 0 ? "PDF" : "-"),
+          negotiation: payment.negotiation || (index % 4 === 0 ? "PDF" : "-"),
+          invoiceVerified: payment.invoiceVerified || payment.invoiceChecked || "Pending",
+          financeNotes: payment.financeNotes || payment.financeNote || "",
+          process: payment.process || (paid ? "Paid" : "Planning"),
+          status: payment.status || (paid ? "In Progress" : "Pending"),
+          qtyConsistent: payment.qtyConsistent || "Yes",
+          source: payment.source || "Manual",
+          picIsMe: payment.picIsMe ?? String(payment.owner || "") === "Ajeng Salma Nadhifa Fitriani",
+          supervisorIsMe: payment.supervisorIsMe ?? String(payment.supervisor || "") === "Desy Chintya",
+        };
+      });
+      const changed = nextPayments.some((payment, index) => Object.keys(payment).some((key) => payment[key] !== payments[index][key]));
       return changed ? { ...current, payment31: nextPayments } : current;
     });
   }, [setRows]);

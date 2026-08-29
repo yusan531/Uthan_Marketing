@@ -363,8 +363,20 @@ pageConfigs.reviews11 = {
   ],
 };
 
-const review31Columns = [column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("creatorName", "达人", "Creator"), column("platform", "平台", "Platform"), column("contentType", "内容类型", "Content Type"), column("contentAngle", "内容角度", "Content Angles"), column("product", "产品", "Product"), column("planningPostDate", "计划发布日期", "Planning Post"), column("postId", "Post ID", "Post ID"), column("postStatus", "Review 状态", "Review Status")];
-const review31Filters = [country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), text("creatorName", "达人", "Creator"), brand(), select("postStatus", "Review 状态", "Review Status", statusOptions)];
+const review31Columns = [
+  column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("postId", "Post ID", "Post ID"),
+  column("actualPostDate", "Post Date", "Post Date"), column("postNo", "Post No.", "Post No."), column("createdAt", "Create Date", "Create Date"),
+  column("creatorName", "KOL Name", "KOL Name"), column("owner", "KOL Strategist", "KOL Strategist"), column("ownerDept", "Department", "Department"),
+  column("country", "国家", "Country"), column("brand", "品牌", "Brand"), column("product", "产品", "Product"), column("platform", "平台", "Platform"),
+  column("contentType", "内容类型", "Content Type"), column("contentAngle", "内容角度", "Content Angles"), column("planningPostDate", "计划发布日期", "Planning Post"),
+  column("eachPrice", "Each Price", "Each Price"), column("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status"), column("postStatus", "Review 状态", "Review Status"), column("postLink", "帖子链接", "Post Link"),
+];
+const review31Filters = [
+  country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), brand(), product(),
+  date("actualPostDate", "Post Date", "Post Date"), text("postId", "Post ID", "Post ID"), number("eachPrice", "Each Price", "Each Price"),
+  owner(), select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", [option("None"), option("Ready"), option("Notice"), option("Active"), option("Expired")]),
+  select("postStatus", "Review 状态", "Review Status", statusOptions), select("source", "来源", "Source", [option("GST"), option("Private")]),
+];
 const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   const number = 31 + index;
   const paymentNo = `PID20260826${String(number).padStart(6, "0")}`;
@@ -474,6 +486,14 @@ const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.p
     postId,
     postLink: postId ? `https://www.tiktok.com/@${payment.creatorName}/video/${postId}` : "",
     actualPostDate: published ? `2026-08-${String(12 + paymentIndex).padStart(2, "0")}` : "",
+    createdAt: payment.createdAt,
+    eachPrice: plan.eachPrice,
+    ranking: paymentIndex % 4 === 0 ? "Top" : "Normal",
+    targetTraffic: paymentIndex % 3 === 0 ? "No" : "Yes",
+    shouldCpm: paymentIndex % 2 === 0 ? "Yes" : "No",
+    picIsMe: payment.picIsMe,
+    sparkCodeNotice: paymentIndex % 5 === 0 ? "Yes" : "No",
+    sparkAdsStatus: published ? "Ready" : plan.sparkStatus === "Required" ? "Notice" : "None",
     postStatus: published ? "Published" : "Pending",
     linkStatus: "Linked",
     postPlans: payment.postPlans,

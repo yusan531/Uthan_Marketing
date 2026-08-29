@@ -920,6 +920,7 @@ function TablePage({
   notify: (message: string) => void;
 }) {
   const isPayment31 = config.key === "payment31";
+  const isReview31 = ["review31a", "review31b", "review31c"].includes(config.key);
   const initialFilterState = isPayment31 ? { country: "ID" } : {};
   const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>(initialFilterState);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>(initialFilterState);
@@ -933,6 +934,7 @@ function TablePage({
   const [batchBankOpen, setBatchBankOpen] = useState(false);
   const [batchBank, setBatchBank] = useState("GST");
   const [paymentQuickFilter, setPaymentQuickFilter] = useState("all");
+  const [reviewQuickFilter, setReviewQuickFilter] = useState("all");
   const [batchSupervisorStatus, setBatchSupervisorStatus] = useState("Approved");
   const [batchCeoStatus, setBatchCeoStatus] = useState("Pending");
   const [hiddenColumns, setHiddenColumns] = useStored<string[]>(`marketing-columns-${config.key}`, []);
@@ -943,6 +945,10 @@ function TablePage({
     ? [...baseColumns, { key: "productCostSplit", zh: "产品成本拆分", en: "Product Cost Split" }]
     : baseColumns;
   const columns = allColumns.filter((column) => !hiddenColumns.includes(column.key));
+  const reviewAnchorDate = rows.reduce((latest, row) => {
+    const date = String(row.actualPostDate || "");
+    return date > latest ? date : latest;
+  }, "");
   const filteredRows = useMemo(
     () => rows.filter((row) => {
       const matchesFilters = Object.entries(appliedFilters).every(([key, expected]) => {
@@ -959,14 +965,29 @@ function TablePage({
           .toLowerCase()
           .includes(String(expected).toLowerCase());
       });
-      if (!matchesFilters || !isPayment31) return matchesFilters;
-      if (paymentQuickFilter === "payment-empty") return !String(row.paymentDate || "");
-      if (paymentQuickFilter === "ceo-approval") return String(row.ceoApproval || "Pending") === "Pending";
-      if (paymentQuickFilter === "pic-me") return row.picIsMe === true || String(row.owner || "") === "Ajeng Salma Nadhifa Fitriani";
-      if (paymentQuickFilter === "supervisor-me") return row.supervisorIsMe === true || String(row.supervisor || "") === "Desy Chintya";
+      if (!matchesFilters || (!isPayment31 && !isReview31)) return matchesFilters;
+      if (isPayment31) {
+        if (paymentQuickFilter === "payment-empty") return !String(row.paymentDate || "");
+        if (paymentQuickFilter === "ceo-approval") return String(row.ceoApproval || "Pending") === "Pending";
+        if (paymentQuickFilter === "pic-me") return row.picIsMe === true || String(row.owner || "") === "Ajeng Salma Nadhifa Fitriani";
+        if (paymentQuickFilter === "supervisor-me") return row.supervisorIsMe === true || String(row.supervisor || "") === "Desy Chintya";
+        return true;
+      }
+      if (reviewQuickFilter === "ready-for-ads") return Boolean(row.postId) && ["Ready", "Active"].includes(String(row.sparkAdsStatus || ""));
+      if (reviewQuickFilter === "top-rank") return String(row.ranking || "") === "Top";
+      if (reviewQuickFilter === "not-traffic") return String(row.targetTraffic || "") === "No";
+      if (reviewQuickFilter === "should-cpm") return String(row.shouldCpm || "") === "Yes";
+      if (reviewQuickFilter === "pic-me") return row.picIsMe === true || String(row.owner || "") === "Ajeng Salma Nadhifa Fitriani";
+      if (reviewQuickFilter === "spark-notice") return String(row.sparkCodeNotice || "") === "Yes" || String(row.sparkAdsStatus || "") === "Notice";
+      if (reviewQuickFilter === "last-30-days") {
+        if (!String(row.actualPostDate || "") || !reviewAnchorDate) return false;
+        const cutoff = new Date(`${reviewAnchorDate}T00:00:00`);
+        cutoff.setDate(cutoff.getDate() - 30);
+        return String(row.actualPostDate) >= cutoff.toISOString().slice(0, 10);
+      }
       return true;
     }),
-    [rows, appliedFilters, isPayment31, paymentQuickFilter],
+    [rows, appliedFilters, isPayment31, isReview31, paymentQuickFilter, reviewQuickFilter, reviewAnchorDate],
   );
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
@@ -1175,6 +1196,7 @@ function TablePage({
                   setDraftFilters(initialFilterState);
                   setAppliedFilters(initialFilterState);
                   setPaymentQuickFilter("all");
+                  setReviewQuickFilter("all");
                   setPage(1);
                 }}
               >
@@ -1196,6 +1218,25 @@ function TablePage({
             ["supervisor-me", "Supervisor 是我", "Supervisor is Me"],
           ].map(([key, zh, en]) => (
             <button type="button" role="tab" aria-selected={paymentQuickFilter === key} key={key} className={paymentQuickFilter === key ? "active" : ""} onClick={() => { setPaymentQuickFilter(key); setPage(1); }}>
+              {label(zh, en, language)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isReview31 && (
+        <div className="review-quick-filters" role="tablist" aria-label={label("Review 快速筛选", "Review quick filters", language)}>
+          {[
+            ["all", "全部", "All"],
+            ["ready-for-ads", "Ready for Ads", "Ready for Ads"],
+            ["top-rank", "Top Rank Videos", "Top Rank Videos"],
+            ["not-traffic", "Target is not Traffic", "Target is not Traffic"],
+            ["should-cpm", "Should CPM", "Should CPM"],
+            ["pic-me", "PIC 是我", "PIC is Me"],
+            ["spark-notice", "Spark Code Notice", "Spark Code Notice"],
+            ["last-30-days", "近 30 天", "Last 30 Days"],
+          ].map(([key, zh, en]) => (
+            <button type="button" role="tab" aria-selected={reviewQuickFilter === key} key={key} className={reviewQuickFilter === key ? "active" : ""} onClick={() => { setReviewQuickFilter(key); setPage(1); }}>
               {label(zh, en, language)}
             </button>
           ))}
@@ -2276,7 +2317,7 @@ export default function MarketingSystem() {
   const [role, setRole] = useStored<RoleKey>("marketing-v8-role", "admin");
   const [rows, setRows] = useStored<RowStore>("marketing-v9-records", initialRows);
   const [budgetRules, setBudgetRules] = useStored<Record<string, Row[]>>("marketing-v8-budget-rules", budgetRuleSeeds);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(["versions"]));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(["versions", "mobile31"]));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [quickSearchOpen, setQuickSearchOpen] = useState(false);
@@ -2342,7 +2383,35 @@ export default function MarketingSystem() {
         };
       });
       const changed = nextPayments.some((payment, index) => Object.keys(payment).some((key) => payment[key] !== payments[index][key]));
-      return changed ? { ...current, payment31: nextPayments } : current;
+      const reviews = current.review31b || [];
+      const nextReviews = reviews.map((review, index) => {
+        const payment = nextPayments.find((item) => String(item.paymentNo || "") === String(review.paymentNo || ""));
+        const plan = Array.isArray(payment?.postPlans)
+          ? (payment.postPlans as Record<string, unknown>[]).find((item) => String(item.postNo || "") === String(review.postNo || ""))
+          : undefined;
+        const source = String(payment?.source || "") === "Manual" ? "GST" : "Private";
+        return {
+          ...review,
+          country: review.country || payment?.country || "ID",
+          brand: review.brand || payment?.brand || "",
+          owner: review.owner || payment?.owner || "",
+          ownerDept: review.ownerDept || payment?.department || "",
+          supervisor: review.supervisor || payment?.supervisor || "",
+          submitter: review.submitter || payment?.submitter || "",
+          department: review.department || payment?.department || "",
+          createdAt: review.createdAt || payment?.createdAt || `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
+          eachPrice: review.eachPrice || plan?.eachPrice || payment?.unitPrice || "",
+          ranking: review.ranking || (index % 4 === 0 ? "Top" : "Normal"),
+          targetTraffic: review.targetTraffic || (index % 3 === 0 ? "No" : "Yes"),
+          shouldCpm: review.shouldCpm || (index % 2 === 0 ? "Yes" : "No"),
+          picIsMe: review.picIsMe ?? payment?.picIsMe ?? String(review.owner || "") === "Ajeng Salma Nadhifa Fitriani",
+          sparkCodeNotice: review.sparkCodeNotice || (index % 5 === 0 ? "Yes" : "No"),
+          sparkAdsStatus: review.sparkAdsStatus || (review.postId ? "Ready" : plan?.sparkStatus === "Required" ? "Notice" : "None"),
+          source: review.source || source,
+        };
+      });
+      const reviewsChanged = nextReviews.some((review, index) => Object.keys(review).some((key) => review[key] !== reviews[index][key]));
+      return changed || reviewsChanged ? { ...current, payment31: nextPayments, review31b: nextReviews } : current;
     });
   }, [setRows]);
 

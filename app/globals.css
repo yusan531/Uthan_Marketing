@@ -948,6 +948,18 @@ input[type="checkbox"] {
   background: var(--surface);
 }
 
+.review-quick-filters {
+  min-height: 43px;
+  padding: 6px 10px 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--surface);
+}
+
 .payment-quick-filters button {
   min-height: 36px;
   padding: 0 12px;
@@ -960,8 +972,22 @@ input[type="checkbox"] {
   white-space: nowrap;
 }
 
+.review-quick-filters button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
 .payment-quick-filters button:hover,
-.payment-quick-filters button.active {
+.payment-quick-filters button.active,
+.review-quick-filters button:hover,
+.review-quick-filters button.active {
   color: var(--blue);
   border-bottom-color: var(--blue);
 }

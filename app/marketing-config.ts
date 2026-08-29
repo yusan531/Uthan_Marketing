@@ -376,6 +376,7 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   const creatorName = creators[index % creators.length];
   const brandName = brands[index % brands.length];
   const owner = owners[index % owners.length];
+  const specialist = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"][index % 4];
   const qty = 2 + (index % 4);
   const unitPrice = [350000, 420000, 500000, 280000][index % 4];
   const expectedPostDate = `2026-09-${String(5 + (index % 5) * 3).padStart(2, "0")}`;
@@ -399,10 +400,12 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   return {
     id: 3001 + index,
     paymentNo,
+    createdAt: `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
     country: index % 4 === 0 ? "MY" : "ID",
     creatorName,
     brand: brandName,
     owner,
+    kolSpecialist: specialist,
     supervisor: "Desy Chintya",
     submitter: "Uthan",
     department: "Marketing ID",
@@ -415,6 +418,13 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
     ceoApproval: index % 7 === 0 ? "Approved" : "Pending",
     sendPayment: paid ? "Yes" : "No",
     paymentDate: paid ? "2026-08-20" : "",
+    invoiceVerified: paid ? "Approved" : "Pending",
+    financeNotes: paid ? "Payment instruction verified" : "",
+    process: paid ? "Paid" : "Planning",
+    paymentBank: ["GST", "GIA", "Private"][index % 3],
+    source: ["Manual", "Echotik", "知虾", "Fastmoss"][index % 4],
+    picIsMe: index % 3 === 0,
+    supervisorIsMe: index % 4 === 0,
     postPlans: plans,
   };
 });
@@ -450,8 +460,8 @@ const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.p
 
 pageConfigs.payment31 = {
   key: "payment31", titleZh: "Payment3.1", titleEn: "Payment3.1", descZh: "Axure 3.1 方案：Payment 主单内统一维护 Post Plan、Finance、Pay Info 与 Approvals。", descEn: "Axure 3.1 option combining Post Plan, Finance, Pay Info and Approvals inside Payment.",
-  filters: [country(), text("paymentNo", "Payment ID", "Payment ID"), text("creatorName", "达人", "Creator"), brand(), owner(), select("progress", "进度", "Progress", statusOptions)], fields: paymentFields,
-  columns: [column("paymentNo", "Payment ID", "Payment ID"), column("creatorName", "达人", "Creator"), column("brand", "品牌", "Brand"), column("owner", "KOL Strategist", "KOL Strategist"), column("qty", "数量", "Qty"), column("unitPrice", "单价", "Each Price"), column("totalPrice", "总价", "Total Price"), column("expectedPostDate", "计划完成日期", "Expected Finish"), column("reviewQty", "Review 数量", "Review Qty"), column("supervisorApproval", "主管审批", "Supervisor Approval"), column("ceoApproval", "CEO 审批", "CEO Approval")], actions: ["add", "edit", "approve", "export"],
+  filters: [country(), text("paymentNo", "Payment ID", "Payment ID"), brand(), text("creatorName", "达人名称", "Creator Name"), owner(), text("paymentDateRange", "付款日期", "Date of Payment"), select("invoiceVerified", "发票核验", "Invoice Checked", statusOptions), text("financeNotes", "财务备注", "Note Finance"), select("supervisorApproval", "主管审批", "Supervisor Approval", statusOptions), select("ceoApproval", "CEO 审批", "CEO Approval", statusOptions), select("process", "流程", "Process", [option("Planning"), option("Paid"), option("Review"), option("Completed")]), select("paymentBank", "付款银行", "Payment Bank", [option("GST"), option("GIA"), option("Private")]), select("source", "来源", "Source", [option("Manual"), option("Echotik"), option("知虾"), option("Fastmoss")])], fields: paymentFields,
+  columns: [column("paymentNo", "Payment ID", "Payment ID"), column("createdAt", "创建日期", "Create Date"), column("paymentDate", "付款日期", "Date of Payment"), column("owner", "KOL Strategist", "KOL Strategist"), column("kolSpecialist", "KOL Specialist", "KOL Specialist"), column("department", "部门", "Department"), column("creatorName", "达人", "Creator"), column("brand", "品牌", "Brand"), column("qty", "数量", "Qty"), column("unitPrice", "单价", "Each Price"), column("totalPrice", "总价", "Total Price"), column("expectedPostDate", "计划完成日期", "Expected Finish"), column("reviewQty", "Review 数量", "Review Qty"), column("supervisorApproval", "主管审批", "Supervisor Approval"), column("ceoApproval", "CEO 审批", "CEO Approval")], actions: ["add", "edit", "export", "import"],
   seed: payment31Seed,
 };
 pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed };

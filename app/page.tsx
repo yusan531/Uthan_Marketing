@@ -910,14 +910,20 @@ function TablePage({
   relatedRows?: Row[];
   notify: (message: string) => void;
 }) {
-  const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>({});
-  const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>({});
+  const isPayment31 = config.key === "payment31";
+  const initialFilterState = isPayment31 ? { country: "ID" } : {};
+  const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>(initialFilterState);
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>(initialFilterState);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Row | null | undefined>(undefined);
   const [activeView, setActiveView] = useState(config.views?.[0]?.key || "");
   const [page, setPage] = useState(1);
   const [columnMenuOpen, setColumnMenuOpen] = useState(false);
   const [batchApprovalOpen, setBatchApprovalOpen] = useState(false);
+  const [batchApprovalMode, setBatchApprovalMode] = useState<"both" | "supervisor" | "ceo">("both");
+  const [batchBankOpen, setBatchBankOpen] = useState(false);
+  const [batchBank, setBatchBank] = useState("GST");
+  const [paymentQuickFilter, setPaymentQuickFilter] = useState("all");
   const [batchSupervisorStatus, setBatchSupervisorStatus] = useState("Approved");
   const [batchCeoStatus, setBatchCeoStatus] = useState("Pending");
   const [hiddenColumns, setHiddenColumns] = useStored<string[]>(`marketing-columns-${config.key}`, []);
@@ -929,16 +935,29 @@ function TablePage({
     : baseColumns;
   const columns = allColumns.filter((column) => !hiddenColumns.includes(column.key));
   const filteredRows = useMemo(
-    () =>
-      rows.filter((row) =>
-        Object.entries(appliedFilters).every(([key, expected]) => {
-          if (expected === "" || expected === undefined || expected === false) return true;
-          return String(row[key] ?? "")
-            .toLowerCase()
-            .includes(String(expected).toLowerCase());
-        }),
-      ),
-    [rows, appliedFilters],
+    () => rows.filter((row) => {
+      const matchesFilters = Object.entries(appliedFilters).every(([key, expected]) => {
+        if (key === "paymentDateFrom") {
+          const paymentDate = String(row.paymentDate || "");
+          return !expected || (Boolean(paymentDate) && paymentDate >= String(expected));
+        }
+        if (key === "paymentDateTo") {
+          const paymentDate = String(row.paymentDate || "");
+          return !expected || (Boolean(paymentDate) && paymentDate <= String(expected));
+        }
+        if (expected === "" || expected === undefined || expected === false) return true;
+        return String(row[key] ?? "")
+          .toLowerCase()
+          .includes(String(expected).toLowerCase());
+      });
+      if (!matchesFilters || !isPayment31) return matchesFilters;
+      if (paymentQuickFilter === "payment-empty") return !String(row.paymentDate || "");
+      if (paymentQuickFilter === "ceo-approval") return String(row.ceoApproval || "Pending") === "Pending";
+      if (paymentQuickFilter === "pic-me") return row.picIsMe === true || String(row.owner || "") === "Ajeng Salma Nadhifa Fitriani";
+      if (paymentQuickFilter === "supervisor-me") return row.supervisorIsMe === true || String(row.supervisor || "") === "Desy Chintya";
+      return true;
+    }),
+    [rows, appliedFilters, isPayment31, paymentQuickFilter],
   );
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
@@ -996,6 +1015,20 @@ function TablePage({
       }),
     );
     notify(label("审批状态已更新", "Approval status updated", language));
+  }
+
+  function openBatchApproval(mode: "supervisor" | "ceo") {
+    if (!requireSelection()) return;
+    setBatchApprovalMode(mode);
+    setBatchApprovalOpen(true);
+  }
+
+  function applyBatchBank() {
+    if (!requireSelection()) return;
+    setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, paymentBank: batchBank, updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } : row));
+    setBatchBankOpen(false);
+    setSelected(new Set());
+    notify(label("付款银行已批量更新", "Payment banks updated", language));
   }
 
   function runAction(action: ActionKey) {
@@ -1093,9 +1126,18 @@ function TablePage({
   return (
     <div className="page-stack">
       {config.filters.length > 0 && (
-        <section className="filter-card">
+        <section className={`filter-card ${isPayment31 ? "payment31-filter-card" : ""}`}>
           <div className="filter-grid">
-            {config.filters.map((field) => (
+            {config.filters.map((field) => field.key === "paymentDateRange" ? (
+              <label className="filter-field payment-date-range-field" key={field.key}>
+                <span>{label(field.zh, field.en, language)}</span>
+                <div className="payment-date-range">
+                  <input type="date" aria-label={label("付款日期开始", "Payment date from", language)} value={String(draftFilters.paymentDateFrom || "")} onChange={(event) => setDraftFilters((current) => ({ ...current, paymentDateFrom: event.target.value }))} />
+                  <b>–</b>
+                  <input type="date" aria-label={label("付款日期结束", "Payment date to", language)} value={String(draftFilters.paymentDateTo || "")} onChange={(event) => setDraftFilters((current) => ({ ...current, paymentDateTo: event.target.value }))} />
+                </div>
+              </label>
+            ) : (
               <label className="filter-field" key={field.key}>
                 <span>{label(field.zh, field.en, language)}</span>
                 <FieldControl
@@ -1121,8 +1163,9 @@ function TablePage({
               <button
                 className="button ghost"
                 onClick={() => {
-                  setDraftFilters({});
-                  setAppliedFilters({});
+                  setDraftFilters(initialFilterState);
+                  setAppliedFilters(initialFilterState);
+                  setPaymentQuickFilter("all");
                   setPage(1);
                 }}
               >
@@ -1132,6 +1175,22 @@ function TablePage({
             </div>
           </div>
         </section>
+      )}
+
+      {isPayment31 && (
+        <div className="payment-quick-filters" role="tablist" aria-label={label("Payment 快速筛选", "Payment quick filters", language)}>
+          {[
+            ["all", "全部", "All"],
+            ["payment-empty", "Date of Payment 为空", "Date of Payment is Empty"],
+            ["ceo-approval", "CEO Approval", "CEO Approval"],
+            ["pic-me", "PIC 是我", "PIC is Me"],
+            ["supervisor-me", "Supervisor 是我", "Supervisor is Me"],
+          ].map(([key, zh, en]) => (
+            <button type="button" role="tab" aria-selected={paymentQuickFilter === key} key={key} className={paymentQuickFilter === key ? "active" : ""} onClick={() => { setPaymentQuickFilter(key); setPage(1); }}>
+              {label(zh, en, language)}
+            </button>
+          ))}
+        </div>
       )}
 
       <section className="table-card">
@@ -1173,6 +1232,24 @@ function TablePage({
                 </button>
               );
             })}
+            {isPayment31 && canEdit && (
+              <button className="button soft" disabled={!selectedRows.length} onClick={() => { if (!requireSelection()) return; setBatchBankOpen(true); }}>
+                <WalletCards size={14} />
+                {label("批量更新付款银行", "Batch Update Payment Bank", language)}
+              </button>
+            )}
+            {isPayment31 && actionAllowed("approve") && approvalPermissions.supervisor && (
+              <button className="button approve" disabled={!selectedRows.length} onClick={() => openBatchApproval("supervisor")}>
+                <CheckCircle2 size={14} />
+                {label("主管审批", "Supervisor Approval", language)}
+              </button>
+            )}
+            {isPayment31 && actionAllowed("approve") && approvalPermissions.ceo && (
+              <button className="button approve" disabled={!selectedRows.length} onClick={() => openBatchApproval("ceo")}>
+                <ShieldCheck size={14} />
+                {label("CEO 审批", "CEO Approval", language)}
+              </button>
+            )}
             <input ref={importRef} className="hidden-input" type="file" accept=".csv,text/csv" onChange={importCsv} />
           </div>
           <span className="selection-copy">
@@ -1295,14 +1372,25 @@ function TablePage({
         <RecordModal config={config} row={editing} language={language} relatedRows={relatedRows} onSave={saveRow} onClose={() => setEditing(undefined)} />
       )}
       {batchApprovalOpen && (
-        <Modal title={label("批量审批", "Batch Approval", language)} onClose={() => setBatchApprovalOpen(false)}>
-          <form onSubmit={(event) => { event.preventDefault(); const approvalUpdates: Partial<Row> = {}; if (approvalPermissions.supervisor) approvalUpdates.supervisorApproval = batchSupervisorStatus; if (approvalPermissions.ceo) approvalUpdates.ceoApproval = batchCeoStatus; setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, ...approvalUpdates, updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } : row)); setBatchApprovalOpen(false); setSelected(new Set()); notify(label("已批量更新审批状态", "Approval statuses updated", language)); }}>
+        <Modal title={label(batchApprovalMode === "supervisor" ? "主管审批" : batchApprovalMode === "ceo" ? "CEO 审批" : "批量审批", batchApprovalMode === "supervisor" ? "Supervisor Approval" : batchApprovalMode === "ceo" ? "CEO Approval" : "Batch Approval", language)} onClose={() => setBatchApprovalOpen(false)}>
+          <form onSubmit={(event) => { event.preventDefault(); const approvalUpdates: Partial<Row> = {}; if (batchApprovalMode !== "ceo" && approvalPermissions.supervisor) approvalUpdates.supervisorApproval = batchSupervisorStatus; if (batchApprovalMode !== "supervisor" && approvalPermissions.ceo) approvalUpdates.ceoApproval = batchCeoStatus; setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, ...approvalUpdates, updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } : row)); setBatchApprovalOpen(false); setSelected(new Set()); notify(label("已批量更新审批状态", "Approval statuses updated", language)); }}>
             <div className="form-grid batch-approval-grid">
               <div className="batch-selection-note"><CheckCircle2 size={16}/><span>{label(`将更新已选择的 ${selectedRows.length} 条 Payment 记录`, `Updating ${selectedRows.length} selected Payment record(s)`, language)}</span></div>
-              {approvalPermissions.supervisor && <label className="form-field"><span>{label("主管审批状态", "Supervisor Approval", language)}</span><select value={batchSupervisorStatus} onChange={(event) => setBatchSupervisorStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>}
-              {approvalPermissions.ceo && <label className="form-field"><span>{label("CEO 审批状态", "CEO Approval", language)}</span><select value={batchCeoStatus} onChange={(event) => setBatchCeoStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>}
+              {batchApprovalMode !== "ceo" && approvalPermissions.supervisor && <label className="form-field"><span>{label("主管审批状态", "Supervisor Approval", language)}</span><select value={batchSupervisorStatus} onChange={(event) => setBatchSupervisorStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>}
+              {batchApprovalMode !== "supervisor" && approvalPermissions.ceo && <label className="form-field"><span>{label("CEO 审批状态", "CEO Approval", language)}</span><select value={batchCeoStatus} onChange={(event) => setBatchCeoStatus(event.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></label>}
             </div>
             <footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchApprovalOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("确认修改", "Apply", language)}</button></footer>
+          </form>
+        </Modal>
+      )}
+      {batchBankOpen && (
+        <Modal title={label("批量更新付款银行", "Batch Update Payment Bank", language)} onClose={() => setBatchBankOpen(false)}>
+          <form onSubmit={(event) => { event.preventDefault(); applyBatchBank(); }}>
+            <div className="form-grid">
+              <div className="batch-selection-note"><CheckCircle2 size={16}/><span>{label(`将更新已选择的 ${selectedRows.length} 条 Payment 记录`, `Updating ${selectedRows.length} selected Payment record(s)`, language)}</span></div>
+              <label className="form-field"><span>{label("Payment Bank", "Payment Bank", language)}</span><select value={batchBank} onChange={(event) => setBatchBank(event.target.value)}><option>GST</option><option>GIA</option><option>Private</option></select></label>
+            </div>
+            <footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchBankOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("确认修改", "Apply", language)}</button></footer>
           </form>
         </Modal>
       )}
@@ -2130,6 +2218,38 @@ export default function MarketingSystem() {
     document.documentElement.dataset.theme = theme;
     document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
   }, [language, theme]);
+
+  useEffect(() => {
+    setRows((current) => {
+      const payments = current.payment31;
+      if (!payments?.length) return current;
+      const specialists = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"];
+      const nextPayments = payments.map((payment, index) => ({
+        ...payment,
+        createdAt: payment.createdAt || `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
+        kolSpecialist: payment.kolSpecialist || specialists[index % specialists.length],
+        invoiceVerified: payment.invoiceVerified || payment.invoiceChecked || "Pending",
+        financeNotes: payment.financeNotes || payment.financeNote || "",
+        process: payment.process || (String(payment.sendPayment || "") === "Yes" || Boolean(payment.paymentDate) ? "Paid" : "Planning"),
+        paymentBank: payment.paymentBank || "GST",
+        source: payment.source || "Manual",
+        picIsMe: payment.picIsMe ?? String(payment.owner || "") === "Ajeng Salma Nadhifa Fitriani",
+        supervisorIsMe: payment.supervisorIsMe ?? String(payment.supervisor || "") === "Desy Chintya",
+      }));
+      const changed = nextPayments.some((payment, index) => (
+        payment.createdAt !== payments[index].createdAt ||
+        payment.kolSpecialist !== payments[index].kolSpecialist ||
+        payment.invoiceVerified !== payments[index].invoiceVerified ||
+        payment.financeNotes !== payments[index].financeNotes ||
+        payment.process !== payments[index].process ||
+        payment.paymentBank !== payments[index].paymentBank ||
+        payment.source !== payments[index].source ||
+        payment.picIsMe !== payments[index].picIsMe ||
+        payment.supervisorIsMe !== payments[index].supervisorIsMe
+      ));
+      return changed ? { ...current, payment31: nextPayments } : current;
+    });
+  }, [setRows]);
 
   useEffect(() => {
     if (!roleConfig.groups.includes(pageGroup(activePage))) setActivePage("home");

@@ -2877,6 +2877,18 @@ thead .operation-column {
   display: none;
 }
 
+.mobile31-workspace { gap: 12px; }
+.mobile31-header { padding: 15px 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.mobile31-kicker { color: var(--blue); font-size: 9px; font-weight: 750; letter-spacing: 0.8px; }
+.mobile31-header h1 { margin: 4px 0 0; font-size: 21px; letter-spacing: -0.45px; }
+.mobile31-header p { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+.mobile31-switcher { min-width: min(360px, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); }
+.mobile31-switcher button { min-height: 36px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid transparent; border-radius: 5px; color: var(--muted); background: transparent; font-size: 11px; font-weight: 650; cursor: pointer; }
+.mobile31-switcher button:hover { color: var(--text); background: var(--surface-3); }
+.mobile31-switcher button.active { color: var(--blue); border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); background: var(--surface-3); }
+.mobile31-page-content { min-width: 0; }
+.mobile31-page-content > .page-stack { margin: 0; }
+
 .v11-modal { width: min(1240px, 96vw); }
 .v11-form .modal-scroll-area { padding: 18px 22px 24px; }
 .v11-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
@@ -3119,6 +3131,54 @@ thead .operation-column {
 
   .topbar {
     padding: 0 7px;
+  }
+
+  .mobile31-header {
+    display: block;
+    padding: 13px;
+  }
+
+  .mobile31-header h1 {
+    font-size: 18px;
+  }
+
+  .mobile31-switcher {
+    min-width: 0;
+    margin-top: 12px;
+  }
+
+  .mobile31-switcher button {
+    min-height: 42px;
+    padding: 6px 4px;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 10px;
+  }
+
+  .mobile31-workspace .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile31-workspace .filter-actions {
+    grid-column: auto;
+  }
+
+  .mobile31-workspace .table-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mobile31-workspace .toolbar-actions {
+    width: 100%;
+  }
+
+  .mobile31-workspace .toolbar-actions .button {
+    flex: 1 1 auto;
+  }
+
+  .mobile31-workspace .data-table-wrap,
+  .mobile31-workspace .creator-table-wrap {
+    overflow-x: auto;
   }
 
   .topbar-actions {

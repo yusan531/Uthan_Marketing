@@ -1,7 +1,7 @@
 export type RoleKey = "country" | "brand" | "kolPic" | "ads" | "finance" | "analyst" | "admin";
 
 export type PageKey =
-  | "home" | "targetDashboard" | "dashboard31" | "target1" | "productTarget" | "ownTarget"
+  | "home" | "targetDashboard" | "dashboard31" | "mobilePayment31" | "mobileReview31" | "mobileDashboard31" | "target1" | "productTarget" | "ownTarget"
   | "creator" | "campaign" | "sample"
   | "reviews" | "reviews11" | "review31a" | "review31b" | "review31c" | "lsaReviews" | "lsaKocReviews" | "ownMediaReview" | "inhouseContent"
   | "payment" | "payment11" | "payment31" | "paymentPriceChange"
@@ -533,10 +533,13 @@ pageConfigs.payment31 = {
 pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed };
 pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "从 Payment 带出计划信息，并分区维护 Payment、Post 与广告发布信息。", descEn: "Bring planned information from Payment and maintain Payment, Post and Ads details in separate sections.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 1000 })) };
 pageConfigs.review31c = { key: "review31c", titleZh: "Review3.1-C · 计划选择", titleEn: "Review3.1-C · Plan Selection", descZh: "方案 C：先填写发布结果，再从 Payment 的 Post Plan 表中选择待关联明细。", descEn: "Option C: enter publishing results first, then select the linked row from Payment Post Plan.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 2000 })) };
+pageConfigs.mobilePayment31 = { ...pageConfigs.payment31!, key: "mobilePayment31", titleZh: "Payment3.1M", titleEn: "Payment3.1M", descZh: "移动端 Payment3.1 工作台。", descEn: "Mobile Payment3.1 workspace.", seed: [] };
+pageConfigs.mobileReview31 = { ...pageConfigs.review31b!, key: "mobileReview31", titleZh: "Review3.1M", titleEn: "Review3.1M", descZh: "移动端 Review3.1 工作台。", descEn: "Mobile Review3.1 workspace.", seed: [] };
 
 export const menuGroups: { key: string; zh: string; en: string; pages: { key: PageKey; zh: string; en: string }[] }[] = [
   { key: "home", zh: "Home", en: "Home", pages: [{ key: "home", zh: "Home", en: "Home" }] },
   { key: "versions", zh: "Marketing 3.1", en: "Marketing 3.1", pages: [{ key: "payment31", zh: "Payment3.1", en: "Payment3.1" }, { key: "review31b", zh: "Review3.1", en: "Review3.1" }, { key: "dashboard31", zh: "Dashboard3.1", en: "Dashboard3.1" }] },
+  { key: "mobile31", zh: "Marketing3.1M", en: "Marketing3.1M", pages: [{ key: "mobilePayment31", zh: "Payment3.1M", en: "Payment3.1M" }, { key: "mobileReview31", zh: "Review3.1M", en: "Review3.1M" }, { key: "mobileDashboard31", zh: "Dashboard3.1M", en: "Dashboard3.1M" }] },
   { key: "target", zh: "Target", en: "Target", pages: [{ key: "targetDashboard", zh: "Dashboard", en: "Dashboard" }, { key: "productTarget", zh: "Target", en: "Target" }, { key: "ownTarget", zh: "Own Target", en: "Own Target" }] },
   { key: "creator", zh: "Creator", en: "Creator", pages: [{ key: "creator", zh: "Creator", en: "Creator" }] },
   { key: "content", zh: "Content", en: "Content", pages: [{ key: "reviews", zh: "Reviews", en: "Reviews" }, { key: "reviews11", zh: "Reviews1.1", en: "Reviews1.1" }, { key: "ownMediaReview", zh: "Own Media Review", en: "Own Media Review" }] },
@@ -547,12 +550,14 @@ export const menuGroups: { key: string; zh: string; en: string; pages: { key: Pa
   { key: "monitor", zh: "系统监控", en: "System Monitor", pages: [{ key: "onlineUsers", zh: "在线用户", en: "Online Users" }] },
 ];
 
+const mirrorMobile31 = (items: string[]) => items.includes("versions") && !items.includes("mobile31") ? [...items, "mobile31"] : items;
+
 export const roles: { key: RoleKey; zh: string; en: string; groups: string[]; canEdit: string[]; canApprove: string[]; approvalTypes: ("supervisor" | "ceo")[] }[] = [
-  { key: "country", zh: "国家经理", en: "Country Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "basic", "versions"], canApprove: ["finance", "target"], approvalTypes: ["supervisor"] },
-  { key: "brand", zh: "品牌经理", en: "Brand Manager", groups: ["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"], canEdit: ["target", "creator", "content", "finance", "basic", "versions"], canApprove: ["target"], approvalTypes: ["supervisor"] },
-  { key: "kolPic", zh: "KOL Strategist", en: "KOL Strategist", groups: ["home", "target", "creator", "content", "finance", "versions"], canEdit: ["creator", "content", "finance", "versions"], canApprove: [], approvalTypes: [] },
+  { key: "country", zh: "国家经理", en: "Country Manager", groups: mirrorMobile31(["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"]), canEdit: mirrorMobile31(["target", "creator", "content", "basic", "versions"]), canApprove: ["finance", "target"], approvalTypes: ["supervisor"] },
+  { key: "brand", zh: "品牌经理", en: "Brand Manager", groups: mirrorMobile31(["home", "target", "creator", "content", "finance", "analysis", "basic", "versions"]), canEdit: mirrorMobile31(["target", "creator", "content", "finance", "basic", "versions"]), canApprove: ["target"], approvalTypes: ["supervisor"] },
+  { key: "kolPic", zh: "KOL Strategist", en: "KOL Strategist", groups: mirrorMobile31(["home", "target", "creator", "content", "finance", "versions"]), canEdit: mirrorMobile31(["creator", "content", "finance", "versions"]), canApprove: [], approvalTypes: [] },
   { key: "ads", zh: "广告经理", en: "Ads Manager", groups: ["home", "target", "content", "analysis"], canEdit: ["content"], canApprove: [], approvalTypes: [] },
-  { key: "finance", zh: "财务", en: "Finance", groups: ["home", "finance", "analysis", "basic", "versions"], canEdit: ["finance", "versions"], canApprove: ["finance"], approvalTypes: ["ceo"] },
+  { key: "finance", zh: "财务", en: "Finance", groups: mirrorMobile31(["home", "finance", "analysis", "basic", "versions"]), canEdit: mirrorMobile31(["finance", "versions"]), canApprove: ["finance"], approvalTypes: ["ceo"] },
   { key: "analyst", zh: "数据分析师", en: "Data Analyst", groups: ["home", "target", "analysis"], canEdit: [], canApprove: [], approvalTypes: [] },
   { key: "admin", zh: "管理员", en: "Administrator", groups: menuGroups.map(group => group.key), canEdit: menuGroups.map(group => group.key), canApprove: menuGroups.map(group => group.key), approvalTypes: ["supervisor", "ceo"] },
 ];

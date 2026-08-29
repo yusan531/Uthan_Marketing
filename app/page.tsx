@@ -56,6 +56,7 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  Smartphone,
   Target,
   Trash2,
   Upload,
@@ -95,6 +96,7 @@ const groupIcons: Record<string, LucideIcon> = {
   system: Settings,
   monitor: Monitor,
   versions: Sparkles,
+  mobile31: Smartphone,
 };
 
 const pageIcons: Partial<Record<PageKey, LucideIcon>> = {
@@ -119,6 +121,9 @@ const pageIcons: Partial<Record<PageKey, LucideIcon>> = {
   payment: WalletCards,
   payment11: WalletCards,
   payment31: WalletCards,
+  mobilePayment31: WalletCards,
+  mobileReview31: FileText,
+  mobileDashboard31: LayoutDashboard,
   paymentPriceChange: RefreshCcw,
   paymentAnalytics: FileBarChart,
   paymentReview: FileBarChart,
@@ -2195,6 +2200,75 @@ function BudgetRulePage({
   );
 }
 
+type Mobile31PageKey = "mobilePayment31" | "mobileReview31" | "mobileDashboard31";
+const mobile31BasePage: Record<Mobile31PageKey, PageKey> = {
+  mobilePayment31: "payment31",
+  mobileReview31: "review31b",
+  mobileDashboard31: "dashboard31",
+};
+const mobile31Menu: [Mobile31PageKey, string, string, LucideIcon][] = [
+  ["mobilePayment31", "Payment", "Payment", WalletCards],
+  ["mobileReview31", "Review", "Review", FileText],
+  ["mobileDashboard31", "Dashboard", "Dashboard", LayoutDashboard],
+];
+
+function Mobile31Workspace({
+  activePage,
+  language,
+  rows,
+  savePageRows,
+  canEdit,
+  canApprove,
+  approvalPermissions,
+  notify,
+  onNavigate,
+}: {
+  activePage: Mobile31PageKey;
+  language: Language;
+  rows: RowStore;
+  savePageRows: (page: PageKey, next: Row[]) => void;
+  canEdit: boolean;
+  canApprove: boolean;
+  approvalPermissions: { supervisor: boolean; ceo: boolean };
+  notify: (message: string) => void;
+  onNavigate: (page: PageKey) => void;
+}) {
+  const basePage = mobile31BasePage[activePage];
+  const baseConfig = pageConfigs[basePage];
+  const content = activePage === "mobileDashboard31" ? (
+    <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} version31 />
+  ) : baseConfig ? (
+    <TablePage
+      key={activePage}
+      config={baseConfig}
+      rows={rows[basePage] || []}
+      setRows={(next) => savePageRows(basePage, next)}
+      language={language}
+      canEdit={canEdit}
+      canApprove={canApprove}
+      approvalPermissions={approvalPermissions}
+      relatedRows={rows.payment31 || []}
+      notify={notify}
+    />
+  ) : <EmptyState language={language} />;
+
+  return (
+    <div className="page-stack mobile31-workspace">
+      <section className="mobile31-header">
+        <div>
+          <span className="mobile31-kicker">MOBILE WORKSPACE</span>
+          <h1>Marketing3.1M</h1>
+          <p>{label("Payment、Review、Dashboard 的移动端工作台", "Mobile workspace for Payment, Review and Dashboard", language)}</p>
+        </div>
+        <nav className="mobile31-switcher" aria-label="Marketing3.1M menu" role="tablist">
+          {mobile31Menu.map(([key, zh, en, Icon]) => <button type="button" role="tab" aria-selected={activePage === key} key={key} className={activePage === key ? "active" : ""} onClick={() => onNavigate(key)}><Icon size={15} /><span>{label(zh, en, language)}</span></button>)}
+        </nav>
+      </section>
+      <div className="mobile31-page-content">{content}</div>
+    </div>
+  );
+}
+
 export default function MarketingSystem() {
   const [activePage, setActivePage] = useState<PageKey>("payment31");
   const [language, setLanguage] = useStored<Language>("marketing-v8-language", "zh");
@@ -2368,6 +2442,8 @@ export default function MarketingSystem() {
     pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} version31={activePage === "dashboard31"} />;
   } else if (activePage === "creator") {
     pageContent = <CreatorManagementPage language={language} rows={rows.creator || []} setRows={(next) => savePageRows("creator", next)} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} canEdit={canEdit} notify={notify} onNavigate={navigate} />;
+  } else if (["mobilePayment31", "mobileReview31", "mobileDashboard31"].includes(activePage)) {
+    pageContent = <Mobile31Workspace activePage={activePage as Mobile31PageKey} language={language} rows={rows} savePageRows={savePageRows} canEdit={canEdit} canApprove={canApprove} approvalPermissions={approvalPermissions} notify={notify} onNavigate={navigate} />;
   } else if (activePage === "budgetRule") {
     pageContent = <BudgetRulePage language={language} store={budgetRules} setStore={setBudgetRules} canEdit={canEdit} notify={notify} />;
   } else if (activeConfig) {

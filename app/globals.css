@@ -1028,6 +1028,13 @@ input[type="checkbox"] {
   box-shadow: -1px 0 0 var(--line);
 }
 
+.payment-list-table .operation-column {
+  width: 52px;
+  min-width: 52px;
+  padding: 6px 4px;
+  text-align: center;
+}
+
 .column-manager { position: relative; margin-left: auto; }
 .column-menu { position: absolute; z-index: 40; top: 34px; right: 0; width: 230px; max-height: 340px; overflow: auto; padding: 10px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface-raised); box-shadow: var(--shadow); }
 .column-menu strong { display: block; margin-bottom: 7px; font-size: 10px; }

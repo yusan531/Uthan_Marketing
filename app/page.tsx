@@ -1209,7 +1209,7 @@ function TablePage({
         )}
 
         <div className="data-table-wrap">
-          <table className={`data-table ${["target1", "productTarget", "ownTarget"].includes(config.key) ? "target-table" : ""}`}>
+          <table className={`data-table ${["target1", "productTarget", "ownTarget"].includes(config.key) ? "target-table" : ""} ${config.key === "payment31" ? "payment-list-table" : ""}`}>
             <thead>
               <tr>
                 <th className="select-column">

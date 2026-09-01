@@ -2931,6 +2931,7 @@ thead .operation-column {
 .v11-summary span,.v11-summary small { display: block; color: var(--muted); }
 .v11-summary b { display: block; margin: 7px 0 4px; font-size: 20px; }
 .post-plan-title { margin: 18px 0 10px; display: flex; align-items: center; justify-content: space-between; }
+.post-plan-title.payment-post-plan-actions { justify-content: flex-end; }
 .post-plan-title strong,.post-plan-title span { display: block; }
 .post-plan-title span { margin-top: 3px; color: var(--muted); font-size: 11px; }
 .plan-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }

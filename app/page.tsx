@@ -534,10 +534,20 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
 type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string; postId?: string; postDate?: string; postLink?: string; postStatus?: string; sparkAdsStatus?: string; addDate?: string; adsPic?: string; createdAfterApproval?: boolean };
 type BatchPlanKey = "strategist" | "platform" | "contentType" | "contentAngle" | "planningPostDate" | "eachPrice" | "product" | "yellowCart" | "owning";
 const plan31Seed: PostPlan31[] = [
-  { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "", owning: "", sparkStatus: "Required" },
-  { postNo: 2, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "TikTok", contentType: "TTS", contentAngle: "Tutorial", planningPostDate: "2026-09-12", eachPrice: "350000", rate: "A", product: "Day Cream", yellowCart: "Yes", boostCode: "", owning: "", sparkStatus: "None" },
-  { postNo: 3, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", eachPrice: "350000", rate: "A", product: "Body Scrub", yellowCart: "No", boostCode: "", owning: "", sparkStatus: "None" },
+  { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "", owning: "", sparkStatus: "Yes" },
+  { postNo: 2, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "TikTok", contentType: "TTS", contentAngle: "Tutorial", planningPostDate: "2026-09-12", eachPrice: "350000", rate: "A", product: "Day Cream", yellowCart: "Yes", boostCode: "", owning: "", sparkStatus: "not Provided" },
+  { postNo: 3, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", eachPrice: "350000", rate: "A", product: "Body Scrub", yellowCart: "No", boostCode: "", owning: "", sparkStatus: "not Provided" },
 ];
+
+const normalizeBoostCodeStatus = (value: unknown) => String(value || "") === "Yes" || String(value || "") === "Required" ? "Yes" : "not Provided";
+const normalizeReviewPostStatus = (value: unknown) => String(value || "") === "Video Removed" ? "Video Removed" : "Normal";
+const normalizeReviewSparkAdsStatus = (value: unknown) => {
+  const status = String(value || "");
+  if (["None", "Done", "CodeDeleted", "Expired", "Code Incorrect"].includes(status)) return status;
+  if (status === "Code Deleted") return "CodeDeleted";
+  if (["Ready", "Notice", "Active"].includes(status)) return "Done";
+  return "None";
+};
 
 function Version31Modal({ config, row, language, relatedRows, onSave, onClose, readOnly = false }: { config: PageConfig; row: Row | null; language: Language; relatedRows: Row[]; onSave: (row: Row) => void; onClose: () => void; readOnly?: boolean }) {
   const isPayment = config.key === "payment31";
@@ -545,7 +555,14 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose, r
   const relatedPayment = !isPayment && row?.paymentNo ? relatedRows.find(payment => String(payment.paymentNo || "") === String(row.paymentNo)) : undefined;
   const [plans, setPlans] = useState<PostPlan31[]>(() => {
     const savedPlans = Array.isArray(row?.postPlans) ? row.postPlans as PostPlan31[] : Array.isArray(relatedPayment?.postPlans) ? relatedPayment.postPlans as PostPlan31[] : plan31Seed;
-    return savedPlans.map(item => ({ ...item, sparkStatus: item.sparkStatus || (item.boostCode === "Required" ? "Required" : "None"), boostCode: ["Required", "No", "None"].includes(item.boostCode) ? "" : item.boostCode, ...(Number(row?.postNo) === item.postNo ? { postId: String(row?.postId || ""), postDate: String(row?.postDate || row?.actualPostDate || ""), postLink: String(row?.postLink || ""), postStatus: String(row?.postStatus || "Pending"), sparkAdsStatus: String(row?.sparkAdsStatus || "None"), addDate: String(row?.addDate || ""), adsPic: String(row?.adsPic || "") } : {}) }));
+    return savedPlans.map(item => ({
+      ...item,
+      sparkStatus: normalizeBoostCodeStatus(item.sparkStatus === "Required" || item.sparkStatus === "Yes" ? item.sparkStatus : item.boostCode || item.sparkStatus),
+      boostCode: ["Required", "No", "None"].includes(String(item.boostCode || "")) ? "" : item.boostCode,
+      postStatus: item.postStatus ? normalizeReviewPostStatus(item.postStatus) : item.postStatus,
+      sparkAdsStatus: item.sparkAdsStatus ? normalizeReviewSparkAdsStatus(item.sparkAdsStatus) : item.sparkAdsStatus,
+      ...(Number(row?.postNo) === item.postNo ? { postId: String(row?.postId || ""), postDate: String(row?.postDate || row?.actualPostDate || ""), postLink: String(row?.postLink || ""), postStatus: normalizeReviewPostStatus(row?.postStatus || "Normal"), sparkAdsStatus: normalizeReviewSparkAdsStatus(row?.sparkAdsStatus || "None"), addDate: String(row?.addDate || ""), adsPic: String(row?.adsPic || "") } : {})
+    }));
   });
   const [selectedPlan, setSelectedPlan] = useState(Number(row?.postNo || (isPayment ? 1 : 0)));
   const [selectedPlanRows, setSelectedPlanRows] = useState<Set<number>>(() => new Set(isPayment ? [Number(row?.postNo || 1)] : []));
@@ -558,7 +575,7 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose, r
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || (isPayment ? "ID" : ""), creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || "350000", notes: row?.notes || "",
     reviewPlatform: row?.platform || selected.platform, reviewContentType: row?.contentType || selected.contentType, reviewContentAngle: row?.contentAngle || selected.contentAngle, reviewProduct: row?.product || selected.product, reviewPlanningPost: row?.planningPostDate || selected.planningPostDate, reviewEachPrice: row?.unitPrice || selected.eachPrice, reviewRate: row?.rate || selected.rate, reviewYellowCart: row?.yellowCart || selected.yellowCart, reviewOwning: row?.owning || selected.owning, reviewSparkStatus: row?.sparkStatus || selected.sparkStatus, reviewBoostCode: row?.boostCode || selected.boostCode,
-    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", sparkCode: row?.sparkCode || "", boostCode: row?.boostCode || "", expiredDate: row?.expiredDate || "", sparkAdsStatus: row?.sparkAdsStatus || "None", qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: row?.postStatus || "Pending", sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
+    postId: row?.postId || "", postDate: row?.postDate || "", actualPostNo: row?.actualPostNo || "", postLink: row?.postLink || "", sparkCode: row?.sparkCode || "", boostCode: row?.boostCode || "", expiredDate: row?.expiredDate || "", sparkAdsStatus: normalizeReviewSparkAdsStatus(row?.sparkAdsStatus || "None"), qrCode: row?.qrCode || "", contentTag: row?.contentTag || "Launch", actualPrice: row?.actualPrice || selected.eachPrice, rate: row?.rate || selected.rate, postStatus: normalizeReviewPostStatus(row?.postStatus || "Normal"), sampleDate: row?.sampleDate || "", slideProject: row?.slideProject || "No", ranking: row?.ranking || "Normal",
     paymentBank: row?.paymentBank || "GST", bankName: row?.bankName || "Seabank", accountName: row?.accountName || "Alkkna Creator", bankAccount: row?.bankAccount || "901804750996", idNumber: row?.idNumber || "6305044607080001", idName: row?.idName || "Alkkna", invoiceFile: row?.invoiceFile || "", paymentReceipt: row?.paymentReceipt || "", sendPayment: row?.sendPayment || "No", invoiceChecked: row?.invoiceChecked || "Pending", paymentDate: row?.paymentDate || "", financeNote: row?.financeNote || row?.financeNotes || "", supervisorApproval: row?.supervisorApproval || "Pending", ceoApproval: row?.ceoApproval || "Pending",
   }));
   const isPaymentLocked = isPayment && Boolean(row) && [String(form.supervisorApproval || ""), String(form.ceoApproval || "")].includes("Approved");
@@ -606,7 +623,7 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose, r
     const nextNo = Math.max(0, ...plans.map(item => item.postNo)) + 1;
     const createdAfterApproval = isPayment && isPaymentLocked;
     const source = plans.find(item => item.postNo === selectedPlan) || plans[0];
-    setPlans(current => [...current, { ...source, postNo: nextNo, reviewId: "", eachPrice: createdAfterApproval ? "0" : source.eachPrice, rate: createdAfterApproval ? "C" : source.rate, boostCode: "", postId: "", postDate: "", postLink: "", postStatus: "Pending", sparkAdsStatus: "None", addDate: "", adsPic: "", createdAfterApproval }]);
+    setPlans(current => [...current, { ...source, postNo: nextNo, reviewId: "", eachPrice: createdAfterApproval ? "0" : source.eachPrice, rate: createdAfterApproval ? "C" : source.rate, boostCode: "", postId: "", postDate: "", postLink: "", postStatus: "Normal", sparkAdsStatus: "None", addDate: "", adsPic: "", createdAfterApproval }]);
     setSelectedPlan(nextNo);
     setSelectedPlanRows(new Set([nextNo]));
   };
@@ -625,7 +642,7 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose, r
   const updatePlan = (index: number, key: keyof PostPlan31, value: string) => setPlans(current => current.map((item, itemIndex) => {
     if (itemIndex !== index) return item;
     const next = { ...item, [key]: value, ...(key === "eachPrice" ? { rate: rateFromPrice(value) } : {}) };
-    if (key === "sparkAdsStatus" && value === "Active") {
+    if (key === "sparkAdsStatus" && value === "Done") {
       next.addDate = item.addDate || new Date().toISOString().slice(0, 10);
       next.adsPic = item.adsPic || "Uthan";
     }
@@ -689,7 +706,7 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose, r
     const createsUnplannedReview = !isPayment && !reviewValue;
     const generatedReviewNo = `RID${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`;
     const singleReviewPlan = !isPayment && scheme === "A" ? { platform: String(form.reviewPlatform || ""), contentType: String(form.reviewContentType || ""), contentAngle: String(form.reviewContentAngle || ""), product: String(form.reviewProduct || ""), planningPostDate: String(form.reviewPlanningPost || ""), eachPrice: String(form.reviewEachPrice || ""), rate: String(form.reviewRate || ""), yellowCart: String(form.reviewYellowCart || ""), owning: String(form.reviewOwning || ""), sparkStatus: String(form.reviewSparkStatus || ""), boostCode: String(form.reviewBoostCode || "") } : linked;
-    onSave({ ...(row || {}), ...form, ...(isPayment ? { financeNotes: String(form.financeNote || "") } : {}), ...(!isPayment ? { postId: linked.postId || "", postDate: linked.postDate || "", postLink: linked.postLink || "", postStatus: linked.postStatus || "Pending", sparkAdsStatus: linked.sparkAdsStatus || "None", addDate: linked.addDate || "", adsPic: linked.adsPic || "" } : {}), reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: plans, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || `RID${Date.now()}${item.postNo}`, creatorName: form.creatorName, owner: form.owner, brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, product: item.product, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, sparkStatus: item.sparkStatus, boostCode: item.boostCode, postStatus: "Pending", linkStatus: "Linked", postPlans: plans })) : undefined });
+    onSave({ ...(row || {}), ...form, ...(isPayment ? { financeNotes: String(form.financeNote || "") } : {}), ...(!isPayment ? { postId: linked.postId || "", postDate: linked.postDate || "", postLink: linked.postLink || "", postStatus: normalizeReviewPostStatus(linked.postStatus || "Normal"), sparkAdsStatus: normalizeReviewSparkAdsStatus(linked.sparkAdsStatus || "None"), addDate: linked.addDate || "", adsPic: linked.adsPic || "", kolSpecialist: row?.kolSpecialist || relatedPayment?.kolSpecialist || "" } : {}), reviewNo: createsUnplannedReview ? generatedReviewNo : form.reviewNo, linkStatus: createsUnplannedReview ? "Unplanned" : "Linked", id: row?.id || Date.now(), postNo: createsUnplannedReview ? "Unplanned" : linked.postNo, platform: singleReviewPlan.platform, contentType: singleReviewPlan.contentType, contentAngle: singleReviewPlan.contentAngle, product: singleReviewPlan.product, planningPostDate: singleReviewPlan.planningPostDate, yellowCart: singleReviewPlan.yellowCart, owning: singleReviewPlan.owning, sparkStatus: singleReviewPlan.sparkStatus, boostCode: singleReviewPlan.boostCode, qty: plans.length, unitPrice: numeric(singleReviewPlan.eachPrice), totalPrice: plans.reduce((sum, item) => sum + numeric(item.eachPrice), 0), expectedPostDate: plans.map(item => item.planningPostDate).filter(Boolean).sort().at(-1) || "" , postPlans: plans, generatedReviews: isPayment ? plans.map(item => ({ paymentNo: form.paymentNo, postNo: item.postNo, reviewNo: item.reviewId || `RID${Date.now()}${item.postNo}`, creatorName: form.creatorName, owner: form.owner, kolSpecialist: (relatedPayment?.kolSpecialist || ""), brand: form.brand, strategist: item.strategist, platform: item.platform, contentType: item.contentType, contentAngle: item.contentAngle, product: item.product, planningPostDate: item.planningPostDate, eachPrice: item.eachPrice, yellowCart: item.yellowCart, owning: item.owning, sparkStatus: item.sparkStatus, boostCode: item.boostCode, postStatus: "Normal", linkStatus: "Linked", postPlans: plans })) : undefined });
   };
 
   const renderPlanControl = (item: PostPlan31, index: number, key: keyof PostPlan31) => {
@@ -704,8 +721,12 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose, r
   const reviewInlineControl = (item: PostPlan31, index: number, key: "postId" | "postDate" | "postLink" | "postStatus" | "sparkAdsStatus" | "addDate" | "adsPic") => {
     if (readOnly) return <span>{item[key] || "—"}</span>;
     if (["postDate", "addDate", "adsPic"].includes(key)) return <input className="plan-system-field" readOnly type={key === "postDate" || key === "addDate" ? "date" : "text"} value={String(item[key] || "")} placeholder={key === "postDate" ? label("根据 Post ID 自动识别", "Auto-detected from Post ID", language) : label("系统自动生成", "Auto-generated", language)} title={key === "postDate" ? label("根据 Post ID 自动识别，不可手工修改", "Auto-detected from Post ID and not manually editable", language) : label("系统自动生成，不可手工修改", "System-generated and not manually editable", language)} />;
-    const options = key === "postStatus" ? ["Pending", "Published", "Video Removed"] : key === "sparkAdsStatus" ? ["None", "Active", "Expired", "Code Deleted"] : null;
-    if (options) return <select value={String(item[key] || options[0])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => { setSelectedPlan(item.postNo); updatePlan(index, key, event.target.value); }}>{options.map(option => <option key={option}>{option}</option>)}</select>;
+    const options = key === "postStatus" ? ["Normal", "Video Removed"] : key === "sparkAdsStatus" ? ["None", "Done", "CodeDeleted", "Expired", "Code Incorrect"] : null;
+    if (options) {
+      const currentValue = String(item[key] || "");
+      const selectedValue = options.includes(currentValue) ? currentValue : options[0];
+      return <select value={selectedValue} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => { setSelectedPlan(item.postNo); updatePlan(index, key, event.target.value); }}>{options.map(option => <option key={option}>{option}</option>)}</select>;
+    }
     return <input type="text" value={String(item[key] || "")} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => { setSelectedPlan(item.postNo); updatePlan(index, key, event.target.value); }} />;
   };
   const stackedPlanCell = (item: PostPlan31, index: number, keys: readonly (keyof PostPlan31)[], className = "") => <td className={`plan-stacked-cell ${className}`}>{keys.map(key => <div key={String(key)}>{renderPlanControl(item, index, key)}</div>)}</td>;
@@ -991,12 +1012,12 @@ function TablePage({
         if (paymentQuickFilter === "supervisor-me") return row.supervisorIsMe === true || String(row.supervisor || "") === "Desy Chintya";
         return true;
       }
-      if (reviewQuickFilter === "ready-for-ads") return Boolean(row.postId) && ["Ready", "Active"].includes(String(row.sparkAdsStatus || ""));
+      if (reviewQuickFilter === "ready-for-ads") return Boolean(row.postId) && ["Done", "Ready", "Active"].includes(String(row.sparkAdsStatus || ""));
       if (reviewQuickFilter === "top-rank") return String(row.ranking || "") === "Top";
       if (reviewQuickFilter === "not-traffic") return String(row.targetTraffic || "") === "No";
       if (reviewQuickFilter === "should-cpm") return String(row.shouldCpm || "") === "Yes";
       if (reviewQuickFilter === "pic-me") return row.picIsMe === true || String(row.owner || "") === "Ajeng Salma Nadhifa Fitriani";
-      if (reviewQuickFilter === "spark-notice") return String(row.sparkCodeNotice || "") === "Yes" || String(row.sparkAdsStatus || "") === "Notice";
+      if (reviewQuickFilter === "spark-notice") return String(row.sparkCodeNotice || "") === "Yes" || ["Code Incorrect", "Notice"].includes(String(row.sparkAdsStatus || ""));
       if (reviewQuickFilter === "last-30-days") {
         if (!String(row.actualPostDate || "") || !reviewAnchorDate) return false;
         const cutoff = new Date(`${reviewAnchorDate}T00:00:00`);
@@ -2415,6 +2436,7 @@ export default function MarketingSystem() {
           country: review.country || payment?.country || "ID",
           brand: review.brand || payment?.brand || "",
           owner: review.owner || payment?.owner || "",
+          kolSpecialist: review.kolSpecialist || payment?.kolSpecialist || "",
           ownerDept: review.ownerDept || payment?.department || "",
           supervisor: review.supervisor || payment?.supervisor || "",
           submitter: review.submitter || payment?.submitter || "",
@@ -2426,7 +2448,8 @@ export default function MarketingSystem() {
           shouldCpm: review.shouldCpm || (index % 2 === 0 ? "Yes" : "No"),
           picIsMe: review.picIsMe ?? payment?.picIsMe ?? String(review.owner || "") === "Ajeng Salma Nadhifa Fitriani",
           sparkCodeNotice: review.sparkCodeNotice || (index % 5 === 0 ? "Yes" : "No"),
-          sparkAdsStatus: review.sparkAdsStatus || (review.postId ? "Ready" : plan?.sparkStatus === "Required" ? "Notice" : "None"),
+          sparkAdsStatus: normalizeReviewSparkAdsStatus(review.sparkAdsStatus || (review.postId ? "Done" : ["Required", "Yes"].includes(String(plan?.sparkStatus || "")) ? "Done" : "None")),
+          postStatus: normalizeReviewPostStatus(review.postStatus || "Normal"),
           source: review.source || source,
         };
       });

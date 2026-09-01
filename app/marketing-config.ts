@@ -63,6 +63,8 @@ const brandOptions = [option("Glowsicha"), option("Glad2Glow"), option("Skintifi
 const productOptions = [option("Tone Up Sunscreen"), option("Day Cream"), option("Body Scrub"), option("Juicy Tinted Lip Balm"), option("Hair Oil")];
 const ownerOptions = [option("Ajeng Salma Nadhifa Fitriani"), option("Annisa Putri Nur Aini"), option("Delvi"), option("Shafi"), option("Nadia"), option("Nisa"), option("Cilla")];
 const statusOptions = [option("Draft", "草稿", "Draft"), option("Published", "已发布", "Published"), option("Pending", "待处理", "Pending"), option("Approved", "已通过", "Approved"), option("Rejected", "已拒绝", "Rejected")];
+const review31StatusOptions = [option("Normal"), option("Video Removed")];
+const review31SparkAdsStatusOptions = [option("None"), option("Done"), option("CodeDeleted"), option("Expired"), option("Code Incorrect")];
 const creatorTypeOptions = [option("KOL"), option("KOC"), option("Others")];
 const tierOptions = [option("S"), option("A"), option("B"), option("C"), option("D"), option("T0")];
 const platformOptions = [option("TikTok"), option("Instagram"), option("YouTube"), option("Xiaohongshu", "小红书", "Xiaohongshu")];
@@ -366,16 +368,16 @@ pageConfigs.reviews11 = {
 const review31Columns = [
   column("reviewNo", "Review ID", "Review ID"), column("paymentNo", "Payment ID", "Payment ID"), column("postId", "Post ID", "Post ID"),
   column("actualPostDate", "Post Date", "Post Date"), column("postNo", "Post No.", "Post No."), column("createdAt", "Create Date", "Create Date"),
-  column("creatorName", "KOL Name", "KOL Name"), column("owner", "KOL Strategist", "KOL Strategist"), column("ownerDept", "Department", "Department"),
-  column("country", "国家", "Country"), column("brand", "品牌", "Brand"), column("product", "产品", "Product"), column("platform", "平台", "Platform"),
+  column("creatorName", "KOL Name", "KOL Name"), column("owner", "KOL Strategist", "KOL Strategist"), column("kolSpecialist", "KOL Specialist", "KOL Specialist"), column("ownerDept", "Department", "Department"),
+  column("brand", "品牌", "Brand"), column("product", "产品", "Product"), column("platform", "平台", "Platform"),
   column("contentType", "内容类型", "Content Type"), column("contentAngle", "内容角度", "Content Angles"), column("planningPostDate", "计划发布日期", "Planning Post"),
   column("eachPrice", "Each Price", "Each Price"), column("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status"), column("postStatus", "Review 状态", "Review Status"), column("postLink", "帖子链接", "Post Link"),
 ];
 const review31Filters = [
   country(), text("reviewNo", "Review ID", "Review ID"), text("paymentNo", "Payment ID", "Payment ID"), brand(), product(),
   date("actualPostDate", "Post Date", "Post Date"), text("postId", "Post ID", "Post ID"), number("eachPrice", "Each Price", "Each Price"),
-  owner(), select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", [option("None"), option("Ready"), option("Notice"), option("Active"), option("Expired")]),
-  select("postStatus", "Review 状态", "Review Status", statusOptions), select("source", "来源", "Source", [option("GST"), option("Private")]),
+  owner(), select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", review31SparkAdsStatusOptions),
+  select("postStatus", "Review 状态", "Review Status", review31StatusOptions), select("source", "来源", "Source", [option("GST"), option("Private")]),
 ];
 const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   const number = 31 + index;
@@ -405,9 +407,9 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
     rate: unitPrice >= 300000 ? "A" : "B",
     product: products[(index + planIndex) % products.length],
     yellowCart: planIndex % 3 === 0 ? "Yes" : "No",
-    boostCode: planIndex % 3 === 0 ? "Required" : "No",
+    boostCode: "",
     owning: "",
-    sparkStatus: planIndex % 3 === 0 ? "Required" : "None",
+    sparkStatus: planIndex % 3 === 0 ? "Yes" : "not Provided",
   }));
   return {
     id: 3001 + index,
@@ -472,9 +474,9 @@ const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.p
     paymentNo: payment.paymentNo,
     postNo: String(plan.postNo),
     creatorName: payment.creatorName,
-    country: payment.country,
     brand: payment.brand,
     owner: payment.owner,
+    kolSpecialist: payment.kolSpecialist,
     supervisor: payment.supervisor,
     submitter: payment.submitter,
     department: payment.department,
@@ -493,8 +495,8 @@ const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.p
     shouldCpm: paymentIndex % 2 === 0 ? "Yes" : "No",
     picIsMe: payment.picIsMe,
     sparkCodeNotice: paymentIndex % 5 === 0 ? "Yes" : "No",
-    sparkAdsStatus: published ? "Ready" : plan.sparkStatus === "Required" ? "Notice" : "None",
-    postStatus: published ? "Published" : "Pending",
+    sparkAdsStatus: published ? "Done" : plan.sparkStatus === "Yes" ? "Done" : "None",
+    postStatus: "Normal",
     linkStatus: "Linked",
     postPlans: payment.postPlans,
   };

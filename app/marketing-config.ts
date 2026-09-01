@@ -11,7 +11,7 @@ export type PageKey =
   | "brandData" | "productData" | "budgetRule"
   | "users" | "roles" | "menus" | "notices" | "operLogs" | "loginLogs" | "onlineUsers";
 
-export type ActionKey = "add" | "edit" | "delete" | "import" | "export" | "approve" | "clear" | "unlock";
+export type ActionKey = "add" | "edit" | "delete" | "import" | "export" | "approve" | "clear" | "unlock" | "updateAdsStatus" | "updateReviewStatus";
 export type FieldKind = "text" | "number" | "date" | "select" | "textarea" | "radio" | "checkbox" | "file";
 
 export type OptionDef = { value: string; zh: string; en: string };
@@ -549,9 +549,9 @@ pageConfigs.payment31 = {
   columns: payment31Columns, actions: ["add", "edit", "export", "import"],
   seed: payment31Seed,
 };
-pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed };
-pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "从 Payment 带出计划信息，并分区维护 Payment、Post 与广告发布信息。", descEn: "Bring planned information from Payment and maintain Payment, Post and Ads details in separate sections.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 1000 })) };
-pageConfigs.review31c = { key: "review31c", titleZh: "Review3.1-C · 计划选择", titleEn: "Review3.1-C · Plan Selection", descZh: "方案 C：先填写发布结果，再从 Payment 的 Post Plan 表中选择待关联明细。", descEn: "Option C: enter publishing results first, then select the linked row from Payment Post Plan.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "export"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 2000 })) };
+pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "delete", "export", "updateAdsStatus", "updateReviewStatus"], seed: review31Seed };
+pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "从 Payment 带出计划信息，并分区维护 Payment、Post 与广告发布信息。", descEn: "Bring planned information from Payment and maintain Payment, Post and Ads details in separate sections.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "delete", "export", "updateAdsStatus", "updateReviewStatus"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 1000 })) };
+pageConfigs.review31c = { key: "review31c", titleZh: "Review3.1-C · 计划选择", titleEn: "Review3.1-C · Plan Selection", descZh: "方案 C：先填写发布结果，再从 Payment 的 Post Plan 表中选择待关联明细。", descEn: "Option C: enter publishing results first, then select the linked row from Payment Post Plan.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "delete", "export", "updateAdsStatus", "updateReviewStatus"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 2000 })) };
 pageConfigs.mobilePayment31 = { ...pageConfigs.payment31!, key: "mobilePayment31", titleZh: "Payment3.1M", titleEn: "Payment3.1M", descZh: "移动端 Payment3.1 工作台。", descEn: "Mobile Payment3.1 workspace.", seed: [] };
 pageConfigs.mobileReview31 = { ...pageConfigs.review31b!, key: "mobileReview31", titleZh: "Review3.1M", titleEn: "Review3.1M", descZh: "移动端 Review3.1 工作台。", descEn: "Mobile Review3.1 workspace.", seed: [] };
 

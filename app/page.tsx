@@ -157,6 +157,8 @@ const actionIcons: Record<ActionKey, LucideIcon> = {
   approve: Check,
   clear: RotateCcw,
   unlock: LockKeyholeOpen,
+  updateAdsStatus: Megaphone,
+  updateReviewStatus: RefreshCcw,
 };
 
 const initialRows = Object.fromEntries(
@@ -976,6 +978,10 @@ function TablePage({
   const [reviewQuickFilter, setReviewQuickFilter] = useState("all");
   const [batchSupervisorStatus, setBatchSupervisorStatus] = useState("Approved");
   const [batchCeoStatus, setBatchCeoStatus] = useState("Pending");
+  const [batchStatusOpen, setBatchStatusOpen] = useState(false);
+  const [batchStatusMode, setBatchStatusMode] = useState<"ads" | "review">("ads");
+  const [batchAdsStatus, setBatchAdsStatus] = useState("Done");
+  const [batchReviewStatus, setBatchReviewStatus] = useState("Normal");
   const [hiddenColumns, setHiddenColumns] = useStored<string[]>(`marketing-columns-${config.key}`, []);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -1100,6 +1106,22 @@ function TablePage({
     notify(label("付款银行已批量更新", "Payment banks updated", language));
   }
 
+  function openBatchStatus(mode: "ads" | "review") {
+    if (!requireSelection()) return;
+    setBatchStatusMode(mode);
+    setBatchStatusOpen(true);
+  }
+
+  function applyBatchStatus() {
+    if (!requireSelection()) return;
+    const field = batchStatusMode === "ads" ? "sparkAdsStatus" : "postStatus";
+    const value = batchStatusMode === "ads" ? batchAdsStatus : batchReviewStatus;
+    setRows(rows.map((row) => selected.has(String(row.id)) ? { ...row, [field]: value, updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ") } : row));
+    setBatchStatusOpen(false);
+    setSelected(new Set());
+    notify(label(batchStatusMode === "ads" ? "广告状态已批量更新" : "审核状态已批量更新", batchStatusMode === "ads" ? "Ads statuses updated" : "Review statuses updated", language));
+  }
+
   function runAction(action: ActionKey) {
     if (action === "export") {
       downloadCsv(label(config.titleZh, config.titleEn, language), columns, filteredRows, language);
@@ -1116,6 +1138,14 @@ function TablePage({
     }
     if (action === "edit") {
       if (requireSelection(true)) setEditing(selectedRows[0]);
+      return;
+    }
+    if (action === "updateAdsStatus") {
+      openBatchStatus("ads");
+      return;
+    }
+    if (action === "updateReviewStatus") {
+      openBatchStatus("review");
       return;
     }
     if (action === "approve") {
@@ -1188,6 +1218,8 @@ function TablePage({
       approve: ["审批", "Approve"],
       clear: ["清空", "Clear"],
       unlock: ["解锁", "Unlock"],
+      updateAdsStatus: ["更新广告状态", "Update Ads Status"],
+      updateReviewStatus: ["更新审核状态", "Update Review Status"],
     };
     return label(names[action][0], names[action][1], language);
   };
@@ -1314,6 +1346,7 @@ function TablePage({
                 <button
                   key={action}
                   className={`button ${action === "add" ? "primary" : action === "delete" || action === "clear" ? "danger-outline" : action === "approve" ? "approve" : "ghost"}`}
+                  disabled={(action === "updateAdsStatus" || action === "updateReviewStatus") && selectedRows.length === 0}
                   onClick={() => runAction(action)}
                 >
                   <Icon size={14} />
@@ -1482,6 +1515,21 @@ function TablePage({
               <label className="form-field"><span>{label("Payment Bank", "Payment Bank", language)}</span><select value={batchBank} onChange={(event) => setBatchBank(event.target.value)}><option>GST</option><option>GIA</option><option>Private</option></select></label>
             </div>
             <footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchBankOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("确认修改", "Apply", language)}</button></footer>
+          </form>
+        </Modal>
+      )}
+      {batchStatusOpen && (
+        <Modal title={label(batchStatusMode === "ads" ? "批量更新广告状态" : "批量更新审核状态", batchStatusMode === "ads" ? "Update Ads Status" : "Update Review Status", language)} onClose={() => setBatchStatusOpen(false)}>
+          <form onSubmit={(event) => { event.preventDefault(); applyBatchStatus(); }}>
+            <div className="form-grid">
+              <div className="batch-selection-note"><CheckCircle2 size={16}/><span>{label(`将更新已选择的 ${selectedRows.length} 条 Review 记录`, `Updating ${selectedRows.length} selected Review record(s)`, language)}</span></div>
+              {batchStatusMode === "ads" ? (
+                <label className="form-field"><span>{label("广告状态", "Ads Status", language)}</span><select value={batchAdsStatus} onChange={(event) => setBatchAdsStatus(event.target.value)}>{["None", "Done", "CodeDeleted", "Expired", "Code Incorrect"].map((status) => <option key={status}>{status}</option>)}</select></label>
+              ) : (
+                <label className="form-field"><span>{label("审核状态", "Review Status", language)}</span><select value={batchReviewStatus} onChange={(event) => setBatchReviewStatus(event.target.value)}>{["Normal", "Video Removed"].map((status) => <option key={status}>{status}</option>)}</select></label>
+              )}
+            </div>
+            <footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchStatusOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("确认修改", "Apply", language)}</button></footer>
           </form>
         </Modal>
       )}

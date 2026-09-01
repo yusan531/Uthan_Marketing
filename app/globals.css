@@ -148,7 +148,7 @@
 .target-dashboard .nested-breakdown.depth-2 td { background: color-mix(in srgb, var(--surface-2) 70%, var(--surface)); }
 .target-dashboard .breakdown-metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 .batch-plan-modal { width: min(50vw, 720px); max-width: calc(100vw - 16px); max-height: 88vh; }
-.drawer-backdrop .batch-plan-modal form { max-height: calc(88vh - 48px); }
+.batch-plan-modal form { max-height: calc(88vh - 48px); }
 .batch-plan-modal .modal-scroll-area { max-height: calc(88vh - 106px); }
 
 @media (max-width: 1180px) {
@@ -3001,6 +3001,8 @@ thead .operation-column {
 .v31-plan-table .plan-stacked-cell > div { min-height: 37px; display: flex; align-items: center; }
 .v31-plan-table .plan-stacked-cell > div + div { border-top: 1px solid var(--line); }
 .v31-plan-table .plan-stacked-cell input,.v31-plan-table .plan-stacked-cell select { min-width: 0; height: 30px; padding: 0 6px; }
+.v31-plan-table .plan-product-header,.v31-plan-table .plan-product-cell { min-width: 170px; }
+.v31-plan-table .plan-product-cell input,.v31-plan-table .plan-product-cell select { min-width: 154px; }
 .v31-plan-table .plan-stacked-cell > div > span { min-width: 0; padding: 3px 0; overflow: hidden; text-overflow: ellipsis; }
 .v31-plan-table td:first-child input[type="radio"] { min-width: 16px; width: 16px; accent-color: var(--primary); }
 .v31-plan-table .plan-check-cell { width: 42px; min-width: 42px; text-align: center; }
@@ -3039,7 +3041,7 @@ thead .operation-column {
   cursor: not-allowed;
 }
 .batch-plan-modal { width: min(920px, 92vw); height: auto; max-height: 76vh; display: flex; flex-direction: column; }
-.drawer-backdrop .batch-plan-modal form { display: flex; flex: 0 1 auto; min-height: 0; height: auto; max-height: calc(76vh - 48px); flex-direction: column; }
+.batch-plan-modal form { display: flex; flex: 0 1 auto; min-height: 0; height: auto; max-height: calc(76vh - 48px); flex-direction: column; }
 .batch-plan-modal .modal-scroll-area { flex: 0 1 auto; min-height: 0; max-height: calc(76vh - 106px); padding: 20px 24px; overflow-y: auto; }
 .batch-plan-modal .modal-footer { flex: 0 0 58px; }
 .batch-plan-note { margin-bottom: 18px; padding: 13px 15px; display: grid; gap: 4px; color: var(--text); border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line)); border-radius: 7px; background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
@@ -3466,7 +3468,7 @@ thead .operation-column {
 .target-dashboard .breakdown-result-card > header { border-left-color: var(--line-strong); }
 .target-dashboard .breakdown-metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .batch-plan-modal { width: min(50vw, 720px); max-width: calc(100vw - 16px); max-height: 88vh; }
-.drawer-backdrop .batch-plan-modal form { max-height: calc(88vh - 48px); }
+.batch-plan-modal form { max-height: calc(88vh - 48px); }
 .batch-plan-modal .modal-scroll-area { max-height: calc(88vh - 106px); }
 
 @media (max-width: 1180px) {

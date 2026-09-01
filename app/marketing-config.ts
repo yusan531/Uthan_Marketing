@@ -559,7 +559,6 @@ pageConfigs.mobileReview31 = { ...pageConfigs.review31b!, key: "mobileReview31",
 export const menuGroups: { key: string; zh: string; en: string; pages: { key: PageKey; zh: string; en: string }[] }[] = [
   { key: "home", zh: "Home", en: "Home", pages: [{ key: "home", zh: "Home", en: "Home" }] },
   { key: "versions", zh: "Marketing 3.1", en: "Marketing 3.1", pages: [{ key: "payment31", zh: "Payment3.1", en: "Payment3.1" }, { key: "review31b", zh: "Review3.1", en: "Review3.1" }, { key: "dashboard31", zh: "Dashboard3.1", en: "Dashboard3.1" }] },
-  { key: "mobile31", zh: "Marketing3.1M", en: "Marketing3.1M", pages: [{ key: "mobilePayment31", zh: "Payment3.1M", en: "Payment3.1M" }, { key: "mobileReview31", zh: "Review3.1M", en: "Review3.1M" }, { key: "mobileDashboard31", zh: "Dashboard3.1M", en: "Dashboard3.1M" }] },
   { key: "target", zh: "Target", en: "Target", pages: [{ key: "targetDashboard", zh: "Dashboard", en: "Dashboard" }, { key: "productTarget", zh: "Target", en: "Target" }, { key: "ownTarget", zh: "Own Target", en: "Own Target" }] },
   { key: "creator", zh: "Creator", en: "Creator", pages: [{ key: "creator", zh: "Creator", en: "Creator" }] },
   { key: "content", zh: "Content", en: "Content", pages: [{ key: "reviews", zh: "Reviews", en: "Reviews" }, { key: "reviews11", zh: "Reviews1.1", en: "Reviews1.1" }, { key: "ownMediaReview", zh: "Own Media Review", en: "Own Media Review" }] },
@@ -568,6 +567,7 @@ export const menuGroups: { key: string; zh: string; en: string; pages: { key: Pa
   { key: "basic", zh: "Basic Data", en: "Basic Data", pages: [{ key: "brandData", zh: "Brand", en: "Brand" }, { key: "productData", zh: "Product", en: "Product" }, { key: "budgetRule", zh: "Budget Rule Config", en: "Budget Rule Config" }] },
   { key: "system", zh: "系统管理", en: "System Management", pages: [{ key: "users", zh: "用户管理", en: "Users" }, { key: "roles", zh: "角色管理", en: "Roles" }, { key: "menus", zh: "菜单管理", en: "Menus" }, { key: "notices", zh: "通知公告", en: "Notices" }, { key: "operLogs", zh: "操作日志", en: "Operation Logs" }, { key: "loginLogs", zh: "登录日志", en: "Login Logs" }] },
   { key: "monitor", zh: "系统监控", en: "System Monitor", pages: [{ key: "onlineUsers", zh: "在线用户", en: "Online Users" }] },
+  { key: "mobile31", zh: "Marketing3.1M", en: "Marketing3.1M", pages: [{ key: "mobilePayment31", zh: "Payment3.1M", en: "Payment3.1M" }, { key: "mobileReview31", zh: "Review3.1M", en: "Review3.1M" }, { key: "mobileDashboard31", zh: "Dashboard3.1M", en: "Dashboard3.1M" }] },
 ];
 
 const mirrorMobile31 = (items: string[]) => items.includes("versions") && !items.includes("mobile31") ? [...items, "mobile31"] : items;

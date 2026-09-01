@@ -2985,8 +2985,8 @@ thead .operation-column {
 .v31-plan-actions { display: flex; gap: 8px; }
 .review-plan-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .v31-plan-wrap { max-height: 310px; }
-.v31-plan-table { min-width: 1760px; }
-.review-grouped-plan-table { min-width: 2450px; }
+.v31-plan-table { min-width: 1240px; }
+.review-grouped-plan-table { min-width: 1640px; }
 .review-grouped-plan-table .plan-module-head th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; color: var(--primary); text-align: left; background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border-bottom: 1px solid var(--line); }
 .review-grouped-plan-table .plan-module-head th:nth-child(1) { color: #245a9b; background: #eaf3ff; }
 .review-grouped-plan-table .plan-module-head th:nth-child(2) { color: #08745b; background: #e7f8f2; border-left: 3px solid #20a47a; }
@@ -2996,8 +2996,7 @@ thead .operation-column {
 .review-grouped-plan-table .plan-module-head + tr .plan-post-info-field { background: #f0faf7; }
 .review-grouped-plan-table .plan-module-head + tr .plan-ads-info-field { background: #fff8ec; }
 .review-grouped-plan-table .plan-module-start { border-left: 2px solid var(--primary); }
-.review-grouped-plan-table .plan-post-info-cell input { min-width: 120px; }
-.review-grouped-plan-table .plan-post-link-cell input { min-width: 220px; }
+.review-grouped-plan-table .plan-post-info-cell:not(.plan-stacked-cell) input { min-width: 220px; }
 .review-grouped-plan-table .plan-ads-info-field:not(.plan-module-start),
 .review-grouped-plan-table .plan-ads-info-cell:not(.plan-module-start) { min-width: 125px; }
 .review-link-grid > .form-field:nth-child(4) { display: none; }
@@ -3007,7 +3006,6 @@ thead .operation-column {
 .review-edit-mode .review-link-grid select { color: var(--muted); background: var(--surface-2); cursor: not-allowed; }
 .v31-plan-table th { position: sticky; top: 0; z-index: 1; }
 .v31-plan-table tr.selected-plan td { background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
-.v31-plan-table th:not(.plan-check-cell),.v31-plan-table td:not(.plan-check-cell) { min-width: 110px; white-space: nowrap; }
 .v31-plan-table td > span { display: block; min-width: 88px; padding: 7px 5px; white-space: nowrap; }
 .v31-plan-table .plan-stacked-header { min-width: 160px; white-space: normal; line-height: 1.3; }
 .v31-plan-table .plan-stacked-cell { min-width: 160px; padding: 0 7px; vertical-align: middle; }

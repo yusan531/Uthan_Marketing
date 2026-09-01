@@ -12,7 +12,7 @@ export type PageKey =
   | "users" | "roles" | "menus" | "notices" | "operLogs" | "loginLogs" | "onlineUsers";
 
 export type ActionKey = "add" | "edit" | "delete" | "import" | "export" | "approve" | "clear" | "unlock" | "updateAdsStatus" | "updateReviewStatus";
-export type FieldKind = "text" | "number" | "date" | "select" | "textarea" | "radio" | "checkbox" | "file";
+export type FieldKind = "text" | "number" | "date" | "dateRange" | "select" | "textarea" | "radio" | "checkbox" | "file";
 
 export type OptionDef = { value: string; zh: string; en: string };
 export type FieldDef = {
@@ -48,6 +48,7 @@ const option = (value: string, zh = value, en = value): OptionDef => ({ value, z
 const text = (key: string, zh: string, en = zh, wide = false): FieldDef => ({ key, zh, en, kind: "text", wide });
 const number = (key: string, zh: string, en = zh): FieldDef => ({ key, zh, en, kind: "number" });
 const date = (key: string, zh: string, en = zh): FieldDef => ({ key, zh, en, kind: "date" });
+const dateRange = (key: string, zh: string, en = zh): FieldDef => ({ key, zh, en, kind: "dateRange" });
 const select = (key: string, zh: string, en: string, options: OptionDef[]): FieldDef => ({ key, zh, en, kind: "select", options });
 const area = (key: string, zh: string, en = zh): FieldDef => ({ key, zh, en, kind: "textarea", wide: true });
 const file = (key: string, zh: string, en = zh): FieldDef => ({ key, zh, en, kind: "file", wide: true });
@@ -189,6 +190,40 @@ const reviewEditFields: FieldDef[] = [
   text("adsOwner", "广告 KOL Strategist", "Ads KOL Strategist"),
 ];
 
+const ownMediaBrandOptions = [option("Elformula"), option("Glowsicha"), option("Glad2Glow"), option("Skintific")];
+const ownMediaProductOptions = [option("NAD+ Serum"), option("Tone Up Sunscreen"), option("Day Cream"), option("Body Scrub"), option("Serum Spray"), option("Hair Oil")];
+const ownMediaVideoSourceOptions = [option("Official"), option("Other")];
+const ownMediaAdTypeOptions = [option("Other"), option("Spark Ads")];
+const ownMediaTargetOptions = [option("Conversion"), option("Traffic"), option("Awareness")];
+const ownMediaContentTagOptions = [option("Gimmick"), option("Launch"), option("Product")];
+const ownMediaSparkStatusOptions = [option("None"), option("Done"), option("CodeDeleted"), option("Expired"), option("Code Incorrect")];
+const ownMediaFields: FieldDef[] = [
+  text("reviewNo", "审核编号", "Review ID"),
+  text("postId", "Post ID"),
+  date("postDate", "发布日期", "Post Date"),
+  text("postLink", "帖子链接", "Post Link"),
+  text("creatorName", "创作者名称", "Creator Name"),
+  text("pic", "PIC"),
+  text("picDepartment", "PIC 部门", "PIC Department"),
+  { ...select("brand", "品牌", "Brand", ownMediaBrandOptions), required: true },
+  { ...select("product", "产品", "Product", ownMediaProductOptions), required: true },
+  { ...select("yellowBasket", "Yellow Basket", "Yellow Basket", [option("Yes"), option("No")]), kind: "radio", required: true },
+  { ...select("videoSource", "视频来源", "Video Source", ownMediaVideoSourceOptions), required: true },
+  { ...select("adType", "广告类型", "Ad Type", ownMediaAdTypeOptions), required: true },
+  { ...select("target", "目标", "Target", ownMediaTargetOptions), required: true },
+  { ...select("contentTag", "内容标签", "Content Tag", ownMediaContentTagOptions), required: true },
+  text("sparkCode", "Spark Code"),
+  area("notes", "备注", "Notes"),
+  select("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status", ownMediaSparkStatusOptions),
+  date("adDate", "广告日期", "Ad Date"),
+  text("adsPic", "Ads PIC"),
+  number("gmvRp", "GMV (Rp)"),
+  number("gmxRp", "Gmx (Rp)"),
+  date("gmvUpdateDate", "GMV update date"),
+  number("gmvUsd", "GMV ($)"),
+  number("gmxGmvUsd", "GmxGMV ($)"),
+];
+
 Object.assign(pageConfigs, {
   reviews: {
     key: "reviews", titleZh: "Reviews", titleEn: "Reviews", descZh: "管理达人发布记录、支付关联与审核状态。", descEn: "Manage creator posts, linked payments and review status.",
@@ -210,9 +245,20 @@ Object.assign(pageConfigs, {
   },
   ownMediaReview: {
     key: "ownMediaReview", titleZh: "Own Media Review", titleEn: "Own Media Review", descZh: "管理自有媒体内容、来源、分类和广告类型。", descEn: "Manage owned-media content, source, classification and ad type.",
-    filters: [country(), text("reviewNo", "审核编号", "Review No."), brand()], fields: reviewBaseFields,
-    columns: [column("reviewNo", "审核编号", "Review No."), column("postId", "Post ID"), column("createdAt", "创建时间", "Created At"), column("creatorName", "达人", "Creator"), column("owner", "负责人", "KOL Strategist"), column("ownerDept", "负责人部门", "KOL Strategist Department"), column("brand", "品牌", "Brand"), column("product", "产品", "Product"), column("classification", "Classification"), column("videoSource", "Video Source"), column("adType", "Ad Type")], actions: ["add", "edit", "delete", "export"],
-    seed: [{ id: 1, reviewNo: "OVID2026080344796", postId: "766910289312", createdAt: "2026-08-03", creatorName: "Brand Studio", owner: "Shafi", ownerDept: "Creative", brand: "Glowsicha", product: "Hair Oil", classification: "Product", videoSource: "In-house", adType: "Spark Ads" }],
+    filters: [country(), select("brand", "品牌", "Brand", ownMediaBrandOptions), select("product", "产品", "Product", ownMediaProductOptions), text("reviewNo", "审核编号", "Review ID"), text("postId", "Post ID"), dateRange("createdAtRange", "创建日期", "Create Date")], fields: ownMediaFields,
+    columns: [column("reviewNo", "审核编号", "Review ID"), column("postId", "Post ID"), column("createdAt", "创建日期", "Create Date"), column("pic", "PIC"), column("picDepartment", "PIC 部门", "PIC Department"), column("brand", "品牌", "Brand"), column("product", "产品", "Product"), column("videoSource", "视频来源", "Video Source"), column("adType", "广告类型", "Ad Type"), column("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status"), column("adDate", "广告日期", "Ad Date"), column("adsPic", "Ads PIC")], actions: ["add", "edit", "delete", "export"],
+    seed: [
+      { id: 1, country: "ID", reviewNo: "OVID20260901000063", postId: "7678170366358916372", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-26", postLink: "https://www.tiktok.com/@/video/7678170366358916372", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 2, country: "ID", reviewNo: "OVID20260901000062", postId: "7678170107863960853", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-26", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 3, country: "ID", reviewNo: "OVID20260901000061", postId: "7678169915886472468", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-25", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 4, country: "ID", reviewNo: "OVID20260901000060", postId: "7678169841580182804", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-25", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 5, country: "ID", reviewNo: "OVID20260901000059", postId: "7678169728027856149", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-24", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 6, country: "ID", reviewNo: "OVID20260901000058", postId: "7678169687281600621", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-24", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 7, country: "ID", reviewNo: "OVID20260901000057", postId: "7678169456937405717", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-23", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 8, country: "ID", reviewNo: "OVID20260901000056", postId: "7678644594770283797", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-23", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 9, country: "ID", reviewNo: "OVID20260901000055", postId: "7678644131282947348", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-22", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+      { id: 10, country: "ID", reviewNo: "OVID20260901000054", postId: "7678643694048610615", createdAt: "2026-09-01", pic: "Nahda Aqila", picDepartment: "Elformula", brand: "Elformula", product: "NAD+ Serum", videoSource: "Official", adType: "Other", sparkAdsStatus: "", adDate: "", adsPic: "", postDate: "2026-08-22", yellowBasket: "No", target: "Conversion", contentTag: "Gimmick" },
+    ],
   },
   inhouseContent: {
     key: "inhouseContent", titleZh: "Inhouse Content", titleEn: "Inhouse Content", descZh: "导入并维护内部制作的视频内容。", descEn: "Import and maintain internally produced video content.",

@@ -414,20 +414,22 @@ function FieldControl({
   language,
   onChange,
   filter = false,
+  disabled = false,
 }: {
   field: FieldDef;
   value: unknown;
   language: Language;
   onChange: (value: unknown) => void;
   filter?: boolean;
+  disabled?: boolean;
 }) {
   const textLabel = label(field.zh, field.en, language);
   if (field.kind === "radio") {
-    return <div className="radio-segment">{(field.options || []).map((option) => <button type="button" key={option.value} className={String(value) === option.value ? "active" : ""} onClick={() => onChange(option.value)}>{label(option.zh, option.en, language)}</button>)}</div>;
+    return <div className="radio-segment">{(field.options || []).map((option) => <button type="button" disabled={disabled} key={option.value} className={String(value) === option.value ? "active" : ""} onClick={() => onChange(option.value)}>{label(option.zh, option.en, language)}</button>)}</div>;
   }
   if (field.kind === "select") {
     return (
-      <select value={String(value ?? "")} onChange={(event) => onChange(event.target.value)}>
+      <select disabled={disabled} value={String(value ?? "")} onChange={(event) => onChange(event.target.value)}>
         <option value="">{filter ? label("全部", "All", language) : label("请选择", "Select", language)}</option>
         {(field.options || []).map((option) => (
           <option key={option.value} value={option.value}>
@@ -441,6 +443,7 @@ function FieldControl({
     return (
       <textarea
         value={String(value ?? "")}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         placeholder={language === "zh" ? field.placeholderZh : field.placeholderEn}
         rows={3}
@@ -450,7 +453,7 @@ function FieldControl({
   if (field.kind === "checkbox") {
     return (
       <label className="check-control">
-        <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(event.target.checked)} />
+        <input type="checkbox" disabled={disabled} checked={Boolean(value)} onChange={(event) => onChange(event.target.checked)} />
         <span>{textLabel}</span>
       </label>
     );
@@ -459,6 +462,7 @@ function FieldControl({
     return (
       <input
         type="file"
+        disabled={disabled}
         onChange={(event) => onChange(event.target.files?.[0]?.name || "")}
         aria-label={textLabel}
       />
@@ -469,6 +473,7 @@ function FieldControl({
   const control = (
     <input
       type={inputType}
+      disabled={disabled}
       value={String(value ?? "")}
       onChange={(event) => onChange(field.kind === "number" ? event.target.value : event.target.value)}
       placeholder={(language === "zh" ? field.placeholderZh : field.placeholderEn) || textLabel}
@@ -750,6 +755,160 @@ function Version31Modal({ config, row, language, relatedRows, onSave, onClose, r
   </div></div><footer className="modal-footer"><button type="button" className="button ghost" onClick={() => setBatchPlanEditOpen(false)}>{label("取消", "Cancel", language)}</button><button type="submit" className="button primary"><Check size={14}/>{label("应用到所选行", "Apply to Selected", language)}</button></footer></form></Modal>}</>;
 }
 
+function OwnMediaReviewModal({ config, row, language, onSave, onClose, readOnly = false }: { config: PageConfig; row: Row | null; language: Language; onSave: (row: Row) => void; onClose: () => void; readOnly?: boolean }) {
+  const [form, setForm] = useState<Record<string, unknown>>(() => ({
+    reviewNo: row?.reviewNo || `OVID${new Date().toISOString().slice(0, 10).replaceAll("-", "")}${String(Date.now()).slice(-6)}`,
+    country: row?.country || "ID",
+    postId: row?.postId || "",
+    postDate: row?.postDate || "",
+    postLink: row?.postLink || "",
+    creatorName: row?.creatorName || "",
+    pic: row?.pic || "Uthan(玉山)",
+    picDepartment: row?.picDepartment || "信息技术部",
+    brand: row?.brand || "",
+    product: row?.product || "",
+    yellowBasket: row?.yellowBasket || "No",
+    videoSource: row?.videoSource || "",
+    adType: row?.adType || "",
+    target: row?.target || "",
+    contentTag: row?.contentTag || "",
+    sparkCode: row?.sparkCode || "",
+    notes: row?.notes || "",
+    sparkAdsStatus: row?.sparkAdsStatus || "None",
+    adDate: row?.adDate || "",
+    adsPic: row?.adsPic || "",
+    gmvRp: row?.gmvRp || "",
+    gmxRp: row?.gmxRp || "",
+    gmvUpdateDate: row?.gmvUpdateDate || "",
+    gmvUsd: row?.gmvUsd || "",
+    gmxGmvUsd: row?.gmxGmvUsd || "",
+  }));
+
+  const fieldOptions = (key: string) => config.fields.find((field) => field.key === key)?.options || [];
+  const productValues = String(form.product || "").split(/[,，]/).map((value) => value.trim()).filter(Boolean);
+  const setField = (key: string, value: unknown) => setForm((current) => ({ ...current, [key]: value }));
+  const ownLabel = (zh: string, en: string) => label(zh, en, language);
+
+  function addProduct(value: string) {
+    if (!value || productValues.includes(value)) return;
+    setField("product", [...productValues, value].join(", "));
+  }
+
+  function removeProduct(value: string) {
+    setField("product", productValues.filter((item) => item !== value).join(", "));
+  }
+
+  function fetchPostInfo() {
+    if (!String(form.postId || "")) return;
+    setField("postDate", row?.postDate || new Date().toISOString().slice(0, 19).replace("T", " "));
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+    onSave({
+      ...(row || {}),
+      ...form,
+      id: row?.id ?? Date.now(),
+      createdAt: row?.createdAt || new Date().toISOString().slice(0, 10),
+      updatedAt: now,
+      country: String(form.country || "ID"),
+      product: String(form.product || ""),
+      pic: String(form.pic || "Uthan(玉山)"),
+      picDepartment: String(form.picDepartment || "信息技术部"),
+    });
+  }
+
+  const ownText = (key: string, zh: string, en: string, placeholder = "", system = false, required = false) => (
+    <label className="own-media-field" key={key}>
+      <span>{required && <b className="required-mark">*</b>}{ownLabel(zh, en)}</span>
+      {key === "notes" ? <textarea value={String(form[key] ?? "")} placeholder={placeholder || ownLabel(zh, en)} readOnly={readOnly || system} onChange={(event) => setField(key, event.target.value)} rows={3} /> : <input required={required} type="text" value={String(form[key] ?? "")} placeholder={placeholder || ownLabel(zh, en)} readOnly={readOnly || system} onChange={(event) => setField(key, event.target.value)} />}
+    </label>
+  );
+  const ownDate = (key: string, zh: string, en: string, system = false) => (
+    <label className="own-media-field" key={key}>
+      <span>{ownLabel(zh, en)}</span>
+      <input type={system ? "text" : "date"} value={String(form[key] ?? "")} readOnly={readOnly || system} onChange={(event) => setField(key, event.target.value)} />
+    </label>
+  );
+  const ownSelect = (key: string, zh: string, en: string, required = false, disabled = false) => (
+    <label className="own-media-field" key={key}>
+      <span>{required && <b className="required-mark">*</b>}{ownLabel(zh, en)}</span>
+      <select required={required} disabled={readOnly || disabled} value={String(form[key] ?? "")} onChange={(event) => setField(key, event.target.value)}>
+        <option value="">{ownLabel("请选择", "Please select")}</option>
+        {fieldOptions(key).map((option) => <option value={option.value} key={option.value}>{label(option.zh, option.en, language)}</option>)}
+      </select>
+    </label>
+  );
+  const ownSystem = (zh: string, en: string, value: unknown = "-") => <div className="own-media-system-field"><span>{ownLabel(zh, en)}</span><strong>{String(value || "-")}</strong></div>;
+
+  return (
+    <Modal
+      title={<span className="own-media-dialog-heading"><b>{ownLabel(row ? "编辑 Own Media Review" : "新增 Own Media Review", row ? "Edit Own Media Review" : "Add Own Media Review")}</b><strong>{String(form.reviewNo)}</strong><em><span className="fi fi-id flag-id" /> ID</em></span>}
+      onClose={onClose}
+      wide
+      centered
+      variant="own-media-modal"
+    >
+      <form onSubmit={submit} className="own-media-form">
+        <div className="modal-scroll-area">
+          <div className="form-section-title"><i />{ownLabel("基础信息", "Base Info")}</div>
+          <div className="own-media-base-layout">
+            <div className="own-media-fields">
+              <div className="own-media-grid two">
+                {ownText("postId", "Post ID", "Post ID", "Enter Post ID", false, true)}
+                {ownDate("postDate", "发布日期", "Post Date", true)}
+              </div>
+              <div className="own-media-grid two">
+                <label className="own-media-field">
+                  <span><b className="required-mark">*</b>{ownLabel("帖子链接", "Post Link")}</span>
+                  <div className="own-media-input-action"><input required type="text" value={String(form.postLink || "")} placeholder="Enter text" readOnly={readOnly} onChange={(event) => setField("postLink", event.target.value)} /><button type="button" disabled={readOnly} aria-label="Fetch video info" title="Fetch video info" onClick={fetchPostInfo}><Send size={14} /></button></div>
+                </label>
+                {ownText("creatorName", "创作者名称", "Creator Name", "Enter creator name")}
+              </div>
+              <div className="own-media-grid two">
+                {ownSelect("brand", "品牌", "Brand", true)}
+                <label className="own-media-field"><span>{ownLabel("PIC", "PIC")}</span><div className="own-media-pic-value"><span className="own-media-avatar large">{String(form.pic || "UT").slice(0, 2).toUpperCase()}</span><span>{String(form.pic || "-")} - {String(form.picDepartment || "-")}</span></div></label>
+              </div>
+              <div className="own-media-grid one">
+                <label className="own-media-field own-media-wide"><span><b className="required-mark">*</b>{ownLabel("产品", "Product")}</span><div className="own-media-product-control">{productValues.map((value) => <span className="own-media-product-tag" key={value}>{value}{!readOnly && <button type="button" onClick={() => removeProduct(value)} aria-label={`Remove ${value}`}><X size={11} /></button>}</span>)}<select required={!productValues.length} disabled={readOnly || !form.brand} value="" onChange={(event) => addProduct(event.target.value)}><option value="">{form.brand ? ownLabel("选择产品", "Select product") : ownLabel("请先选择国家和品牌（多选）", "Select country and brand first (multi)")}</option>{fieldOptions("product").map((option) => <option value={option.value} key={option.value}>{label(option.zh, option.en, language)}</option>)}</select></div></label>
+              </div>
+              <div className="own-media-grid two">
+                <label className="own-media-field"><span><b className="required-mark">*</b>{ownLabel("Yellow Basket", "Yellow Basket")}</span><div className="radio-segment">{["Yes", "No"].map((value) => <button type="button" disabled={readOnly} className={String(form.yellowBasket) === value ? "active" : ""} key={value} onClick={() => setField("yellowBasket", value)}>{value}</button>)}</div></label>
+                {ownSelect("videoSource", "视频来源", "Video Source", true)}
+              </div>
+              <div className="own-media-grid two">
+                {ownSelect("adType", "广告类型", "Ad Type", true)}
+                {ownSelect("target", "目标", "Target", true)}
+              </div>
+              <div className="own-media-grid one">{ownSelect("contentTag", "内容标签", "Content Tag", true)}</div>
+              <div className="own-media-grid one">{ownText("sparkCode", "Spark Code", "Spark Code", "Enter Code Boost")}</div>
+              <div className="own-media-grid one">{ownText("notes", "备注", "Notes", "Enter text")}</div>
+            </div>
+            <aside className="own-media-qr" aria-label="QR code for post link">{form.postLink ? ownLabel("二维码预览", "QR code preview") : ownLabel("填写帖子链接后显示二维码", "Enter a post link to show QR code")}</aside>
+          </div>
+
+          {row && <div className="own-media-grid two own-media-edit-status"><>{ownSelect("sparkAdsStatus", "Spark Ads 状态", "Spark Ads Status")}</><label className="own-media-field"><span>{ownLabel("广告日期", "Ad Date")}</span><input type="text" value={String(form.adDate || "-")} readOnly /></label><label className="own-media-field"><span>{ownLabel("Ads PIC", "Ads PIC")}</span><input type="text" value={String(form.adsPic || "-")} readOnly /></label></div>}
+
+          <section className="own-media-section">
+            <h4 className="own-media-section-title"><i />GMV</h4>
+            <div className="own-media-gmv-grid">{ownSystem("GMV (Rp)", "GMV (Rp)", form.gmvRp)}{ownSystem("Gmx (Rp)", "Gmx (Rp)", form.gmxRp)}{ownSystem("GMV update date", "GMV update date", form.gmvUpdateDate)}{ownSystem("GMV ($)", "GMV ($)", form.gmvUsd)}{ownSystem("GmxGMV ($)", "GmxGMV ($)", form.gmxGmvUsd)}</div>
+          </section>
+          <section className="own-media-section">
+            <h4 className="own-media-section-title"><i />{ownLabel("查看摘要（系统生成）", "View summary (system-filled)")}</h4>
+            <div className="own-media-summary-grid">{[["Post ID", form.postId], ["Post Date", form.postDate], ["Status", row ? "Active" : "-"], ["Update date", row?.updatedAt], ["Views (latest total)", row?.views], ["Days since actual post", "-"], ["Likes", row?.likes], ["Comments", row?.comments], ["Favorites", row?.favorites], ["Shares", row?.shares], ["Engagement rate", row?.engagementRate]].map(([name, value]) => <div key={String(name)}><span>{name}</span><strong>{String(value || "-")}</strong></div>)}</div>
+          </section>
+          <section className="own-media-section">
+            <h4 className="own-media-section-title"><i />{ownLabel("目标", "Target")}</h4>
+            <div className="own-media-summary-grid"><div><span>Target</span><strong>{String(form.target || "-")}</strong></div><div><span>Target value</span><strong>{String(row?.targetValue || "-")}</strong></div></div>
+          </section>
+        </div>
+        <footer className="modal-footer"><button type="button" className="button ghost" onClick={onClose}>{ownLabel("取消", "Cancel")}</button>{!readOnly && <button type="submit" className="button primary"><Check size={14} />OK</button>}</footer>
+      </form>
+    </Modal>
+  );
+}
+
 function RecordModal({
   config,
   row,
@@ -791,6 +950,7 @@ function RecordModal({
 
   if (["payment11", "reviews11"].includes(String(config.key))) return <Version11Modal config={config} row={row} language={language} onSave={onSave} onClose={onClose} />;
   if (["payment31", "review31a", "review31b", "review31c"].includes(String(config.key))) return <Version31Modal config={config} row={row} language={language} relatedRows={relatedRows} readOnly={readOnly} onSave={onSave} onClose={onClose} />;
+  if (config.key === "ownMediaReview") return <OwnMediaReviewModal config={config} row={row} language={language} readOnly={readOnly} onSave={onSave} onClose={onClose} />;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -960,8 +1120,9 @@ function TablePage({
 }) {
   const isPayment31 = config.key === "payment31";
   const isReview31 = ["review31a", "review31b", "review31c"].includes(config.key);
+  const isOwnMediaReview = config.key === "ownMediaReview";
   const showViewAction = config.key === "payment31" || config.key === "review31b";
-  const initialFilterState = isPayment31 ? { country: "ID" } : {};
+  const initialFilterState = isPayment31 || isOwnMediaReview ? { country: "ID" } : {};
   const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>(initialFilterState);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>(initialFilterState);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -986,7 +1147,7 @@ function TablePage({
   const importRef = useRef<HTMLInputElement>(null);
 
   const baseColumns = config.views?.find((view) => view.key === activeView)?.columns || config.columns;
-  const allColumns = ["reviews", "lsaReviews", "lsaKocReviews", "ownMediaReview"].includes(config.key)
+  const allColumns = ["reviews", "lsaReviews", "lsaKocReviews"].includes(config.key)
     ? [...baseColumns, { key: "productCostSplit", zh: "产品成本拆分", en: "Product Cost Split" }]
     : baseColumns;
   const columns = allColumns.filter((column) => !hiddenColumns.includes(column.key));
@@ -997,13 +1158,15 @@ function TablePage({
   const filteredRows = useMemo(
     () => rows.filter((row) => {
       const matchesFilters = Object.entries(appliedFilters).every(([key, expected]) => {
-        if (key === "paymentDateFrom") {
-          const paymentDate = String(row.paymentDate || "");
-          return !expected || (Boolean(paymentDate) && paymentDate >= String(expected));
+        if (key.endsWith("From")) {
+          const sourceKey = key.slice(0, -4);
+          const actual = String(row[sourceKey] || "");
+          return !expected || (Boolean(actual) && actual >= String(expected));
         }
-        if (key === "paymentDateTo") {
-          const paymentDate = String(row.paymentDate || "");
-          return !expected || (Boolean(paymentDate) && paymentDate <= String(expected));
+        if (key.endsWith("To")) {
+          const sourceKey = key.slice(0, -2);
+          const actual = String(row[sourceKey] || "");
+          return !expected || (Boolean(actual) && actual <= String(expected));
         }
         if (expected === "" || expected === undefined || expected === false) return true;
         return String(row[key] ?? "")
@@ -1034,7 +1197,7 @@ function TablePage({
     }),
     [rows, appliedFilters, isPayment31, isReview31, paymentQuickFilter, reviewQuickFilter, reviewAnchorDate],
   );
-  const pageSize = 10;
+  const pageSize = isOwnMediaReview ? 50 : 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const visibleRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -1223,19 +1386,20 @@ function TablePage({
     };
     return label(names[action][0], names[action][1], language);
   };
+  const filterRangeBase = (field: FieldDef) => field.key === "paymentDateRange" ? "paymentDate" : field.key.replace(/Range$/, "");
 
   return (
     <div className="page-stack">
       {config.filters.length > 0 && (
-        <section className={`filter-card ${isPayment31 ? "payment31-filter-card" : ""}`}>
+        <section className={`filter-card ${isPayment31 ? "payment31-filter-card" : ""} ${isOwnMediaReview ? "own-media-filter-card" : ""}`}>
           <div className="filter-grid">
-            {config.filters.map((field) => field.key === "paymentDateRange" ? (
+            {config.filters.map((field) => field.kind === "dateRange" || field.key === "paymentDateRange" ? (
               <label className="filter-field payment-date-range-field" key={field.key}>
                 <span>{label(field.zh, field.en, language)}</span>
                 <div className="payment-date-range">
-                  <input type="date" aria-label={label("付款日期开始", "Payment date from", language)} value={String(draftFilters.paymentDateFrom || "")} onChange={(event) => setDraftFilters((current) => ({ ...current, paymentDateFrom: event.target.value }))} />
+                  <input type="date" aria-label={label(`${field.zh}开始`, `${field.en} from`, language)} value={String(draftFilters[`${filterRangeBase(field)}From`] || "")} onChange={(event) => setDraftFilters((current) => ({ ...current, [`${filterRangeBase(field)}From`]: event.target.value }))} />
                   <b>–</b>
-                  <input type="date" aria-label={label("付款日期结束", "Payment date to", language)} value={String(draftFilters.paymentDateTo || "")} onChange={(event) => setDraftFilters((current) => ({ ...current, paymentDateTo: event.target.value }))} />
+                  <input type="date" aria-label={label(`${field.zh}结束`, `${field.en} to`, language)} value={String(draftFilters[`${filterRangeBase(field)}To`] || "")} onChange={(event) => setDraftFilters((current) => ({ ...current, [`${filterRangeBase(field)}To`]: event.target.value }))} />
                 </div>
               </label>
             ) : (
@@ -1246,6 +1410,7 @@ function TablePage({
                   value={draftFilters[field.key]}
                   language={language}
                   filter
+                  disabled={isOwnMediaReview && field.key === "product" && !draftFilters.brand}
                   onChange={(value) => setDraftFilters((current) => ({ ...current, [field.key]: value }))}
                 />
               </label>
@@ -1346,7 +1511,7 @@ function TablePage({
                 <button
                   key={action}
                   className={`button ${action === "add" ? "primary" : action === "delete" || action === "clear" ? "danger-outline" : action === "approve" ? "approve" : "ghost"}`}
-                  disabled={["delete", "updateAdsStatus", "updateReviewStatus"].includes(action) && selectedRows.length === 0}
+                  disabled={(["delete", "updateAdsStatus", "updateReviewStatus"].includes(action) || (isOwnMediaReview && action === "edit")) && selectedRows.length === 0}
                   onClick={() => runAction(action)}
                 >
                   <Icon size={14} />
@@ -1379,6 +1544,7 @@ function TablePage({
               ? label(`已选 ${selected.size} 条`, `${selected.size} selected`, language)
               : label("请选择要操作的记录", "Select records to take action", language)}
           </span>
+          {isOwnMediaReview && <div className="own-media-header-tools"><button className="icon-button" aria-label="Search" title={label("搜索", "Search", language)} onClick={() => { setAppliedFilters(draftFilters); setPage(1); }}><Search size={15} /></button><button className="icon-button" aria-label="Refresh" title={label("刷新", "Refresh", language)} onClick={() => { setDraftFilters(initialFilterState); setAppliedFilters(initialFilterState); setPage(1); }}><RefreshCcw size={15} /></button></div>}
           <div className="column-manager">
             <button className="icon-button" aria-label="Manage columns" title={label("管理表头", "Manage columns", language)} onClick={() => setColumnMenuOpen((open) => !open)}>
               <Settings size={15} />
@@ -1408,7 +1574,7 @@ function TablePage({
         )}
 
         <div className="data-table-wrap">
-          <table className={`data-table ${["target1", "productTarget", "ownTarget"].includes(config.key) ? "target-table" : ""} ${config.key === "payment31" ? "payment-list-table" : ""}`}>
+          <table className={`data-table ${["target1", "productTarget", "ownTarget"].includes(config.key) ? "target-table" : ""} ${config.key === "payment31" ? "payment-list-table" : ""} ${isOwnMediaReview ? "own-media-table" : ""}`}>
             <thead>
               <tr>
                 <th className="select-column">
@@ -1419,11 +1585,11 @@ function TablePage({
                     onChange={(event) => selectPage(event.target.checked)}
                   />
                 </th>
-                <th className="index-column">#</th>
+                {!isOwnMediaReview && <th className="index-column">#</th>}
                 {columns.map((column) => (
                   <th key={column.key}>{label(column.zh, column.en, language)}</th>
                 ))}
-                {(showViewAction || canEdit && config.fields.length > 0) && <th className="operation-column">{label("操作", "Actions", language)}</th>}
+                {(showViewAction || canEdit && config.fields.length > 0) && <th className="operation-column">{isOwnMediaReview ? "Action" : label("操作", "Actions", language)}</th>}
               </tr>
             </thead>
             <tbody>
@@ -1437,10 +1603,10 @@ function TablePage({
                       aria-label={`Select row ${rowIndex + 1}`}
                     />
                   </td>
-                  <td className="index-column">{(currentPage - 1) * pageSize + rowIndex + 1}</td>
+                  {!isOwnMediaReview && <td className="index-column">{(currentPage - 1) * pageSize + rowIndex + 1}</td>}
                   {columns.map((column) => (
                     <td key={column.key} title={String(row[column.key] ?? "")}>
-                      {formatCell(column.key, row[column.key])}
+                      {isOwnMediaReview && column.key === "reviewNo" ? <div className="own-media-id-cell"><button type="button" className="table-link own-media-id-button" onClick={() => canEdit ? setEditing(row) : setViewing(row)}>{String(row.reviewNo || "—")}</button><button type="button" className="own-media-copy-button" aria-label="Copy Review ID" title="Copy" onClick={() => { void navigator.clipboard?.writeText(String(row.reviewNo || "")); notify(label("已复制 Review ID", "Review ID copied", language)); }}><ClipboardList size={14} /></button></div> : isOwnMediaReview && column.key === "pic" ? <span className="own-media-pic-cell"><span className="own-media-avatar">{String(row.pic || "NA").slice(0, 2).toUpperCase()}</span>{String(row.pic || "—")}</span> : formatCell(column.key, row[column.key])}
                     </td>
                   ))}
                   {(showViewAction || canEdit && config.fields.length > 0) && (

@@ -2933,7 +2933,7 @@ thead .operation-column {
 .plan-table td { padding: 7px; border-bottom: 1px solid var(--line); }
 .plan-table input,.plan-table select { width: 100%; min-width: 105px; height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--text); }
 .v11-form .form-section-title { margin-top: 18px; }
-.v31-modal { width: min(66.666vw, 960px); max-width: calc(100vw - 16px); height: 100vh; max-height: 100vh; display: flex; flex-direction: column; border-radius: 0; }
+.v31-modal { width: 75vw; max-width: calc(100vw - 16px); height: 100vh; max-height: 100vh; display: flex; flex-direction: column; border-radius: 0; }
 .v31-modal .modal-header { flex: 0 0 48px; }
 .drawer-backdrop .v31-modal form { flex: 1; min-height: 0; height: auto; max-height: none; }
 .v31-modal .modal-scroll-area { flex: 1; min-height: 0; padding-bottom: 28px; }
@@ -3007,6 +3007,37 @@ thead .operation-column {
 .v31-plan-table .plan-check-cell input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; padding: 0; accent-color: var(--primary); cursor: pointer; }
 .v31-plan-table .plan-system-field { color: var(--muted); border-style: dashed; background: var(--surface-2); cursor: not-allowed; }
 .v31-plan-actions .button:disabled { opacity: 0.45; cursor: not-allowed; }
+.v31-modal .form-field input:not([readonly]):not(:disabled),
+.v31-modal .form-field select:not(:disabled),
+.v31-modal .form-field textarea:not([readonly]):not(:disabled),
+.v31-modal .plan-table input:not([readonly]):not(:disabled),
+.v31-modal .plan-table select:not(:disabled),
+.batch-plan-modal .form-field input:not([readonly]):not(:disabled),
+.batch-plan-modal .form-field select:not(:disabled) {
+  background: #fff;
+  color: #172033;
+  border-color: var(--line);
+  border-bottom: 2px solid var(--blue);
+}
+.v31-modal .form-field input[readonly],
+.v31-modal .form-field input:disabled,
+.v31-modal .form-field select:disabled,
+.v31-modal .form-field textarea[readonly],
+.v31-modal .plan-table input[readonly],
+.v31-modal .plan-table input:disabled,
+.v31-modal .plan-table select:disabled {
+  color: var(--muted);
+  background: var(--surface-3);
+  border-color: var(--line);
+  cursor: not-allowed;
+}
+.v31-modal .review-edit-mode .review-link-grid input,
+.v31-modal .review-edit-mode .review-link-grid select {
+  color: var(--muted);
+  background: var(--surface-3);
+  border-color: var(--line);
+  cursor: not-allowed;
+}
 .batch-plan-modal { width: min(920px, 92vw); height: auto; max-height: 76vh; display: flex; flex-direction: column; }
 .drawer-backdrop .batch-plan-modal form { display: flex; flex: 0 1 auto; min-height: 0; height: auto; max-height: calc(76vh - 48px); flex-direction: column; }
 .batch-plan-modal .modal-scroll-area { flex: 0 1 auto; min-height: 0; max-height: calc(76vh - 106px); padding: 20px 24px; overflow-y: auto; }

@@ -1346,7 +1346,7 @@ function TablePage({
                 <button
                   key={action}
                   className={`button ${action === "add" ? "primary" : action === "delete" || action === "clear" ? "danger-outline" : action === "approve" ? "approve" : "ghost"}`}
-                  disabled={(action === "updateAdsStatus" || action === "updateReviewStatus") && selectedRows.length === 0}
+                  disabled={["delete", "updateAdsStatus", "updateReviewStatus"].includes(action) && selectedRows.length === 0}
                   onClick={() => runAction(action)}
                 >
                   <Icon size={14} />

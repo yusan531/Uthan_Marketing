@@ -927,7 +927,7 @@ function TablePage({
 }) {
   const isPayment31 = config.key === "payment31";
   const isReview31 = ["review31a", "review31b", "review31c"].includes(config.key);
-  const showViewAction = config.key === "payment31";
+  const showViewAction = config.key === "payment31" || config.key === "review31b";
   const initialFilterState = isPayment31 ? { country: "ID" } : {};
   const [draftFilters, setDraftFilters] = useState<Record<string, unknown>>(initialFilterState);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>(initialFilterState);

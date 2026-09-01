@@ -519,8 +519,6 @@ const payment31Columns: ColumnDef[] = [
   column("unitPrice", "Each Price", "Each Price"),
   column("qty", "Quantity", "Quantity"),
   column("totalPrice", "Total Price", "Total Price"),
-  column("reviewQty", "Review QTY", "Review QTY"),
-  column("qtyMismatch", "Qty Inconsistent", "Qty Inconsistent"),
   column("expectedPostDate", "Expected Post Date", "Expected Post Date"),
   column("actualPostDate", "Actual Post Date", "Actual Post Date"),
   column("process", "Process", "Process"),
@@ -541,7 +539,6 @@ const payment31Columns: ColumnDef[] = [
   column("supervisorApproval", "Supervisor Approval", "Supervisor Approval"),
   column("ceoApproval", "CEO Approval", "CEO Approval"),
   column("status", "Status", "Status"),
-  column("qtyConsistent", "Qty Consistent", "Qty Consistent"),
 ];
 
 pageConfigs.payment31 = {

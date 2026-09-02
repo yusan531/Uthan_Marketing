@@ -2842,6 +2842,15 @@ thead .operation-column {
   accent-color: var(--dashboard-primary);
 }
 
+.post-plan-summary-panel .nested-breakdown .dashboard-select-cell {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.post-plan-summary-panel .nested-breakdown td:nth-child(2) {
+  padding-left: 12px;
+}
+
 .post-plan-summary-panel .dashboard-table thead tr:last-child th:nth-child(2),
 .post-plan-summary-panel .dashboard-table thead tr:last-child th:nth-child(5) {
   white-space: normal;
@@ -3173,11 +3182,14 @@ thead .operation-column {
 }
 
 .schedule-legend-item {
+  max-width: 132px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  overflow: hidden;
   color: var(--muted);
   font-size: 8px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -3377,6 +3389,7 @@ thead .operation-column {
 .schedule-segment.overdue { background: var(--dashboard-danger); }
 .schedule-segment.completed,
 .schedule-segment.overdue-completed { background: var(--dashboard-success); }
+.schedule-segment.dimension { background: var(--schedule-segment-color, var(--dashboard-primary)); }
 
 .schedule-overdue-dot {
   top: -3px;
@@ -4506,6 +4519,23 @@ thead .operation-column {
 .target-dashboard .post-plan-dashboard-grid .progress-summary {
   min-height: 110px;
   padding: 10px 18px;
+}
+
+.target-dashboard .post-plan-dashboard-grid .summary-body {
+  grid-template-columns: minmax(0, 1fr) auto minmax(54px, .34fr);
+  gap: 9px;
+}
+
+.target-dashboard .post-plan-dashboard-grid .summary-values-three {
+  gap: 5px;
+}
+
+.target-dashboard .post-plan-dashboard-grid .summary-values-three b {
+  font-size: clamp(22px, 2vw, 29px);
+}
+
+.target-dashboard .post-plan-dashboard-grid .progress-summary.amber .summary-values-three b {
+  font-size: clamp(19px, 1.75vw, 25px);
 }
 
 .target-dashboard .post-plan-dashboard-grid .summary-values {

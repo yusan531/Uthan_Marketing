@@ -77,6 +77,14 @@ const product = () => select("product", "产品", "Product", productOptions);
 const owner = () => select("owner", "负责人", "KOL Strategist", ownerOptions);
 const commonTargetFields = [date("targetMonth", "目标月份", "Target Month"), brand(), product(), owner()];
 
+export const dashboard31SeptemberTargets = [
+  { id: 9101, country: "ID", targetNo: "TG-202609-001", targetMonth: "2026-09", brand: "Glowsicha", product: "Tone Up Sunscreen", owner: "Nadia", contentType: "Vlog", rateTier: "A", budgetTarget: 18000000, actualCost: 9160000, budgetRate: "51%", viewsTarget: 2400000, actualViews: 1520000, viewsRate: "63%", qtyTarget: 38, qty: 20, qtyRate: "53%", qtyRatio: "1.9", targetCpm: 7500, realCpm: 6026 },
+  { id: 9102, country: "ID", targetNo: "TG-202609-002", targetMonth: "2026-09", brand: "Glowsicha", product: "Day Cream", owner: "Delvi", contentType: "TTS", rateTier: "A", budgetTarget: 17000000, actualCost: 9200000, budgetRate: "54%", viewsTarget: 2100000, actualViews: 1370000, viewsRate: "65%", qtyTarget: 34, qty: 20, qtyRate: "59%", qtyRatio: "1.7", targetCpm: 8095, realCpm: 6715 },
+  { id: 9103, country: "ID", targetNo: "TG-202609-003", targetMonth: "2026-09", brand: "Glowsicha", product: "Body Scrub", owner: "Shafi", contentType: "Photoslide", rateTier: "B", budgetTarget: 18000000, actualCost: 8780000, budgetRate: "49%", viewsTarget: 1900000, actualViews: 1210000, viewsRate: "64%", qtyTarget: 32, qty: 19, qtyRate: "59%", qtyRatio: "1.7", targetCpm: 9474, realCpm: 7256 },
+  { id: 9104, country: "ID", targetNo: "TG-202609-004", targetMonth: "2026-09", brand: "Glowsicha", product: "Serum Spray", owner: "Cilla", contentType: "Livetalk", rateTier: "S", budgetTarget: 18000000, actualCost: 8660000, budgetRate: "48%", viewsTarget: 1800000, actualViews: 1180000, viewsRate: "66%", qtyTarget: 30, qty: 19, qtyRate: "63%", qtyRatio: "1.6", targetCpm: 10000, realCpm: 7339 },
+  { id: 9105, country: "ID", targetNo: "TG-202609-005", targetMonth: "2026-09", brand: "Glowsicha", product: "Hair Oil", owner: "Ajeng Salma Nadhifa Fitriani", contentType: "Vlog", rateTier: "C", budgetTarget: 17000000, actualCost: 9200000, budgetRate: "54%", viewsTarget: 1700000, actualViews: 1140000, viewsRate: "67%", qtyTarget: 26, qty: 20, qtyRate: "77%", qtyRatio: "1.3", targetCpm: 10000, realCpm: 8070 },
+];
+
 export const pageConfigs: Partial<Record<PageKey, PageConfig>> = {
   target1: {
     key: "target1", titleZh: "Target 1.0", titleEn: "Target 1.0",
@@ -88,6 +96,7 @@ export const pageConfigs: Partial<Record<PageKey, PageConfig>> = {
     seed: [
       { id: 1, targetNo: "TG-202608-001", targetMonth: "2026-08", brand: "Glowsicha", product: "Tone Up Sunscreen", owner: "Nadia", contentType: "Vlog", budgetTarget: 43000000, actualCost: 17600000, budgetRate: "41%", viewsTarget: 2200000, actualViews: 1180000, viewsRate: "54%", qtyTarget: 52, qty: 38, qtyRate: "73%", qtyRatio: "1.4", targetCpm: 19545, realCpm: 14915 },
       { id: 2, targetNo: "TG-202608-002", targetMonth: "2026-08", brand: "Glowsicha", product: "Day Cream", owner: "Delvi", contentType: "TTS", budgetTarget: 29000000, actualCost: 8500000, budgetRate: "29%", viewsTarget: 1600000, actualViews: 540000, viewsRate: "34%", qtyTarget: 32, qty: 7, qtyRate: "22%", qtyRatio: "0.8", targetCpm: 18125, realCpm: 15740 },
+      ...dashboard31SeptemberTargets,
     ],
   },
   productTarget: {
@@ -459,6 +468,7 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   }));
   return {
     id: 3001 + index,
+    dashboardSeptemberDemoVersion: index === 0 ? 1 : undefined,
     paymentNo,
     createdAt: `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
     country: index % 4 === 0 ? "MY" : "ID",
@@ -511,7 +521,141 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   };
 });
 
-const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string }[]).map((plan, planIndex) => {
+const dashboard31SeptemberQuantities = [14, 13, 13, 13, 12, 12, 12, 12, 12, 11];
+const dashboard31SeptemberPublished = [12, 11, 11, 10, 10, 10, 9, 9, 8, 8];
+const dashboard31SeptemberOffsets = dashboard31SeptemberQuantities.map((_, index) => dashboard31SeptemberQuantities.slice(0, index).reduce((sum, value) => sum + value, 0));
+
+export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((qty, index) => {
+  const paymentNo = `PID20260901${String(index + 1).padStart(6, "0")}`;
+  const creators = ["nadiaglow", "delvibeauty", "shafiskin", "cillareview", "ajengdaily", "raniskincare", "miaglowup", "salsabeauty", "nafadiary", "putrireview"];
+  const owners = ["Nadia", "Delvi", "Shafi", "Cilla", "Ajeng Salma Nadhifa Fitriani"];
+  const specialists = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"];
+  const products = ["Tone Up Sunscreen", "Day Cream", "Body Scrub", "Serum Spray", "Hair Oil"];
+  const platforms = ["TikTok", "Instagram", "YouTube"];
+  const tiers = ["S", "A", "B", "C"];
+  const unitPrice = [420000, 460000, 500000, 380000, 540000][index % 5];
+  const owner = owners[index % owners.length];
+  const plans = Array.from({ length: qty }, (_, planIndex) => {
+    const planOffset = dashboard31SeptemberOffsets[index] + planIndex;
+    const planningPostDate = planOffset % 5 === 0
+      ? `2026-08-${String(8 + (planOffset % 20)).padStart(2, "0")}`
+      : `2026-09-${String(3 + (planOffset % 26)).padStart(2, "0")}`;
+    return {
+      postNo: planIndex + 1,
+      strategist: owner,
+      reviewId: `RID20260901${String(index + 1).padStart(6, "0")}${String(planIndex + 1).padStart(2, "0")}`,
+      platform: platforms[(index + planIndex) % platforms.length],
+      contentType: ["Vlog", "TTS", "Photoslide", "Livetalk"][planIndex % 4],
+      contentAngle: ["Review", "Tutorial", "Lifestyle", "Before & After"][planIndex % 4],
+      planningPostDate,
+      eachPrice: String(unitPrice),
+      rate: tiers[planOffset % tiers.length],
+      product: products[(index + planIndex) % products.length],
+      yellowCart: planIndex % 3 === 0 ? "Yes" : "No",
+      boostCode: "",
+      owning: "",
+      sparkStatus: planIndex % 4 === 0 ? "Yes" : "not Provided",
+    };
+  });
+  return {
+    id: 3201 + index,
+    dashboardSeptemberDemoVersion: 1,
+    paymentNo,
+    targetMonth: "2026-09",
+    createdAt: `2026-09-${String(1 + (index % 2)).padStart(2, "0")}`,
+    paymentDate: "2026-09-01",
+    country: "ID",
+    creatorName: creators[index],
+    brand: "Glowsicha",
+    owner,
+    kolSpecialist: specialists[index % specialists.length],
+    supervisor: "Desy Chintya",
+    submitter: "Uthan",
+    department: "Marketing ID",
+    followersK: 86.4 + index * 24.8,
+    ownContent: "No",
+    platform: platforms[index % platforms.length],
+    contentType: ["Vlog", "TTS", "Photoslide", "Livetalk"][index % 4],
+    rateTier: tiers[index % tiers.length],
+    gracePeriod: 15,
+    qty,
+    unitPrice,
+    totalPrice: qty * unitPrice,
+    expectedPostDate: "2026-09-28",
+    actualPostDate: "2026-09-02",
+    reviewQty: qty,
+    qtyMismatch: "No",
+    progress: "Published",
+    notes: index < 2 ? "September priority creator" : "",
+    bankName: ["Seabank", "BCA", "BRI"][index % 3],
+    accountName: `${creators[index]} Creator`,
+    bankAccount: `901804759${String(100 + index).padStart(3, "0")}`,
+    idNumber: `6305044607081${String(9000 + index).padStart(4, "0")}`,
+    idName: creators[index],
+    invoiceFiles: "PDF",
+    paid: "Yes",
+    paymentProof: "PDF",
+    agreement: "PDF",
+    negotiation: index % 2 === 0 ? "PDF" : "-",
+    supervisorApproval: "Approved",
+    ceoApproval: "Approved",
+    status: "In Progress",
+    qtyConsistent: "Yes",
+    sendPayment: "Yes",
+    invoiceVerified: "Approved",
+    financeNotes: "September payment instruction verified",
+    process: "Paid",
+    paymentBank: ["GST", "GIA", "Private"][index % 3],
+    source: ["Manual", "Echotik", "知虾", "Fastmoss"][index % 4],
+    picIsMe: index % 3 === 0,
+    supervisorIsMe: index % 4 === 0,
+    postPlans: plans,
+  };
+});
+
+export const dashboard31SeptemberReviews = dashboard31SeptemberPayments.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string; eachPrice: string; rate: string; sparkStatus: string }[]).map((plan, planIndex) => {
+  const published = planIndex < dashboard31SeptemberPublished[paymentIndex];
+  const globalIndex = dashboard31SeptemberOffsets[paymentIndex] + planIndex;
+  const postId = published ? `7681090202609${String(10000 + globalIndex)}` : "";
+  return {
+    id: 90000 + globalIndex,
+    reviewNo: plan.reviewId,
+    paymentNo: payment.paymentNo,
+    postNo: String(plan.postNo),
+    creatorName: payment.creatorName,
+    country: payment.country,
+    brand: payment.brand,
+    owner: payment.owner,
+    kolSpecialist: payment.kolSpecialist,
+    supervisor: payment.supervisor,
+    submitter: payment.submitter,
+    ownerDept: payment.department,
+    department: payment.department,
+    platform: plan.platform,
+    contentType: plan.contentType,
+    contentAngle: plan.contentAngle,
+    product: plan.product,
+    rate: plan.rate,
+    planningPostDate: plan.planningPostDate,
+    postId,
+    postLink: postId ? `https://www.tiktok.com/@${payment.creatorName}/video/${postId}` : "",
+    actualPostDate: published ? `2026-09-${String(1 + (globalIndex % 2)).padStart(2, "0")}` : "",
+    createdAt: payment.createdAt,
+    eachPrice: plan.eachPrice,
+    ranking: globalIndex % 5 === 0 ? "Top" : "Normal",
+    targetTraffic: globalIndex % 3 === 0 ? "No" : "Yes",
+    shouldCpm: globalIndex % 2 === 0 ? "Yes" : "No",
+    picIsMe: payment.picIsMe,
+    sparkCodeNotice: globalIndex % 7 === 0 ? "Yes" : "No",
+    sparkAdsStatus: published || plan.sparkStatus === "Yes" ? "Done" : "None",
+    postStatus: "Normal",
+    linkStatus: "Linked",
+    source: payment.source,
+    postPlans: payment.postPlans,
+  };
+}));
+
+const augustReview31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string }[]).map((plan, planIndex) => {
   const published = paymentIndex % 3 === 0 && planIndex < 3;
   const postId = published ? `76774464559797${String(24040 + paymentIndex * 10 + planIndex)}` : "";
   return {
@@ -547,6 +691,8 @@ const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.p
     postPlans: payment.postPlans,
   };
 }));
+
+const review31Seed = [...augustReview31Seed, ...dashboard31SeptemberReviews];
 
 const payment31Columns: ColumnDef[] = [
   column("paymentNo", "Payment ID", "Payment ID"),
@@ -593,7 +739,7 @@ pageConfigs.payment31 = {
   key: "payment31", titleZh: "Payment3.1", titleEn: "Payment3.1", descZh: "Axure 3.1 方案：Payment 主单内统一维护 Post Plan、Finance、Pay Info 与 Approvals。", descEn: "Axure 3.1 option combining Post Plan, Finance, Pay Info and Approvals inside Payment.",
   filters: [country(), text("paymentNo", "Payment ID", "Payment ID"), brand(), text("creatorName", "达人名称", "Creator Name"), owner(), text("paymentDateRange", "付款日期", "Date of Payment"), select("invoiceVerified", "发票核验", "Invoice Checked", statusOptions), text("financeNotes", "财务备注", "Note Finance"), select("supervisorApproval", "主管审批", "Supervisor Approval", statusOptions), select("ceoApproval", "CEO 审批", "CEO Approval", statusOptions), select("process", "流程", "Process", [option("Planning"), option("Paid"), option("Review"), option("Completed")]), select("paymentBank", "付款银行", "Payment Bank", [option("GST"), option("GIA"), option("Private")]), select("source", "来源", "Source", [option("Manual"), option("Echotik"), option("知虾"), option("Fastmoss")])], fields: paymentFields,
   columns: payment31Columns, actions: ["add", "edit", "export", "import"],
-  seed: payment31Seed,
+  seed: [...payment31Seed, ...dashboard31SeptemberPayments],
 };
 pageConfigs.review31a = { key: "review31a", titleZh: "Review3.1-A · 关联明细", titleEn: "Review3.1-A · Linked Detail", descZh: "方案 A：选择 Payment ID + Post No.，单条带出 Post Plan，并保留完整 Payment Post Plan 对照表。", descEn: "Option A: select Payment ID + Post No., auto-fill one plan and retain the full payment plan reference.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "delete", "export", "updateAdsStatus", "updateReviewStatus"], seed: review31Seed };
 pageConfigs.review31b = { key: "review31b", titleZh: "Review3.1", titleEn: "Review3.1", descZh: "从 Payment 带出计划信息，并分区维护 Payment、Post 与广告发布信息。", descEn: "Bring planned information from Payment and maintain Payment, Post and Ads details in separate sections.", filters: review31Filters, fields: reviewBaseFields, columns: review31Columns, actions: ["add", "edit", "delete", "export", "updateAdsStatus", "updateReviewStatus"], seed: review31Seed.map(row => ({ ...row, id: Number(row.id) + 1000 })) };

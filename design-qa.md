@@ -1,50 +1,33 @@
-# Post Plan Schedule Chart Design QA
+# Dashboard3.1 Design QA
 
 ## Source visual truth
 
-- Source: `/Users/thanu/Downloads/20260902-175727.jpeg`
-- Reference: dark-theme stacked column charts with period labels, stacked counts, and a legend.
+- Browser comments and supplied Dashboard3.1 screenshots are the acceptance reference.
+- Scope: September demo data, Post Plan summary, linked row selection, and the two Schedule charts.
+- Existing Marketing 3.0 shell, compact density, bilingual/theme controls, and fixed sidebar are preserved.
 
-## Implementation evidence
+## Visual verification
 
-- Screenshot: `.playwright-cli/post-plan-day-full.png`
-- Focus crop used for comparison: `.playwright-cli/post-plan-month-focus.png`
-- Viewport: 1280 x 874 CSS pixels; full-page capture is 1280 x 3136 pixels.
-- Source pixels: 1055 x 483. The focused implementation region was compared as a chart-region crop; no density normalization was required for the browser viewport capture.
-- State: Dashboard3.1, Post Plan, dark theme, Creator Tier tab, Day period.
+- Viewport: 1280 x 720 CSS pixels in the in-app browser.
+- Default month is `2026-09`; the selector also retains August, July, and June.
+- Post summary renders `98 / 124 / 160` without crossing its divider or colliding with the GAP value.
+- The first Schedule chart stacks Planned, Overdue, and Completed.
+- The second Schedule chart stacks the active breakdown field. Product shows product names; switching to Creator Tier shows S, A, B, and C with no status legend.
+- Expanded child rows align with the parent table and each child has its own checkbox.
+- The left navigation remains visible while the dashboard content scrolls.
 
-## Comparison
+## Functional verification
 
-The implementation preserves the existing Marketing 3.0 shell and embeds the reference visual language in the Post Plan module. Month renders seven stacked columns and Week renders sixteen columns, with the active month/week highlighted and two side-by-side quantity views: the first is labelled by Post Status, while the second follows whichever dimension is selected in the upper Post Plan tab. Day is restored to a monthly calendar grid with adjacent-month dates, month labels on day 1, and four status colors; each schedule entry shows only the creator/strategist name, while delayed completions use a red dot on a green entry.
-
-The reference image is a standalone two-chart composition while the implementation is intentionally integrated into the existing dashboard panel. This is an expected product-layout difference, not a fidelity defect.
-
-## Primary interactions tested
-
-- Month: side-by-side quantity charts labelled by Post Status and the active upper-tab dimension, each with exactly 7 period columns and one current-period highlight; each legend has only Planned, Overdue, and Completed.
-- Week: side-by-side quantity charts labelled by Post Status and the active upper-tab dimension, each with exactly 16 period columns and one current-week highlight; each legend has only Planned, Overdue, and Completed.
-- Chart hover: segment values enlarge and expose a status/value tooltip.
-- Day: monthly calendar grid replaces the previous date list, fills leading/trailing adjacent dates in a subdued style, labels month changes on day 1, and exposes all four status colors while showing only creator names in entries.
-- Tab dimension switching: the second schedule view follows Product, Creator Tier, KOL Strategist, KOL Specialist, Submitter, or Brand as the matching upper tab changes.
-- Row checkbox: deselecting a product removes its dimension chip and entries from the schedule data.
-- Status rendering: Day entries use planned, overdue, completed, and overdue-completed classes; Month/Week fold delayed completions into Completed and hide the fourth legend item.
-- Build: `npm run build` passed.
-
-## Required fidelity surfaces
-
-- Fonts and typography: uses the existing Marketing 3.0 Geist tokens and compact dashboard hierarchy.
-- Spacing and layout rhythm: chart is contained within the existing panel, with a scroll-safe 16-week axis and consistent bar baseline.
-- Colors and visual tokens: status colors map to existing primary, success, and danger dashboard tokens; current period uses the existing primary soft token.
-- Image quality and asset fidelity: no image asset is required by the reference; existing icon library and native DOM chart elements are used.
-- Copy and content: Month/Week/Day, This month/This week/Today, dimension, and four status labels are exposed in the active language.
+- September seed totals: Post 98, Plan 124, Target 160.
+- Child selection: a child can be unchecked independently; parent and header enter the indeterminate state.
+- Parent selection: checking selects every child and unchecking clears every child.
+- Restoring all rows returns the summary to `98 / 124 / 160` and updates both Schedule charts.
+- Changing the breakdown tab immediately changes the second chart's stacks and legend.
+- Production build: `npm run build` passed.
 
 ## Findings
 
-- No actionable P0/P1/P2 findings remain.
-
-## Comparison history
-
-- Initial pass: replaced Month/Week calendar grids with status-stacked columns, added period markers and dimension chips.
-- Post-fix pass: restored Day as a monthly calendar grid, added four status labels/colors, and added the linked secondary schedule view; no actionable P0/P1/P2 differences remained.
+- No actionable visual or interaction findings remain in the requested scope.
+- The repository's pre-existing untracked starter test expects a removed `_sites-preview/SkeletonPreview.tsx` and development-only preview metadata; it does not test Dashboard3.1 and remains outside this change.
 
 final result: passed

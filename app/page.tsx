@@ -70,6 +70,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
+  dashboard31SeptemberPayments,
+  dashboard31SeptemberReviews,
+  dashboard31SeptemberTargets,
   menuGroups,
   pageConfigs,
   pageGroup,
@@ -1904,6 +1907,24 @@ type DashboardBreakdown = {
 
 type DashboardDimension = "product" | "tier" | "strategist" | "specialist" | "submitter" | "brand";
 
+function LinkedSelectionCheckbox({
+  checked,
+  indeterminate = false,
+  ariaLabel,
+  onChange,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  ariaLabel: string;
+  onChange: (checked: boolean) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (inputRef.current) inputRef.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+  return <input ref={inputRef} type="checkbox" aria-label={ariaLabel} checked={checked} onChange={(event) => onChange(event.target.checked)} />;
+}
+
 function scaleBreakdown(row: DashboardBreakdown, name: string, sub: string, share: number): DashboardBreakdown {
   return {
     name,
@@ -2189,6 +2210,17 @@ function postPlanScheduleStatus(entry: Record<string, unknown>, today: string, p
   return "planned";
 }
 
+const postPlanDimensionPalette = [
+  "#3478f6",
+  "#17a673",
+  "#8b5cf6",
+  "#f59e0b",
+  "#06b6d4",
+  "#ec4899",
+  "#64748b",
+  "#84cc16",
+];
+
 function PostPlanScheduleChart({
   entries,
   period,
@@ -2200,6 +2232,7 @@ function PostPlanScheduleChart({
   heading,
   visibleStatuses = ["planned", "overdue", "completed", "overdue-completed"],
   metric = "quantity",
+  stackBy = "status",
 }: {
   entries: Record<string, unknown>[];
   period: Exclude<PostPlanCalendarPeriod, "day">;
@@ -2211,6 +2244,7 @@ function PostPlanScheduleChart({
   heading?: string;
   visibleStatuses?: PostPlanScheduleStatus[];
   metric?: PostPlanScheduleMetric;
+  stackBy?: "status" | "dimension";
 }) {
   const anchor = dashboardLocalDate(today);
   const statusOrder = visibleStatuses;
@@ -2227,15 +2261,30 @@ function PostPlanScheduleChart({
     if (dimension === "submitter") return entry.submitter;
     return entry.brand;
   };
+  const unassignedLabel = label("未分配", "Unassigned", language);
   const scheduleEntries = entries.map((entry) => {
     const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
     return {
       entry,
       date: postPlanScheduleDate(entry),
       status: status === "overdue-completed" && !statusOrder.includes("overdue-completed") ? "completed" : status,
+      dimensionName: String(dimensionValue(entry) || unassignedLabel),
       value: metric === "amount" ? numeric(entry.eachPrice) : 1,
     };
   }).filter((item) => item.date);
+  const dimensionCounts = Array.from(scheduleEntries.reduce((groups, current) => {
+    groups.set(current.dimensionName, (groups.get(current.dimensionName) || 0) + current.value);
+    return groups;
+  }, new Map<string, number>()).entries()).sort((a, b) => b[1] - a[1]);
+  const statusColors: Record<PostPlanScheduleStatus, string> = {
+    planned: "var(--dashboard-primary)",
+    overdue: "var(--dashboard-danger)",
+    completed: "var(--dashboard-success)",
+    "overdue-completed": "var(--dashboard-success)",
+  };
+  const series: { key: string; label: string; color: string; status?: PostPlanScheduleStatus }[] = stackBy === "dimension"
+    ? dimensionCounts.map(([name], index) => ({ key: name, label: name, color: postPlanDimensionPalette[index % postPlanDimensionPalette.length] }))
+    : statusOrder.map((status) => ({ key: status, label: label(postPlanScheduleStatusMeta[status].zh, postPlanScheduleStatusMeta[status].en, language), color: statusColors[status], status }));
   const monthPeriods = Array.from({ length: 7 }, (_, index) => {
     const offset = index - 3;
     const date = new Date(anchor.getFullYear(), anchor.getMonth() + offset, 1);
@@ -2270,27 +2319,24 @@ function PostPlanScheduleChart({
     return {
       ...item,
       total: matching.reduce((sum, entry) => sum + entry.value, 0),
-      segments: statusOrder.map((status) => ({ status, value: matching.filter((entry) => entry.status === status).reduce((sum, entry) => sum + entry.value, 0) })),
+      segments: series.map((segment) => ({
+        ...segment,
+        value: matching
+          .filter((entry) => stackBy === "dimension" ? entry.dimensionName === segment.key : entry.status === segment.status)
+          .reduce((sum, entry) => sum + entry.value, 0),
+      })),
     };
   });
-  const dimensionCounts = Array.from(scheduleEntries.reduce((groups, current) => {
-    const name = String(dimensionValue(current.entry) || label("未分配", "Unassigned", language));
-    const currentValue = groups.get(name) || { total: 0, statuses: new Set<PostPlanScheduleStatus>() };
-    currentValue.total += current.value;
-    currentValue.statuses.add(current.status);
-    groups.set(name, currentValue);
-    return groups;
-  }, new Map<string, { total: number; statuses: Set<PostPlanScheduleStatus> }>()).entries()).sort((a, b) => b[1].total - a[1].total);
   const maxCount = Math.max(...periodSegments.map((item) => item.total), 1);
   const formatScheduleValue = (value: number) => metric === "amount" ? compactNumber(value) : `${value}`;
   const metricLabel = metric === "amount" ? label("金额", "Amount", language) : label("数量", "Quantity", language);
   return <div className={`post-plan-schedule-chart ${period} ${metric}`} aria-label={`${heading || metricLabel} · ${dimensionLabel}`}>
     <div className="post-plan-schedule-toolbar">
       <div><strong>{heading || metricLabel}</strong><small>{label("按", "By", language)} {dimensionLabel} · {period === "month" ? "7" : "16"} {period === "month" ? label("个月", "months", language) : label("周", "weeks", language)}</small></div>
-      <div className="post-plan-schedule-legend">{statusOrder.map((status) => <span key={status} className={`schedule-legend-item ${postPlanScheduleStatusMeta[status].className}`}><i />{label(postPlanScheduleStatusMeta[status].zh, postPlanScheduleStatusMeta[status].en, language)}</span>)}</div>
+      <div className="post-plan-schedule-legend">{series.map((item) => <span key={item.key} className={`schedule-legend-item ${item.status ? postPlanScheduleStatusMeta[item.status].className : "dimension"}`} title={item.label}><i style={{ background: item.color }} />{item.label}</span>)}</div>
     </div>
-    {dimensionCounts.length > 0 && <div className="post-plan-schedule-dimensions" aria-label={`${dimensionLabel} breakdown`}>
-      {dimensionCounts.slice(0, 8).map(([name, value]) => <span key={name}><b>{name}</b><small>{formatScheduleValue(value.total)}</small></span>)}
+    {stackBy === "status" && dimensionCounts.length > 0 && <div className="post-plan-schedule-dimensions" aria-label={`${dimensionLabel} breakdown`}>
+      {dimensionCounts.slice(0, 8).map(([name, value]) => <span key={name}><b>{name}</b><small>{formatScheduleValue(value)}</small></span>)}
       {dimensionCounts.length > 8 && <small className="post-plan-schedule-more">+{dimensionCounts.length - 8}</small>}
     </div>}
     <div className="post-plan-schedule-plot" style={{ "--schedule-max": maxCount } as CSSProperties}>
@@ -2299,7 +2345,7 @@ function PostPlanScheduleChart({
         {periodSegments.map((item) => <div className={`post-plan-schedule-column${item.marker ? " current" : ""}`} key={item.key}>
           <div className="post-plan-schedule-bar-area">
             <div className="post-plan-schedule-bar" style={{ height: `${item.total ? Math.max((item.total / maxCount) * 100, 5) : 0}%` }} title={item.total ? `${item.label}: ${formatScheduleValue(item.total)}` : item.label}>
-              {item.segments.map((segment) => segment.value > 0 && <i key={segment.status} className={`schedule-segment ${postPlanScheduleStatusMeta[segment.status].className}`} style={{ height: `${(segment.value / Math.max(item.total, 1)) * 100}%` }} title={`${label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
+              {item.segments.map((segment) => segment.value > 0 && <i key={segment.key} className={`schedule-segment ${segment.status ? postPlanScheduleStatusMeta[segment.status].className : "dimension"}`} style={{ height: `${(segment.value / Math.max(item.total, 1)) * 100}%`, "--schedule-segment-color": segment.color } as CSSProperties} title={`${segment.label}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{segment.label} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
             </div>
           </div>
           <strong className="post-plan-schedule-label">{item.label}</strong>
@@ -2329,9 +2375,9 @@ function TargetDashboard({
   const [tab, setTab] = useState<DashboardDimension>("product");
   const [postPlanTab, setPostPlanTab] = useState<DashboardDimension>("product");
   const [postPlanCalendarPeriod, setPostPlanCalendarPeriod] = useState<PostPlanCalendarPeriod>("month");
-  const [selectedPostPlanRows, setSelectedPostPlanRows] = useState<Set<string>>(new Set());
+  const [excludedPostPlanRows, setExcludedPostPlanRows] = useState<Set<string>>(new Set());
   const [resultTab, setResultTab] = useState<DashboardDimension>("product");
-  const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
+  const [filters, setFilters] = useState({ country: "ID", month: "2026-09", brand: "", owner: "" });
   const [expandedProgress, setExpandedProgress] = useState<Set<string>>(new Set());
   const [expandedPostPlans, setExpandedPostPlans] = useState<Set<string>>(new Set());
   const [resultOpen, setResultOpen] = useState(true);
@@ -2491,20 +2537,79 @@ function TargetDashboard({
     brand: buildPaidPlanBreakdowns("brand"),
   };
   const paidPlanRows = paidRowsByDimension[postPlanTab];
-  const currentPostPlanRowKeys = paidPlanRows.map((row) => `paid-${postPlanTab}-${row.name}`);
-  const currentPostPlanRowKeySignature = currentPostPlanRowKeys.join("|");
-  useEffect(() => {
-    setSelectedPostPlanRows(new Set(currentPostPlanRowKeys));
-  }, [postPlanTab, currentPostPlanRowKeySignature]);
-  const selectedPlanEntries = paidPlanEntries.filter((plan) => selectedPostPlanRows.has(`paid-${postPlanTab}-${postPlanDimensionValue(plan, postPlanTab)}`));
+  const allPostPlanEntryKeys = paidPlanEntries.map(planEntryKey);
+  const postPlanSelectionState = (entryKeys: string[]) => {
+    const selectedCount = entryKeys.filter((key) => !excludedPostPlanRows.has(key)).length;
+    return {
+      checked: entryKeys.length > 0 && selectedCount === entryKeys.length,
+      indeterminate: selectedCount > 0 && selectedCount < entryKeys.length,
+    };
+  };
+  const updatePostPlanSelection = (entryKeys: string[], checked: boolean) => {
+    setExcludedPostPlanRows((current) => {
+      const next = new Set(current);
+      entryKeys.forEach((key) => checked ? next.delete(key) : next.add(key));
+      return next;
+    });
+  };
+  const selectedPlanEntries = paidPlanEntries.filter((plan) => !excludedPostPlanRows.has(planEntryKey(plan)));
+  const selectedPostMtdEntries = postMtdEntries.filter((entry) => !excludedPostPlanRows.has(planEntryKey(entry)));
+  const selectedPlanMtdEntries = planMtdEntries.filter((entry) => !excludedPostPlanRows.has(planEntryKey(entry)));
+  const selectedTargetMetrics = sourceRows.reduce((summary, target) => {
+    const productName = postPlanDimensionValue(target, "product");
+    const productPlanEntries = paidPlanEntries.filter((plan) => postPlanDimensionValue(plan, "product") === productName);
+    const selectedProductPlanCount = productPlanEntries.filter((plan) => !excludedPostPlanRows.has(planEntryKey(plan))).length;
+    const share = productPlanEntries.length > 0 ? selectedProductPlanCount / productPlanEntries.length : 0;
+    summary.count += numeric(target.qtyTarget || target.qty) * share;
+    summary.amount += numeric(target.budgetTarget) * share;
+    return summary;
+  }, { count: 0, amount: 0 });
+  const selectedPostPlanSummary = {
+    ...postPlanSummary,
+    targetCount: Math.round(selectedTargetMetrics.count),
+    targetAmount: Math.round(selectedTargetMetrics.amount),
+    postCount: selectedPostMtdEntries.length,
+    postAmount: selectedPostMtdEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+    planCount: selectedPlanMtdEntries.length,
+    planAmount: selectedPlanMtdEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+    paidCount: selectedPlanEntries.length,
+    paidAmount: selectedPlanEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+  };
   const paidPlanChildrenFor = (dimension: DashboardDimension, row: DashboardBreakdown) => {
-    if (dimension === "product") {
-      return buildPaidPlanBreakdowns("tier").filter((child) => (child.planMtd || 0) > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.targetCount, 1)));
-    }
-    const productPlans = paidRowsByDimension.product;
-    if (dimension === "brand") return productPlans.filter((product) => product.sub.includes(row.name));
-    if (dimension === "strategist") return productPlans.filter((product) => product.sub.includes(row.name));
-    return productPlans.map((product) => scaleBreakdown(row, product.name, row.name, product.postTarget / Math.max(postPlanSummary.targetCount, 1)));
+    const childDimension: DashboardDimension = dimension === "product" ? "tier" : "product";
+    const parentEntries = paidPlanEntries.filter((entry) => postPlanDimensionValue(entry, dimension) === row.name);
+    const childGroups = Array.from(parentEntries.reduce((groups, entry) => {
+      const childName = postPlanDimensionValue(entry, childDimension);
+      groups.set(childName, [...(groups.get(childName) || []), entry]);
+      return groups;
+    }, new Map<string, Record<string, unknown>[]>()).entries()).sort((a, b) => b[1].length - a[1].length);
+    let assignedTargetCount = 0;
+    let assignedTargetAmount = 0;
+    return childGroups.map(([childName, childEntries], index) => {
+      const isLast = index === childGroups.length - 1;
+      const share = childEntries.length / Math.max(parentEntries.length, 1);
+      const childTargetCount = isLast ? Math.max(0, row.postTarget - assignedTargetCount) : Math.max(0, Math.round(row.postTarget * share));
+      const childTargetAmount = isLast ? Math.max(0, row.budgetTarget - assignedTargetAmount) : Math.max(0, Math.round(row.budgetTarget * share));
+      assignedTargetCount += childTargetCount;
+      assignedTargetAmount += childTargetAmount;
+      const matchesChild = (entry: Record<string, unknown>) => postPlanDimensionValue(entry, dimension) === row.name && postPlanDimensionValue(entry, childDimension) === childName;
+      const childPosts = postMtdEntries.filter(matchesChild);
+      const childPlans = planMtdEntries.filter(matchesChild);
+      return {
+        row: {
+          name: childName,
+          sub: row.name,
+          postMtd: childPosts.length,
+          postTarget: childTargetCount,
+          budgetMtd: childPosts.reduce((sum, entry) => sum + numeric(entry.eachPrice), 0),
+          budgetTarget: childTargetAmount,
+          planMtd: childPlans.length,
+          planAmountMtd: childPlans.reduce((sum, entry) => sum + numeric(entry.eachPrice), 0),
+          postAmountMtd: childPosts.reduce((sum, entry) => sum + numeric(entry.eachPrice), 0),
+        } satisfies DashboardBreakdown,
+        entryKeys: childEntries.map(planEntryKey),
+      };
+    });
   };
   const productRows: DashboardBreakdown[] = sourceRows.map((row) => ({
     name: String(row.product || "Product"),
@@ -2689,7 +2794,7 @@ function TargetDashboard({
       <section className="dashboard-filter">
         {[
           ["country", "国家", "Country", ["ID", "MY", "VN", "TH", "PH"]],
-          ["month", "月份", "Month", ["2026-08", "2026-07", "2026-06"]],
+          ["month", "月份", "Month", ["2026-09", "2026-08", "2026-07", "2026-06"]],
           ["brand", "品牌", "Brand", ["", "Glowsicha", "Glad2Glow", "Skintific"]],
           ["owner", "负责人", "KOL Strategist", ["", "Nadia", "Delvi", "Shafi", "Cilla"]],
         ].map(([key, zh, en, options]) => (
@@ -2697,7 +2802,7 @@ function TargetDashboard({
         ))}
         <div className="filter-actions">
           <button className="button primary" onClick={() => notify(label("Dashboard 已按条件刷新", "Dashboard filters applied", language))}><Search size={14} />{label("搜索", "Search", language)}</button>
-          <button className="button ghost" onClick={() => setFilters({ country: "ID", month: "2026-08", brand: "", owner: "" })}><RefreshCcw size={14} />{label("重置", "Reset", language)}</button>
+          <button className="button ghost" onClick={() => setFilters({ country: "ID", month: "2026-09", brand: "", owner: "" })}><RefreshCcw size={14} />{label("重置", "Reset", language)}</button>
         </div>
       </section>
 
@@ -2705,8 +2810,8 @@ function TargetDashboard({
         <section className="panel progress-panel post-plan-summary-panel">
           <div className="section-caption"><span />Post Plan</div>
           <div className="progress-pair">
-            <ProgressSummary title="Post" post={postPlanSummary.postCount} plan={postPlanSummary.planCount} target={postPlanSummary.targetCount} tone="green" language={language} actualLabel="Post" planLabel="Plan" gapLabel="Post GAP" paceLabel="Post Pace" />
-            <ProgressSummary title="Budget" post={postPlanSummary.postAmount} plan={postPlanSummary.planAmount} target={postPlanSummary.targetAmount} tone="amber" language={language} actualLabel="Budget" planLabel="Plan" gapLabel="Budget GAP" paceLabel="Budget Pace" />
+            <ProgressSummary title="Post" post={selectedPostPlanSummary.postCount} plan={selectedPostPlanSummary.planCount} target={selectedPostPlanSummary.targetCount} tone="green" language={language} actualLabel="Post" planLabel="Plan" gapLabel="Post GAP" paceLabel="Post Pace" />
+            <ProgressSummary title="Budget" post={selectedPostPlanSummary.postAmount} plan={selectedPostPlanSummary.planAmount} target={selectedPostPlanSummary.targetAmount} tone="amber" language={language} actualLabel="Budget" planLabel="Plan" gapLabel="Budget GAP" paceLabel="Budget Pace" />
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
@@ -2714,15 +2819,16 @@ function TargetDashboard({
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
               <colgroup><col className="dashboard-select-col" /><col className="breakdown-col" /><col className="post-target-col" /><col className="post-remaining-col" /><col className="post-pace-col" /><col className="budget-target-col" /><col className="budget-remaining-col" /><col className="budget-pace-col" /></colgroup>
-              <thead><tr><th rowSpan={2} className="dashboard-select-header"><input type="checkbox" aria-label={label("全选 Post Plan", "Select all Post Plans", language)} checked={currentPostPlanRowKeys.length > 0 && currentPostPlanRowKeys.every((key) => selectedPostPlanRows.has(key))} onChange={(event) => setSelectedPostPlanRows(event.target.checked ? new Set(currentPostPlanRowKeys) : new Set())} /></th><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr><tr><th>Post / Plan / Target</th><th>Post GAP</th><th>Progress</th><th>Budget / Plan / Target</th><th>Budget GAP</th><th>Progress</th></tr></thead>
+              <thead><tr><th rowSpan={2} className="dashboard-select-header"><LinkedSelectionCheckbox {...postPlanSelectionState(allPostPlanEntryKeys)} ariaLabel={label("全选 Post Plan", "Select all Post Plans", language)} onChange={(checked) => updatePostPlanSelection(allPostPlanEntryKeys, checked)} /></th><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr><tr><th>Post / Plan / Target</th><th>Post GAP</th><th>Progress</th><th>Budget / Plan / Target</th><th>Budget GAP</th><th>Progress</th></tr></thead>
               <tbody>{paidPlanRows.map((row) => {
                 const rowKey = `paid-${postPlanTab}-${row.name}`;
                 const isOpen = expandedPostPlans.has(rowKey);
                 const children = paidPlanChildrenFor(postPlanTab, row);
+                const parentEntryKeys = children.flatMap((child) => child.entryKeys);
                 return <Fragment key={rowKey}>
-                  <tr className="dashboard-parent-row"><td className="dashboard-select-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} ${row.name}`} checked={selectedPostPlanRows.has(rowKey)} onChange={(event) => setSelectedPostPlanRows((current) => { const next = new Set(current); event.target.checked ? next.add(rowKey) : next.delete(rowKey); return next; })} /></td><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><PostPlanMetricCells row={row} /></tr>
+                  <tr className="dashboard-parent-row"><td className="dashboard-select-cell"><LinkedSelectionCheckbox {...postPlanSelectionState(parentEntryKeys)} ariaLabel={`${label("选择", "Select", language)} ${row.name}`} onChange={(checked) => updatePostPlanSelection(parentEntryKeys, checked)} /></td><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><PostPlanMetricCells row={row} /></tr>
                   {isOpen && children.map((child) => {
-                    return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}><td className="dashboard-select-cell" /><td><strong>{child.name}</strong></td><PostPlanMetricCells row={child} /></tr>;
+                    return <tr className="nested-breakdown" key={`${rowKey}-${child.row.name}`}><td className="dashboard-select-cell"><LinkedSelectionCheckbox {...postPlanSelectionState(child.entryKeys)} ariaLabel={`${label("选择", "Select", language)} ${row.name} / ${child.row.name}`} onChange={(checked) => updatePostPlanSelection(child.entryKeys, checked)} /></td><td><strong>{child.row.name}</strong></td><PostPlanMetricCells row={child.row} /></tr>;
                   })}
                 </Fragment>;
               })}</tbody>
@@ -2735,7 +2841,7 @@ function TargetDashboard({
               ? <PostPlanCalendar entries={selectedPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} />
               : <div className="post-plan-schedule-views">
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} /></div>
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" stackBy="dimension" /></div>
               </div>}
           </div>
         </section>
@@ -3125,8 +3231,18 @@ export default function MarketingSystem() {
 
   useEffect(() => {
     setRows((current) => {
-      const payments = current.payment31;
-      if (!payments?.length) return current;
+      const storedPayments = current.payment31;
+      if (!storedPayments?.length) return current;
+      const needsSeptemberDemoMigration = !storedPayments.some((payment) => numeric(payment.dashboardSeptemberDemoVersion) >= 1);
+      const storedPaymentNumbers = new Set(storedPayments.map((payment) => String(payment.paymentNo || "")));
+      const payments = needsSeptemberDemoMigration
+        ? [...storedPayments, ...dashboard31SeptemberPayments.filter((payment) => !storedPaymentNumbers.has(String(payment.paymentNo))).map((payment) => ({ ...payment }))]
+        : storedPayments;
+      const storedTargets = current.target1 || [];
+      const storedTargetNumbers = new Set(storedTargets.map((target) => String(target.targetNo || "")));
+      const nextTargets = needsSeptemberDemoMigration
+        ? [...storedTargets, ...dashboard31SeptemberTargets.filter((target) => !storedTargetNumbers.has(String(target.targetNo))).map((target) => ({ ...target }))]
+        : storedTargets;
       const specialists = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"];
       const nextPayments = payments.map((payment, index) => {
         const paid = String(payment.sendPayment || payment.paid || "") === "Yes" || Boolean(payment.paymentDate);
@@ -3210,6 +3326,7 @@ export default function MarketingSystem() {
           source: payment.source || "Manual",
           picIsMe: payment.picIsMe ?? String(payment.owner || "") === "Ajeng Salma Nadhifa Fitriani",
           supervisorIsMe: payment.supervisorIsMe ?? String(payment.supervisor || "") === "Desy Chintya",
+          ...(needsSeptemberDemoMigration && index === 0 ? { dashboardSeptemberDemoVersion: 1 } : {}),
           ...(demoMigrationPending ? {
             qty: demoPlans.length || payment.qty,
             totalPrice: (demoPlans.length || numeric(payment.qty)) * numeric(payment.unitPrice),
@@ -3219,8 +3336,12 @@ export default function MarketingSystem() {
           } : {}),
         };
       });
-      const changed = nextPayments.some((payment, index) => Object.keys(payment).some((key) => payment[key] !== payments[index][key]));
-      const reviews = current.review31b || [];
+      const changed = nextPayments.length !== storedPayments.length || nextPayments.some((payment, index) => !storedPayments[index] || Object.keys(payment).some((key) => payment[key] !== storedPayments[index][key]));
+      const storedReviews = current.review31b || [];
+      const storedReviewKeys = new Set(storedReviews.map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
+      const reviews = needsSeptemberDemoMigration
+        ? [...storedReviews, ...dashboard31SeptemberReviews.filter((review) => !storedReviewKeys.has(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`)).map((review) => ({ ...review, id: Number(review.id) + 1000 }))]
+        : storedReviews;
       const nextReviews = reviews.map((review, index) => {
         const payment = nextPayments.find((item) => String(item.paymentNo || "") === String(review.paymentNo || ""));
         const paymentIndex = nextPayments.findIndex((item) => String(item.paymentNo || "") === String(review.paymentNo || ""));
@@ -3306,8 +3427,9 @@ export default function MarketingSystem() {
         }));
       });
       const mergedReviews = [...nextReviews, ...generatedDemoReviews];
-      const reviewsChanged = mergedReviews.length !== reviews.length || mergedReviews.some((review, index) => !reviews[index] || Object.keys(review).some((key) => review[key] !== reviews[index][key]));
-      return changed || reviewsChanged ? { ...current, payment31: nextPayments, review31b: mergedReviews } : current;
+      const reviewsChanged = mergedReviews.length !== storedReviews.length || mergedReviews.some((review, index) => !storedReviews[index] || Object.keys(review).some((key) => review[key] !== storedReviews[index][key]));
+      const targetsChanged = nextTargets.length !== storedTargets.length;
+      return changed || reviewsChanged || targetsChanged ? { ...current, target1: nextTargets, payment31: nextPayments, review31b: mergedReviews } : current;
     });
   }, [rows, setRows]);
 

@@ -1897,8 +1897,8 @@ type DashboardBreakdown = {
   postTarget: number;
   budgetMtd: number;
   budgetTarget: number;
-  paymentMtd?: number;
-  paymentAmountMtd?: number;
+  planMtd?: number;
+  planAmountMtd?: number;
   postAmountMtd?: number;
 };
 
@@ -1912,8 +1912,8 @@ function scaleBreakdown(row: DashboardBreakdown, name: string, sub: string, shar
     postTarget: Math.max(1, Math.round(row.postTarget * share)),
     budgetMtd: Math.round(row.budgetMtd * share),
     budgetTarget: Math.round(row.budgetTarget * share),
-    paymentMtd: Math.max(0, Math.round((row.paymentMtd || 0) * share)),
-    paymentAmountMtd: Math.round((row.paymentAmountMtd || 0) * share),
+    planMtd: Math.max(0, Math.round((row.planMtd || 0) * share)),
+    planAmountMtd: Math.round((row.planAmountMtd || 0) * share),
     postAmountMtd: Math.round((row.postAmountMtd || 0) * share),
   };
 }
@@ -1928,23 +1928,30 @@ function dashboardRatioPercent(actual: number, base: number) {
 
 function DualProgressMeter({
   post,
-  payment,
+  plan,
   target,
   tone,
   compact = false,
+  actualLabel = "Post",
+  planLabel = "Plan",
+  paceLabel = "Post Pace",
 }: {
   post: number;
-  payment: number;
+  plan: number;
   target: number;
   tone: "green" | "amber";
   compact?: boolean;
+  actualLabel?: string;
+  planLabel?: string;
+  paceLabel?: string;
 }) {
-  const paymentTargetRate = dashboardRatioPercent(payment, target);
+  const planTargetRate = dashboardRatioPercent(plan, target);
   const postTargetRate = dashboardRatioPercent(post, target);
+  const paceRate = dashboardRatioPercent(post, plan);
   return (
     <div className={`dual-progress-meter ${compact ? "compact" : ""} ${tone}`}>
-      <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(paymentTargetRate, 100)}%` }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%` }} /></div>
-      <div className="dual-progress-foot"><span>Payment / Target <b>{paymentTargetRate}%</b></span><span>Post / Target <b>{postTargetRate}%</b></span></div>
+      <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(planTargetRate, 100)}%` }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%` }} /></div>
+      <div className="dual-progress-foot"><span>{actualLabel} <b>{postTargetRate}%</b> - {planLabel} <b>{planTargetRate}%</b></span><span>{paceLabel} <b>{paceRate}%</b></span></div>
     </div>
   );
 }
@@ -1952,22 +1959,29 @@ function DualProgressMeter({
 function ProgressSummary({
   title,
   post,
-  payment,
+  plan,
   target,
   suffix,
   tone,
   language,
+  actualLabel = "Post",
+  planLabel = "Plan",
+  gapLabel = "Post GAP",
+  paceLabel = "Post Pace",
 }: {
   title: string;
   post: number;
-  payment: number;
+  plan: number;
   target: number;
   suffix?: string;
   tone: "green" | "amber";
   language: Language;
+  actualLabel?: string;
+  planLabel?: string;
+  gapLabel?: string;
+  paceLabel?: string;
 }) {
   const postGap = Math.max(target - post, 0);
-  const paymentGap = Math.max(target - payment, 0);
   return (
     <article className={`progress-summary ${tone}`}>
       <div className="summary-top">
@@ -1975,12 +1989,12 @@ function ProgressSummary({
       </div>
       <div className="summary-body">
         <div className="summary-values summary-values-three">
-          <div><b>{formatDashboardMetric(post, suffix)}</b><small>Post</small></div><i>/</i><div><b>{formatDashboardMetric(payment, suffix)}</b><small>Payment</small></div><i>/</i><div><b>{formatDashboardMetric(target, suffix)}</b><small>{label("目标", "Target", language)}</small></div>
+          <div><b>{formatDashboardMetric(post, suffix)}</b><small>{actualLabel}</small></div><i>/</i><div><b>{formatDashboardMetric(plan, suffix)}</b><small>{planLabel}</small></div><i>/</i><div><b>{formatDashboardMetric(target, suffix)}</b><small>{label("目标", "Target", language)}</small></div>
         </div>
         <i className="summary-divider" aria-hidden="true" />
-        <div className="summary-gaps"><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>Post GAP</small></span><i>/</i><span><b>{formatDashboardMetric(paymentGap, suffix)}</b><small>Payment GAP</small></span></div>
+        <div className="summary-gaps"><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>{gapLabel}</small></span></div>
       </div>
-      <DualProgressMeter post={post} payment={payment} target={target} tone={tone} />
+      <DualProgressMeter post={post} plan={plan} target={target} tone={tone} actualLabel={actualLabel} planLabel={planLabel} paceLabel={paceLabel} />
     </article>
   );
 }
@@ -2042,26 +2056,28 @@ function LegacyProgressSummary({
 
 function PostPlanMetricCells({ row }: { row: DashboardBreakdown }) {
   const post = row.postMtd;
-  const payment = row.paymentMtd ?? row.postMtd;
+  const plan = row.planMtd ?? row.postMtd;
   const target = row.postTarget;
   const postAmount = row.postAmountMtd ?? 0;
-  const paymentAmount = row.paymentAmountMtd ?? row.budgetMtd;
+  const planAmount = row.planAmountMtd ?? row.budgetMtd;
   const targetAmount = row.budgetTarget;
   const renderSnapshot = (values: [number, number, number], suffix = "") => <div className="dashboard-metric-triplet">{values.map((value, index) => <Fragment key={index}><b>{formatDashboardMetric(value, suffix)}</b>{index < values.length - 1 && <span>/</span>}</Fragment>)}</div>;
-  const renderGaps = (postValue: number, paymentValue: number, targetValue: number, suffix = "") => (
-    <div className="dashboard-gap-stack"><b>{formatDashboardMetric(Math.max(targetValue - postValue, 0), suffix)}</b><span>/</span><b>{formatDashboardMetric(Math.max(targetValue - paymentValue, 0), suffix)}</b></div>
+  const renderGap = (actualValue: number, targetValue: number, suffix = "") => (
+    <div className="dashboard-gap-stack"><b>{formatDashboardMetric(Math.max(targetValue - actualValue, 0), suffix)}</b></div>
   );
   return <>
-    <td className="dashboard-metric-snapshot">{renderSnapshot([post, payment, target])}</td>
-    <td className="dashboard-metric-gaps">{renderGaps(post, payment, target)}</td>
-    <td className="dashboard-metric-progress"><DualProgressMeter post={post} payment={payment} target={target} tone="green" compact /></td>
-    <td className="dashboard-metric-snapshot">{renderSnapshot([postAmount, paymentAmount, targetAmount], "IDR ")}</td>
-    <td className="dashboard-metric-gaps">{renderGaps(postAmount, paymentAmount, targetAmount, "IDR ")}</td>
-    <td className="dashboard-metric-progress"><DualProgressMeter post={postAmount} payment={paymentAmount} target={targetAmount} tone="amber" compact /></td>
+    <td className="dashboard-metric-snapshot">{renderSnapshot([post, plan, target])}</td>
+    <td className="dashboard-metric-gaps">{renderGap(post, target)}</td>
+    <td className="dashboard-metric-progress"><DualProgressMeter post={post} plan={plan} target={target} tone="green" compact actualLabel="Post" planLabel="Plan" paceLabel="Post Pace" /></td>
+    <td className="dashboard-metric-snapshot">{renderSnapshot([postAmount, planAmount, targetAmount])}</td>
+    <td className="dashboard-metric-gaps">{renderGap(postAmount, targetAmount)}</td>
+    <td className="dashboard-metric-progress"><DualProgressMeter post={postAmount} plan={planAmount} target={targetAmount} tone="amber" compact actualLabel="Budget" planLabel="Plan" paceLabel="Budget Pace" /></td>
   </>;
 }
 
 type PostPlanCalendarPeriod = "month" | "week" | "day";
+type PostPlanScheduleMetric = "quantity" | "amount";
+type PostPlanScheduleDimension = DashboardDimension | "status";
 
 function dashboardDateKey(date: Date) {
   const year = date.getFullYear();
@@ -2096,17 +2112,20 @@ function PostPlanCalendar({
       entry,
       date: String(entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10),
     }))
-    .filter((item) => item.date.startsWith(month))
+    .filter((item) => item.date)
     .sort((a, b) => a.date.localeCompare(b.date));
   const entriesByDate = new Map<string, typeof monthEntries>();
   monthEntries.forEach((item) => entriesByDate.set(item.date, [...(entriesByDate.get(item.date) || []), item]));
   const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
   const monthLeadingDays = (monthStart.getDay() + 6) % 7;
-  const monthDates = Array.from({ length: monthLeadingDays + daysInMonth }, (_, index) => {
-    if (index < monthLeadingDays) return "";
-    return dashboardDateKey(new Date(monthStart.getFullYear(), monthStart.getMonth(), index - monthLeadingDays + 1));
+  const calendarStart = new Date(monthStart);
+  calendarStart.setDate(calendarStart.getDate() - monthLeadingDays);
+  const calendarDays = monthLeadingDays + daysInMonth;
+  const monthDates = Array.from({ length: calendarDays + ((7 - (calendarDays % 7)) % 7) }, (_, index) => {
+    const date = new Date(calendarStart);
+    date.setDate(calendarStart.getDate() + index);
+    return dashboardDateKey(date);
   });
-  while (monthDates.length % 7) monthDates.push("");
   const firstEntryDate = monthEntries[0]?.date || dashboardDateKey(monthStart);
   const firstWeekDate = dashboardLocalDate(firstEntryDate);
   firstWeekDate.setDate(firstWeekDate.getDate() - ((firstWeekDate.getDay() + 6) % 7));
@@ -2119,17 +2138,16 @@ function PostPlanCalendar({
   const renderEntry = ({ entry }: { entry: Record<string, unknown> }) => {
     const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
     const statusMeta = postPlanCalendarStatusMeta[status];
-    return <div className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`}>
-      <b>{String(entry.product || label("未分配产品", "Unassigned Product", language))}</b>
-      <small>#{String(entry.postNo || "—")} · {String(entry.owner || "—")}</small>
-      <em>{label(statusMeta.zh, statusMeta.en, language)}</em>
+    return <div className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language))}>
+      <b>{String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language))}</b>
       {status === "overdue-completed" && <i className="post-plan-calendar-late-dot" aria-label={label("延期完成", "Published late", language)} />}
     </div>;
   };
   const renderCell = (date: string, index: number) => {
     const dayEntries = entriesByDate.get(date) || [];
-    return <div className={`post-plan-calendar-cell${date ? "" : " empty"}`} key={date || `empty-${index}`}>
-      {date && <><strong>{Number(date.slice(-2))}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className="post-plan-calendar-entries">{dayEntries.slice(0, 3).map(renderEntry)}{dayEntries.length > 3 && <small className="post-plan-calendar-more">+{dayEntries.length - 3}</small>}</div></>}
+    const outsideMonth = !date.startsWith(month);
+    return <div className={`post-plan-calendar-cell${outsideMonth ? " outside-month" : ""}`} key={date || `empty-${index}`}>
+      <><strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className="post-plan-calendar-entries">{dayEntries.slice(0, 3).map(renderEntry)}{dayEntries.length > 3 && <small className="post-plan-calendar-more">+{dayEntries.length - 3}</small>}</div></>
     </div>;
   };
   const dates = period === "week" ? weekDates : monthDates;
@@ -2181,22 +2199,27 @@ function PostPlanScheduleChart({
   publishedPlanKeys,
   heading,
   visibleStatuses = ["planned", "overdue", "completed", "overdue-completed"],
-  dimensionValueOverride,
+  metric = "quantity",
 }: {
   entries: Record<string, unknown>[];
   period: Exclude<PostPlanCalendarPeriod, "day">;
   language: Language;
   today: string;
-  dimension: DashboardDimension;
+  dimension: PostPlanScheduleDimension;
   dimensionLabel: string;
   publishedPlanKeys: Set<string>;
   heading?: string;
   visibleStatuses?: PostPlanScheduleStatus[];
-  dimensionValueOverride?: (entry: Record<string, unknown>) => string;
+  metric?: PostPlanScheduleMetric;
 }) {
   const anchor = dashboardLocalDate(today);
   const statusOrder = visibleStatuses;
   const dimensionValue = (entry: Record<string, unknown>) => {
+    if (dimension === "status") {
+      const rawStatus = postPlanScheduleStatus(entry, today, publishedPlanKeys);
+      const status = rawStatus === "overdue-completed" && !statusOrder.includes(rawStatus) ? "completed" : rawStatus;
+      return label(postPlanScheduleStatusMeta[status].zh, postPlanScheduleStatusMeta[status].en, language);
+    }
     if (dimension === "product") return entry.product;
     if (dimension === "tier") return entry.rate || entry.tier;
     if (dimension === "strategist") return entry.owner;
@@ -2210,6 +2233,7 @@ function PostPlanScheduleChart({
       entry,
       date: postPlanScheduleDate(entry),
       status: status === "overdue-completed" && !statusOrder.includes("overdue-completed") ? "completed" : status,
+      value: metric === "amount" ? numeric(entry.eachPrice) : 1,
     };
   }).filter((item) => item.date);
   const monthPeriods = Array.from({ length: 7 }, (_, index) => {
@@ -2245,36 +2269,37 @@ function PostPlanScheduleChart({
     const matching = periodEntries(item);
     return {
       ...item,
-      total: matching.length,
-      segments: statusOrder.map((status) => ({ status, count: matching.filter((entry) => entry.status === status).length })),
+      total: matching.reduce((sum, entry) => sum + entry.value, 0),
+      segments: statusOrder.map((status) => ({ status, value: matching.filter((entry) => entry.status === status).reduce((sum, entry) => sum + entry.value, 0) })),
     };
   });
   const dimensionCounts = Array.from(scheduleEntries.reduce((groups, current) => {
-    const name = String(dimensionValueOverride?.(current.entry) || dimensionValue(current.entry) || label("未分配", "Unassigned", language));
+    const name = String(dimensionValue(current.entry) || label("未分配", "Unassigned", language));
     const currentValue = groups.get(name) || { total: 0, statuses: new Set<PostPlanScheduleStatus>() };
-    currentValue.total += 1;
+    currentValue.total += current.value;
     currentValue.statuses.add(current.status);
     groups.set(name, currentValue);
     return groups;
   }, new Map<string, { total: number; statuses: Set<PostPlanScheduleStatus> }>()).entries()).sort((a, b) => b[1].total - a[1].total);
   const maxCount = Math.max(...periodSegments.map((item) => item.total), 1);
-  const formatCount = (count: number) => `${count}`;
-  return <div className={`post-plan-schedule-chart ${period}`}>
+  const formatScheduleValue = (value: number) => metric === "amount" ? compactNumber(value) : `${value}`;
+  const metricLabel = metric === "amount" ? label("金额", "Amount", language) : label("数量", "Quantity", language);
+  return <div className={`post-plan-schedule-chart ${period} ${metric}`}>
     <div className="post-plan-schedule-toolbar">
-      <div><strong>{heading || label("柱状排期", "Schedule", language)}</strong><small>{label("按", "By", language)} {dimensionLabel} · {period === "month" ? "7" : "16"} {period === "month" ? label("个月", "months", language) : label("周", "weeks", language)}</small></div>
+      <div><strong>{heading || metricLabel}</strong><small>{label("按", "By", language)} {dimensionLabel} · {period === "month" ? "7" : "16"} {period === "month" ? label("个月", "months", language) : label("周", "weeks", language)}</small></div>
       <div className="post-plan-schedule-legend">{statusOrder.map((status) => <span key={status} className={`schedule-legend-item ${postPlanScheduleStatusMeta[status].className}`}><i />{label(postPlanScheduleStatusMeta[status].zh, postPlanScheduleStatusMeta[status].en, language)}</span>)}</div>
     </div>
     {dimensionCounts.length > 0 && <div className="post-plan-schedule-dimensions" aria-label={`${dimensionLabel} breakdown`}>
-      {dimensionCounts.slice(0, 8).map(([name, value]) => <span key={name}><b>{name}</b><small>{formatCount(value.total)}</small></span>)}
+      {dimensionCounts.slice(0, 8).map(([name, value]) => <span key={name}><b>{name}</b><small>{formatScheduleValue(value.total)}</small></span>)}
       {dimensionCounts.length > 8 && <small className="post-plan-schedule-more">+{dimensionCounts.length - 8}</small>}
     </div>}
     <div className="post-plan-schedule-plot" style={{ "--schedule-max": maxCount } as CSSProperties}>
-      <div className="post-plan-schedule-y-axis"><span>{maxCount}</span><span>{Math.ceil(maxCount / 2)}</span><span>0</span></div>
+      <div className="post-plan-schedule-y-axis"><span>{formatScheduleValue(maxCount)}</span><span>{formatScheduleValue(Math.ceil(maxCount / 2))}</span><span>0</span></div>
       <div className="post-plan-schedule-columns">
         {periodSegments.map((item) => <div className={`post-plan-schedule-column${item.marker ? " current" : ""}`} key={item.key}>
           <div className="post-plan-schedule-bar-area">
-            <div className="post-plan-schedule-bar" title={item.total ? `${item.label}: ${item.total}` : item.label}>
-              {item.segments.map((segment) => segment.count > 0 && <i key={segment.status} className={`schedule-segment ${postPlanScheduleStatusMeta[segment.status].className}`} style={{ height: `${(segment.count / maxCount) * 100}%` }} title={`${label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)}: ${segment.count}`}><b>{segment.count}</b>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
+            <div className="post-plan-schedule-bar" title={item.total ? `${item.label}: ${formatScheduleValue(item.total)}` : item.label}>
+              {item.segments.map((segment) => segment.value > 0 && <i key={segment.status} className={`schedule-segment ${postPlanScheduleStatusMeta[segment.status].className}`} style={{ height: `${(segment.value / maxCount) * 100}%` }} title={`${label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
             </div>
           </div>
           <strong className="post-plan-schedule-label">{item.label}</strong>
@@ -2381,12 +2406,29 @@ function TargetDashboard({
   const publishedPlanKeys = new Set(reviewRows.filter((review) => String(review.postStatus || "") === "Published" || Boolean(review.actualPostDate || review.postDate)).map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
   const publishedPaidPlans = paidPlanEntries.filter((plan) => publishedPlanKeys.has(`${plan.paymentNo}|${String(plan.postNo)}`));
   const today = new Date().toISOString().slice(0, 10);
+  const selectedMonthStart = `${filters.month}-01`;
+  const planEntryKey = (entry: Record<string, unknown>) => `${String(entry.paymentNo || "")}|${String(entry.postNo || "")}`;
+  const postMtdEntries = postedPlanEntries.filter((entry) => {
+    const actualDate = String(entry.actualPostDate || entry.postDate || "");
+    return actualDate.startsWith(filters.month) || (!actualDate && String(entry.planningPostDate || "").startsWith(filters.month));
+  });
+  const currentMonthUnpostedPlanEntries = paidPlanEntries.filter((plan) => {
+    const key = planEntryKey(plan);
+    return String(plan.planningPostDate || "").startsWith(filters.month) && !publishedPlanKeys.has(key);
+  });
   const delayedPaidPlans = paidPlanEntries.filter((plan) => Boolean(plan.planningPostDate) && String(plan.planningPostDate) < today && !publishedPlanKeys.has(`${plan.paymentNo}|${String(plan.postNo)}`));
+  const historicalDelayedPlanEntries = paidPlanEntries.filter((plan) => {
+    const key = planEntryKey(plan);
+    return Boolean(plan.planningPostDate) && String(plan.planningPostDate) < selectedMonthStart && !publishedPlanKeys.has(key);
+  });
+  const planMtdEntries = Array.from(new Map([...postMtdEntries, ...currentMonthUnpostedPlanEntries, ...historicalDelayedPlanEntries].map((entry) => [planEntryKey(entry), entry])).values());
   const postPlanSummary = {
     targetCount: sourceRows.reduce((sum, row) => sum + numeric(row.qtyTarget || row.qty), 0),
     targetAmount: sourceRows.reduce((sum, row) => sum + numeric(row.budgetTarget), 0),
-    postCount: postedPlanEntries.length,
-    postAmount: postedPlanEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+    postCount: postMtdEntries.length,
+    postAmount: postMtdEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
+    planCount: planMtdEntries.length,
+    planAmount: planMtdEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
     paidCount: paidPlanEntries.length,
     paidAmount: paidPlanEntries.reduce((sum, plan) => sum + numeric(plan.eachPrice), 0),
     publishedCount: publishedPaidPlans.length,
@@ -2396,7 +2438,7 @@ function TargetDashboard({
   };
   const buildPaidPlanBreakdowns = (dimension: DashboardDimension): DashboardBreakdown[] => {
     const groups = new Map<string, DashboardBreakdown>();
-    const getGroup = (name: string, sub: string) => groups.get(name) || { name, sub, postMtd: 0, postTarget: 0, budgetMtd: 0, budgetTarget: 0, paymentMtd: 0, paymentAmountMtd: 0, postAmountMtd: 0 };
+    const getGroup = (name: string, sub: string) => groups.get(name) || { name, sub, postMtd: 0, postTarget: 0, budgetMtd: 0, budgetTarget: 0, planMtd: 0, planAmountMtd: 0, postAmountMtd: 0 };
     if (dimension !== "specialist" && dimension !== "submitter") {
       sourceRows.forEach((target) => {
         const name = postPlanDimensionValue(target, dimension);
@@ -2406,15 +2448,14 @@ function TargetDashboard({
         groups.set(name, current);
       });
     }
-    paidPlanEntries.forEach((plan) => {
+    planMtdEntries.forEach((plan) => {
       const name = postPlanDimensionValue(plan, dimension);
-      const current = getGroup(name, dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("已付款 Post Plan", "Paid Post Plan", language));
-      current.paymentMtd = (current.paymentMtd || 0) + 1;
-      current.paymentAmountMtd = (current.paymentAmountMtd || 0) + numeric(plan.eachPrice);
-      current.budgetMtd += numeric(plan.eachPrice);
+      const current = getGroup(name, dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("Post Plan", "Post Plan", language));
+      current.planMtd = (current.planMtd || 0) + 1;
+      current.planAmountMtd = (current.planAmountMtd || 0) + numeric(plan.eachPrice);
       groups.set(name, current);
     });
-    postedPlanEntries.forEach((plan) => {
+    postMtdEntries.forEach((plan) => {
       const name = postPlanDimensionValue(plan, dimension);
       const current = getGroup(name, dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("已发布 Post", "Published Post", language));
       current.postMtd += 1;
@@ -2425,9 +2466,9 @@ function TargetDashboard({
     const totalBudgetTarget = sourceRows.reduce((sum, row) => sum + numeric(row.budgetTarget), 0);
     const values = Array.from(groups.values());
     if (dimension === "specialist" || dimension === "submitter") {
-      const totalPayment = values.reduce((sum, row) => sum + (row.paymentMtd || 0), 0);
+      const totalPlan = values.reduce((sum, row) => sum + (row.planMtd || 0), 0);
       values.forEach((row, index) => {
-        const share = totalPayment > 0 ? (row.paymentMtd || 0) / totalPayment : 1 / Math.max(values.length, 1);
+        const share = totalPlan > 0 ? (row.planMtd || 0) / totalPlan : 1 / Math.max(values.length, 1);
         row.postTarget = Math.max(1, Math.round(totalTarget * share));
         row.budgetTarget = Math.max(0, Math.round(totalBudgetTarget * share));
         if (index === values.length - 1) {
@@ -2454,7 +2495,7 @@ function TargetDashboard({
   useEffect(() => {
     setSelectedPostPlanRows(new Set(currentPostPlanRowKeys));
   }, [postPlanTab, currentPostPlanRowKeySignature]);
-  const selectedPaidPlanEntries = paidPlanEntries.filter((plan) => selectedPostPlanRows.has(`paid-${postPlanTab}-${postPlanDimensionValue(plan, postPlanTab)}`));
+  const selectedPlanEntries = paidPlanEntries.filter((plan) => selectedPostPlanRows.has(`paid-${postPlanTab}-${postPlanDimensionValue(plan, postPlanTab)}`));
   const paidPlanChildrenFor = (dimension: DashboardDimension, row: DashboardBreakdown) => {
     if (dimension === "product") {
       return buildPaidPlanBreakdowns("tier").filter((child) => child.postTarget > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.targetCount, 1)));
@@ -2535,13 +2576,6 @@ function TargetDashboard({
     ...(version31 ? [["brand", "品牌", "Brand"]] as const : []),
   ] as const;
   const currentPostPlanDimensionLabel = tabs.find(([key]) => key === postPlanTab)?.[language === "zh" ? 1 : 2] || "Product";
-  const secondaryPostPlanDimension: DashboardDimension = postPlanTab === "product" ? "tier" : "product";
-  const secondaryPostPlanDimensionLabel = postPlanTab === "product"
-    ? label("产品下 Tier", "Tier within Product", language)
-    : label("产品", "Product", language);
-  const secondaryPostPlanDimensionValue = postPlanTab === "product"
-    ? (entry: Record<string, unknown>) => `${String(entry.product || label("未分配产品", "Unassigned Product", language))} · ${String(entry.rate || entry.tier || label("未分级", "Unrated", language))}`
-    : undefined;
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -2670,8 +2704,8 @@ function TargetDashboard({
         <section className="panel progress-panel post-plan-summary-panel">
           <div className="section-caption"><span />Post Plan</div>
           <div className="progress-pair">
-            <ProgressSummary title="Payment Qty" post={postPlanSummary.postCount} payment={postPlanSummary.paidCount} target={postPlanSummary.targetCount} tone="green" language={language} />
-            <ProgressSummary title="Payment Amount" post={postPlanSummary.postAmount} payment={postPlanSummary.paidAmount} target={postPlanSummary.targetAmount} tone="amber" language={language} />
+            <ProgressSummary title="Post" post={postPlanSummary.postCount} plan={postPlanSummary.planCount} target={postPlanSummary.targetCount} tone="green" language={language} actualLabel="Post" planLabel="Plan" gapLabel="Post GAP" paceLabel="Post Pace" />
+            <ProgressSummary title="Budget" post={postPlanSummary.postAmount} plan={postPlanSummary.planAmount} target={postPlanSummary.targetAmount} tone="amber" language={language} actualLabel="Budget" planLabel="Plan" gapLabel="Budget GAP" paceLabel="Budget Pace" />
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
@@ -2679,7 +2713,7 @@ function TargetDashboard({
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
               <colgroup><col className="dashboard-select-col" /><col className="breakdown-col" /><col className="post-target-col" /><col className="post-remaining-col" /><col className="post-pace-col" /><col className="budget-target-col" /><col className="budget-remaining-col" /><col className="budget-pace-col" /></colgroup>
-              <thead><tr><th rowSpan={2} className="dashboard-select-header"><input type="checkbox" aria-label={label("全选 Post Plan", "Select all Post Plans", language)} checked={currentPostPlanRowKeys.length > 0 && currentPostPlanRowKeys.every((key) => selectedPostPlanRows.has(key))} onChange={(event) => setSelectedPostPlanRows(event.target.checked ? new Set(currentPostPlanRowKeys) : new Set())} /></th><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Payment Qty</th><th colSpan={3}>Payment Amount</th></tr><tr><th>Post / Payment / Target</th><th>Post GAP / Payment GAP</th><th>Progress</th><th>Post / Payment / Target</th><th>Post GAP / Payment GAP</th><th>Progress</th></tr></thead>
+              <thead><tr><th rowSpan={2} className="dashboard-select-header"><input type="checkbox" aria-label={label("全选 Post Plan", "Select all Post Plans", language)} checked={currentPostPlanRowKeys.length > 0 && currentPostPlanRowKeys.every((key) => selectedPostPlanRows.has(key))} onChange={(event) => setSelectedPostPlanRows(event.target.checked ? new Set(currentPostPlanRowKeys) : new Set())} /></th><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr><tr><th>Post / Plan / Target</th><th>Post GAP</th><th>Progress</th><th>Budget / Plan / Target</th><th>Budget GAP</th><th>Progress</th></tr></thead>
               <tbody>{paidPlanRows.map((row) => {
                 const rowKey = `paid-${postPlanTab}-${row.name}`;
                 const isOpen = expandedPostPlans.has(rowKey);
@@ -2697,10 +2731,10 @@ function TargetDashboard({
             <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-tabs">{([[
               "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={selectedPaidPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} />
+              ? <PostPlanCalendar entries={selectedPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} />
               : <div className="post-plan-schedule-views">
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPaidPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("按上方 Tab", "By top Tab", language)} visibleStatuses={["planned", "overdue", "completed"]} /></div>
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPaidPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={secondaryPostPlanDimension} dimensionLabel={secondaryPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("按产品视图", "By product view", language)} visibleStatuses={["planned", "overdue", "completed"]} dimensionValueOverride={secondaryPostPlanDimensionValue} /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} /></div>
               </div>}
           </div>
         </section>

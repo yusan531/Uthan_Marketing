@@ -15,16 +15,17 @@
 
 ## Comparison
 
-The implementation preserves the existing Marketing 3.0 shell and embeds the reference visual language in the Post Plan module. Month renders seven stacked columns and Week renders sixteen columns, with the active month/week highlighted and two linked breakdown views: the upper-tab dimension plus a product view (or Product · Tier when Product is already selected). Day is restored to a monthly calendar grid with four status labels: Published, Pending, Overdue, and Published late; delayed completions use a red dot on a green entry.
+The implementation preserves the existing Marketing 3.0 shell and embeds the reference visual language in the Post Plan module. Month renders seven stacked columns and Week renders sixteen columns, with the active month/week highlighted and two side-by-side quantity views: the first is labelled by Post Status, while the second follows whichever dimension is selected in the upper Post Plan tab. Day is restored to a monthly calendar grid with adjacent-month dates, month labels on day 1, and four status colors; each schedule entry shows only the creator/strategist name, while delayed completions use a red dot on a green entry.
 
 The reference image is a standalone two-chart composition while the implementation is intentionally integrated into the existing dashboard panel. This is an expected product-layout difference, not a fidelity defect.
 
 ## Primary interactions tested
 
-- Month: two linked charts, each with exactly 7 period columns and one current-period highlight; each legend has only Planned, Overdue, and Completed.
-- Week: two linked charts, each with exactly 16 period columns and one current-week highlight; each legend has only Planned, Overdue, and Completed.
-- Day: monthly calendar grid replaces the previous date list and exposes all four status labels.
-- Product to Creator Tier: the primary chart follows the selected tab and the secondary chart switches from Product · Tier to Product as the selected tab changes.
+- Month: side-by-side quantity charts labelled by Post Status and the active upper-tab dimension, each with exactly 7 period columns and one current-period highlight; each legend has only Planned, Overdue, and Completed.
+- Week: side-by-side quantity charts labelled by Post Status and the active upper-tab dimension, each with exactly 16 period columns and one current-week highlight; each legend has only Planned, Overdue, and Completed.
+- Chart hover: segment values enlarge and expose a status/value tooltip.
+- Day: monthly calendar grid replaces the previous date list, fills leading/trailing adjacent dates in a subdued style, labels month changes on day 1, and exposes all four status colors while showing only creator names in entries.
+- Tab dimension switching: the second schedule view follows Product, Creator Tier, KOL Strategist, KOL Specialist, Submitter, or Brand as the matching upper tab changes.
 - Row checkbox: deselecting a product removes its dimension chip and entries from the schedule data.
 - Status rendering: Day entries use planned, overdue, completed, and overdue-completed classes; Month/Week fold delayed completions into Completed and hide the fourth legend item.
 - Build: `npm run build` passed.

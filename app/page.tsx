@@ -2043,7 +2043,7 @@ function TargetDashboard({
     const paymentMonth = String(payment.targetMonth || payment.paymentDate || payment.expectedPostDate || "").slice(0, 7);
     return (String(payment.sendPayment || "") === "Yes" || Boolean(payment.paymentDate)) && (!filters.country || String(payment.country || "ID") === filters.country) && (!filters.month || paymentMonth === filters.month) && (!filters.brand || String(payment.brand || "") === filters.brand) && (!filters.owner || String(payment.owner || "") === filters.owner);
   });
-  const paidPlanEntries = paidPayments.flatMap((payment) => {
+  const paidPlanEntries = paidPayments.flatMap((payment, paymentIndex) => {
     const savedPlans = Array.isArray(payment.postPlans) ? payment.postPlans as Record<string, unknown>[] : [];
     const plans = savedPlans.length
       ? savedPlans
@@ -2060,8 +2060,8 @@ function TargetDashboard({
       planningPostDate: plan.planningPostDate || payment.expectedPostDate,
       product: plan.product || payment.product || label("未分配产品", "Unassigned Product", language),
       owner: payment.owner || label("未分配负责人", "Unassigned Strategist", language),
-      specialist: payment.kolSpecialist || label("未分配 Specialist", "Unassigned Specialist", language),
-      submitter: payment.submitter || label("未分配 Submitter", "Unassigned Submitter", language),
+      specialist: payment.kolSpecialist || payment.specialist || ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"][paymentIndex % 4],
+      submitter: payment.submitter || "Uthan",
       brand: payment.brand || label("未分配品牌", "Unassigned Brand", language),
       tier: plan.rate || payment.rate || label("未分级", "Unrated", language),
     }));

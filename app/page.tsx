@@ -1939,11 +1939,10 @@ function DualProgressMeter({
 }) {
   const paymentTargetRate = dashboardRatioPercent(payment, target);
   const postTargetRate = dashboardRatioPercent(post, target);
-  const postPaymentRate = dashboardRatioPercent(post, payment);
   return (
     <div className={`dual-progress-meter ${compact ? "compact" : ""} ${tone}`}>
       <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(paymentTargetRate, 100)}%` }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%` }} /></div>
-      <div className="dual-progress-foot"><span>Post / Payment <b>{postPaymentRate}%</b></span><span>Payment / Target <b>{paymentTargetRate}%</b></span><span>Post / Target <b>{postTargetRate}%</b></span></div>
+      <div className="dual-progress-foot"><span>Payment / Target <b>{paymentTargetRate}%</b></span><span>Post / Target <b>{postTargetRate}%</b></span></div>
     </div>
   );
 }
@@ -1984,6 +1983,61 @@ function ProgressSummary({
   );
 }
 
+function LegacyDualProgressMeter({
+  post,
+  payment,
+  target,
+  tone,
+}: {
+  post: number;
+  payment: number;
+  target: number;
+  tone: "green" | "amber";
+}) {
+  const postRate = target > 0 ? percent(post, target) : 0;
+  const paymentRate = target > 0 ? percent(payment, target) : 0;
+  return (
+    <div className={`legacy-dual-progress-meter ${tone}`}>
+      <div className="legacy-dual-progress-line"><small>Payment</small><div className="legacy-dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(paymentRate, 100)}%` }} /></div></div>
+      <div className="legacy-dual-progress-line"><small>Post</small><div className="legacy-dual-progress-track"><i className="post-fill" style={{ width: `${Math.min(postRate, 100)}%` }} /></div></div>
+      <div className="legacy-dual-progress-foot"><span>Post <b>{postRate}%</b></span><span>Payment <b>{paymentRate}%</b></span><span>Target <b>100%</b></span></div>
+    </div>
+  );
+}
+
+function LegacyProgressSummary({
+  title,
+  post,
+  payment,
+  target,
+  suffix,
+  tone,
+}: {
+  title: string;
+  post: number;
+  payment: number;
+  target: number;
+  suffix?: string;
+  tone: "green" | "amber";
+}) {
+  const postGap = Math.max(target - post, 0);
+  const paymentGap = Math.max(target - payment, 0);
+  return (
+    <article className={`progress-summary legacy-progress-summary ${tone}`}>
+      <div className="summary-top">
+        <strong>{title}</strong>
+      </div>
+      <div className="legacy-summary-values">
+        <div><b>{formatDashboardMetric(post, suffix)}</b><small>Post</small></div>
+        <div><b>{formatDashboardMetric(payment, suffix)}</b><small>Payment</small></div>
+        <div><b>{formatDashboardMetric(target, suffix)}</b><small>Target</small></div>
+      </div>
+      <div className="legacy-summary-gaps"><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>Post GAP</small></span><span><b>{formatDashboardMetric(paymentGap, suffix)}</b><small>Payment GAP</small></span></div>
+      <LegacyDualProgressMeter post={post} payment={payment} target={target} tone={tone} />
+    </article>
+  );
+}
+
 function PostPlanMetricCells({ row }: { row: DashboardBreakdown }) {
   const post = row.postMtd;
   const payment = row.paymentMtd ?? row.postMtd;
@@ -2005,6 +2059,77 @@ function PostPlanMetricCells({ row }: { row: DashboardBreakdown }) {
   </>;
 }
 
+type PostPlanCalendarPeriod = "month" | "week" | "day";
+
+function dashboardDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function dashboardLocalDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year || 2026, Math.max((month || 1) - 1, 0), day || 1);
+}
+
+function PostPlanCalendar({
+  entries,
+  month,
+  period,
+  language,
+}: {
+  entries: Record<string, unknown>[];
+  month: string;
+  period: PostPlanCalendarPeriod;
+  language: Language;
+}) {
+  const monthStart = dashboardLocalDate(`${month}-01`);
+  const monthEntries = entries
+    .map((entry) => ({
+      entry,
+      date: String(entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10),
+    }))
+    .filter((item) => item.date.startsWith(month))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const entriesByDate = new Map<string, typeof monthEntries>();
+  monthEntries.forEach((item) => entriesByDate.set(item.date, [...(entriesByDate.get(item.date) || []), item]));
+  const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+  const monthLeadingDays = (monthStart.getDay() + 6) % 7;
+  const monthDates = Array.from({ length: monthLeadingDays + daysInMonth }, (_, index) => {
+    if (index < monthLeadingDays) return "";
+    return dashboardDateKey(new Date(monthStart.getFullYear(), monthStart.getMonth(), index - monthLeadingDays + 1));
+  });
+  while (monthDates.length % 7) monthDates.push("");
+  const firstEntryDate = monthEntries[0]?.date || dashboardDateKey(monthStart);
+  const firstWeekDate = dashboardLocalDate(firstEntryDate);
+  firstWeekDate.setDate(firstWeekDate.getDate() - ((firstWeekDate.getDay() + 6) % 7));
+  const weekDates = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(firstWeekDate);
+    date.setDate(firstWeekDate.getDate() + index);
+    return dashboardDateKey(date);
+  });
+  const weekdayLabels = language === "zh" ? ["一", "二", "三", "四", "五", "六", "日"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const renderEntry = ({ entry }: { entry: Record<string, unknown> }) => (
+    <div className="post-plan-calendar-entry" key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`}>
+      <b>{String(entry.product || label("未分配产品", "Unassigned Product", language))}</b>
+      <small>#{String(entry.postNo || "—")} · {String(entry.owner || "—")}</small>
+    </div>
+  );
+  const renderCell = (date: string, index: number) => {
+    const dayEntries = entriesByDate.get(date) || [];
+    return <div className={`post-plan-calendar-cell${date ? "" : " empty"}`} key={date || `empty-${index}`}>
+      {date && <><strong>{Number(date.slice(-2))}</strong><div className="post-plan-calendar-entries">{dayEntries.slice(0, 3).map(renderEntry)}{dayEntries.length > 3 && <small className="post-plan-calendar-more">+{dayEntries.length - 3}</small>}</div></>}
+    </div>;
+  };
+  if (period === "day") {
+    const dayGroups = Array.from(entriesByDate.entries());
+    return <div className="post-plan-day-list">{dayGroups.length ? dayGroups.map(([date, dayEntries]) => <article key={date}><strong>{date}</strong><div>{dayEntries.map(renderEntry)}</div></article>) : <div className="post-plan-calendar-empty">{label("当前月份没有已选择的 Post Plan", "No selected Post Plans in this month", language)}</div>}</div>;
+  }
+  const dates = period === "week" ? weekDates : monthDates;
+  return <div className={`post-plan-calendar-grid ${period}`}><div className="post-plan-calendar-weekdays">{weekdayLabels.map((weekday) => <span key={weekday}>{weekday}</span>)}</div><div className="post-plan-calendar-days">{dates.map((date, index) => renderCell(date, index))}</div></div>;
+}
+
 function TargetDashboard({
   language,
   targetRows,
@@ -2022,6 +2147,8 @@ function TargetDashboard({
 }) {
   const [tab, setTab] = useState<DashboardDimension>("product");
   const [postPlanTab, setPostPlanTab] = useState<DashboardDimension>("product");
+  const [postPlanCalendarPeriod, setPostPlanCalendarPeriod] = useState<PostPlanCalendarPeriod>("month");
+  const [selectedPostPlanRows, setSelectedPostPlanRows] = useState<Set<string>>(new Set());
   const [resultTab, setResultTab] = useState<DashboardDimension>("product");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-08", brand: "", owner: "" });
   const [expandedProgress, setExpandedProgress] = useState<Set<string>>(new Set());
@@ -2069,6 +2196,14 @@ function TargetDashboard({
       tier: plan.rate || payment.rate || label("未分级", "Unrated", language),
     }));
   });
+  const postPlanDimensionValue = (row: Record<string, unknown>, dimension: DashboardDimension) => {
+    if (dimension === "product") return String(row.product || label("未分配产品", "Unassigned Product", language));
+    if (dimension === "tier") return String(row.rate || row.tier || label("未分级", "Unrated", language));
+    if (dimension === "strategist") return String(row.owner || label("未分配负责人", "Unassigned Strategist", language));
+    if (dimension === "specialist") return String(row.kolSpecialist || row.specialist || label("未分配 Specialist", "Unassigned Specialist", language));
+    if (dimension === "submitter") return String(row.submitter || label("未分配 Submitter", "Unassigned Submitter", language));
+    return String(row.brand || label("未分配品牌", "Unassigned Brand", language));
+  };
   const paidPlanPriceByKey = new Map(paidPlanEntries.map((plan) => [`${plan.paymentNo}|${String(plan.postNo)}`, numeric(plan.eachPrice)]));
   const postedPlanEntries = reviewRows.filter((review) => {
     const postDate = String(review.actualPostDate || review.postDate || "");
@@ -2105,18 +2240,10 @@ function TargetDashboard({
   };
   const buildPaidPlanBreakdowns = (dimension: DashboardDimension): DashboardBreakdown[] => {
     const groups = new Map<string, DashboardBreakdown>();
-    const dimensionValue = (row: Record<string, unknown>) => {
-      if (dimension === "product") return String(row.product || label("未分配产品", "Unassigned Product", language));
-      if (dimension === "tier") return String(row.rate || row.tier || label("未分级", "Unrated", language));
-      if (dimension === "strategist") return String(row.owner || label("未分配负责人", "Unassigned Strategist", language));
-      if (dimension === "specialist") return String(row.kolSpecialist || row.specialist || label("未分配 Specialist", "Unassigned Specialist", language));
-      if (dimension === "submitter") return String(row.submitter || label("未分配 Submitter", "Unassigned Submitter", language));
-      return String(row.brand || label("未分配品牌", "Unassigned Brand", language));
-    };
     const getGroup = (name: string, sub: string) => groups.get(name) || { name, sub, postMtd: 0, postTarget: 0, budgetMtd: 0, budgetTarget: 0, paymentMtd: 0, paymentAmountMtd: 0, postAmountMtd: 0 };
     if (dimension !== "specialist" && dimension !== "submitter") {
       sourceRows.forEach((target) => {
-        const name = dimensionValue(target);
+        const name = postPlanDimensionValue(target, dimension);
         const current = getGroup(name, dimension === "product" ? `${String(target.brand || "")} · ${String(target.owner || "")}` : label("Target 页面", "Target page", language));
         current.postTarget += numeric(target.qtyTarget || target.qty);
         current.budgetTarget += numeric(target.budgetTarget);
@@ -2124,7 +2251,7 @@ function TargetDashboard({
       });
     }
     paidPlanEntries.forEach((plan) => {
-      const name = dimensionValue(plan);
+      const name = postPlanDimensionValue(plan, dimension);
       const current = getGroup(name, dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("已付款 Post Plan", "Paid Post Plan", language));
       current.paymentMtd = (current.paymentMtd || 0) + 1;
       current.paymentAmountMtd = (current.paymentAmountMtd || 0) + numeric(plan.eachPrice);
@@ -2132,7 +2259,7 @@ function TargetDashboard({
       groups.set(name, current);
     });
     postedPlanEntries.forEach((plan) => {
-      const name = dimensionValue(plan);
+      const name = postPlanDimensionValue(plan, dimension);
       const current = getGroup(name, dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("已发布 Post", "Published Post", language));
       current.postMtd += 1;
       current.postAmountMtd = (current.postAmountMtd || 0) + numeric(plan.eachPrice);
@@ -2166,6 +2293,12 @@ function TargetDashboard({
     brand: buildPaidPlanBreakdowns("brand"),
   };
   const paidPlanRows = paidRowsByDimension[postPlanTab];
+  const currentPostPlanRowKeys = paidPlanRows.map((row) => `paid-${postPlanTab}-${row.name}`);
+  const currentPostPlanRowKeySignature = currentPostPlanRowKeys.join("|");
+  useEffect(() => {
+    setSelectedPostPlanRows(new Set(currentPostPlanRowKeys));
+  }, [postPlanTab, currentPostPlanRowKeySignature]);
+  const selectedPaidPlanEntries = paidPlanEntries.filter((plan) => selectedPostPlanRows.has(`paid-${postPlanTab}-${postPlanDimensionValue(plan, postPlanTab)}`));
   const paidPlanChildrenFor = (dimension: DashboardDimension, row: DashboardBreakdown) => {
     if (dimension === "product") {
       return buildPaidPlanBreakdowns("tier").filter((child) => child.postTarget > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.targetCount, 1)));
@@ -2374,27 +2507,32 @@ function TargetDashboard({
           <div className="section-caption"><span />Post Plan</div>
           <div className="progress-pair">
             <ProgressSummary title="Payment Qty" post={postPlanSummary.postCount} payment={postPlanSummary.paidCount} target={postPlanSummary.targetCount} tone="green" language={language} />
-            <ProgressSummary title="Payment Amount" post={postPlanSummary.postAmount} payment={postPlanSummary.paidAmount} target={postPlanSummary.targetAmount} suffix="IDR " tone="amber" language={language} />
+            <ProgressSummary title="Payment Amount" post={postPlanSummary.postAmount} payment={postPlanSummary.paidAmount} target={postPlanSummary.targetAmount} tone="amber" language={language} />
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
           </div>
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">
-              <colgroup><col className="breakdown-col" /><col className="post-target-col" /><col className="post-remaining-col" /><col className="post-pace-col" /><col className="budget-target-col" /><col className="budget-remaining-col" /><col className="budget-pace-col" /></colgroup>
-              <thead><tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Payment Qty</th><th colSpan={3}>Payment Amount</th></tr><tr><th>Post / Payment / Target</th><th>GAP</th><th>Progress</th><th>Post / Payment / Target</th><th>GAP</th><th>Progress</th></tr></thead>
+              <colgroup><col className="dashboard-select-col" /><col className="breakdown-col" /><col className="post-target-col" /><col className="post-remaining-col" /><col className="post-pace-col" /><col className="budget-target-col" /><col className="budget-remaining-col" /><col className="budget-pace-col" /></colgroup>
+              <thead><tr><th rowSpan={2} className="dashboard-select-header"><input type="checkbox" aria-label={label("全选 Post Plan", "Select all Post Plans", language)} checked={currentPostPlanRowKeys.length > 0 && currentPostPlanRowKeys.every((key) => selectedPostPlanRows.has(key))} onChange={(event) => setSelectedPostPlanRows(event.target.checked ? new Set(currentPostPlanRowKeys) : new Set())} /></th><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Payment Qty</th><th colSpan={3}>Payment Amount</th></tr><tr><th>Post / Payment / Target</th><th>Post GAP / Payment GAP</th><th>Progress</th><th>Post / Payment / Target</th><th>Post GAP / Payment GAP</th><th>Progress</th></tr></thead>
               <tbody>{paidPlanRows.map((row) => {
                 const rowKey = `paid-${postPlanTab}-${row.name}`;
                 const isOpen = expandedPostPlans.has(rowKey);
                 const children = paidPlanChildrenFor(postPlanTab, row);
                 return <Fragment key={rowKey}>
-                  <tr className="dashboard-parent-row"><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><PostPlanMetricCells row={row} /></tr>
+                  <tr className="dashboard-parent-row"><td className="dashboard-select-cell"><input type="checkbox" aria-label={`${label("选择", "Select", language)} ${row.name}`} checked={selectedPostPlanRows.has(rowKey)} onChange={(event) => setSelectedPostPlanRows((current) => { const next = new Set(current); event.target.checked ? next.add(rowKey) : next.delete(rowKey); return next; })} /></td><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><PostPlanMetricCells row={row} /></tr>
                   {isOpen && children.map((child) => {
-                    return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}><td><strong>{child.name}</strong></td><PostPlanMetricCells row={child} /></tr>;
+                    return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}><td className="dashboard-select-cell" /><td><strong>{child.name}</strong></td><PostPlanMetricCells row={child} /></tr>;
                   })}
                 </Fragment>;
               })}</tbody>
             </table>
+          </div>
+          <div className="post-plan-calendar-module">
+            <div className="post-plan-calendar-header"><strong>{label("日历", "Calendar", language)}</strong><div className="post-plan-calendar-tabs">{([[
+              "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div>
+            <PostPlanCalendar entries={selectedPaidPlanEntries} month={filters.month} period={postPlanCalendarPeriod} language={language} />
           </div>
         </section>
       </div>}
@@ -2403,8 +2541,8 @@ function TargetDashboard({
         <section className="panel progress-panel">
           <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
-            <ProgressSummary title={label("发布数量", "Post", language)} post={postMtd} payment={version31 ? postPlanSummary.paidCount : postMtd} target={postTarget} tone="green" language={language} />
-            <ProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} post={budgetMtd} payment={version31 ? postPlanSummary.paidAmount : budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" language={language} />
+            <LegacyProgressSummary title={label("发布数量", "Post", language)} post={postMtd} payment={version31 ? postPlanSummary.paidCount : postMtd} target={postTarget} tone="green" />
+            <LegacyProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} post={budgetMtd} payment={version31 ? postPlanSummary.paidAmount : budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" />
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}

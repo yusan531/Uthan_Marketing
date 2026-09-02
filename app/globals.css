@@ -2076,6 +2076,7 @@ thead .operation-column {
 
 .dual-progress-track {
   position: relative;
+  height: 5px;
   overflow: hidden;
   border-radius: 999px;
   background: var(--surface-3);
@@ -2180,6 +2181,142 @@ thead .operation-column {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Keep the lower Publish Plan summary on its original presentation. */
+.legacy-summary-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  margin: 18px 0 12px;
+}
+
+.legacy-summary-values > div {
+  min-width: 0;
+}
+
+.legacy-summary-values > div + div {
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+}
+
+.legacy-summary-values b,
+.legacy-summary-values small {
+  display: block;
+}
+
+.legacy-summary-values b {
+  overflow: hidden;
+  font-size: clamp(18px, 2vw, 28px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legacy-summary-values small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.legacy-summary-gaps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.legacy-summary-gaps > span {
+  min-width: 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--line);
+}
+
+.legacy-summary-gaps > span:first-child {
+  border-left-color: color-mix(in srgb, var(--green) 55%, var(--line));
+}
+
+.legacy-summary-gaps > span:last-child {
+  border-left-color: color-mix(in srgb, var(--amber) 55%, var(--line));
+}
+
+.legacy-summary-gaps b,
+.legacy-summary-gaps small {
+  display: block;
+}
+
+.legacy-summary-gaps b {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legacy-summary-gaps small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.legacy-dual-progress-meter {
+  display: grid;
+  gap: 4px;
+}
+
+.legacy-dual-progress-line {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.legacy-dual-progress-line small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.legacy-dual-progress-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.legacy-dual-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.legacy-progress-summary.green .legacy-dual-progress-track .payment-fill {
+  background: color-mix(in srgb, var(--green) 42%, var(--surface));
+}
+
+.legacy-progress-summary.green .legacy-dual-progress-track .post-fill {
+  background: var(--green);
+}
+
+.legacy-progress-summary.amber .legacy-dual-progress-track .payment-fill {
+  background: color-mix(in srgb, var(--amber) 42%, var(--surface));
+}
+
+.legacy-progress-summary.amber .legacy-dual-progress-track .post-fill {
+  background: var(--amber);
+}
+
+.legacy-dual-progress-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.legacy-dual-progress-foot b {
+  color: var(--text);
 }
 
 .post-plan-summary-panel .dashboard-metric-progress .dual-progress-meter {
@@ -2687,6 +2824,193 @@ thead .operation-column {
 .publish-plan-calendar span,.publish-plan-calendar small { font-size: 9px; white-space: nowrap; }
 .publish-plan-calendar small { color: var(--muted); }
 
+.post-plan-summary-panel .dashboard-select-header,
+.post-plan-summary-panel .dashboard-select-cell {
+  width: 34px;
+  padding-left: 6px;
+  padding-right: 6px;
+  text-align: center;
+}
+
+.post-plan-summary-panel .dashboard-select-header input,
+.post-plan-summary-panel .dashboard-select-cell input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--dashboard-primary);
+}
+
+.post-plan-summary-panel .dashboard-table thead tr:last-child th:nth-child(2),
+.post-plan-summary-panel .dashboard-table thead tr:last-child th:nth-child(5) {
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.post-plan-calendar-module {
+  margin: 16px 18px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 22%, var(--surface));
+}
+
+.post-plan-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.post-plan-calendar-header > strong {
+  font-size: 13px;
+}
+
+.post-plan-calendar-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-3);
+}
+
+.post-plan-calendar-tabs button {
+  min-width: 52px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.post-plan-calendar-tabs button.active {
+  color: var(--dashboard-primary);
+  background: var(--surface);
+  box-shadow: 0 2px 7px rgba(25, 52, 85, 0.08);
+}
+
+.post-plan-calendar-grid {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.post-plan-calendar-weekdays,
+.post-plan-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.post-plan-calendar-weekdays {
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 72%, var(--surface));
+}
+
+.post-plan-calendar-weekdays span {
+  padding: 7px 5px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.post-plan-calendar-cell {
+  min-height: 76px;
+  padding: 7px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.post-plan-calendar-cell:nth-child(7n) {
+  border-right: 0;
+}
+
+.post-plan-calendar-cell.empty {
+  background: var(--surface-2);
+}
+
+.post-plan-calendar-cell > strong {
+  display: block;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.post-plan-calendar-entries {
+  display: grid;
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.post-plan-calendar-entry {
+  min-width: 0;
+  padding: 4px 5px;
+  border-left: 2px solid var(--dashboard-primary);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 66%, var(--surface));
+}
+
+.post-plan-calendar-entry b,
+.post-plan-calendar-entry small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-plan-calendar-entry b {
+  font-size: 8px;
+}
+
+.post-plan-calendar-entry small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.post-plan-calendar-more {
+  color: var(--dashboard-primary);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.post-plan-day-list {
+  display: grid;
+  gap: 8px;
+}
+
+.post-plan-day-list article {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.post-plan-day-list article > strong {
+  color: var(--text);
+  font-size: 10px;
+}
+
+.post-plan-day-list article > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.post-plan-calendar-empty {
+  padding: 24px 12px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+
 .target-dashboard .reference-dashboard-grid .progress-summary {
   min-height: 154px;
   padding: 18px 20px;
@@ -2715,6 +3039,22 @@ thead .operation-column {
 
 .target-dashboard .reference-dashboard-grid .summary-values b {
   font-size: clamp(28px, 2.65vw, 38px);
+}
+
+.target-dashboard .reference-dashboard-grid .legacy-summary-values {
+  margin: 22px 0 16px;
+}
+
+.target-dashboard .reference-dashboard-grid .legacy-summary-values b {
+  font-size: clamp(28px, 2.65vw, 38px);
+}
+
+.target-dashboard .reference-dashboard-grid .legacy-progress-summary.amber .legacy-summary-values b {
+  font-size: clamp(22px, 2.25vw, 31px);
+}
+
+.target-dashboard .reference-dashboard-grid .legacy-progress-summary.amber .legacy-summary-values > div + div b {
+  font-size: clamp(20px, 2vw, 27px);
 }
 
 .target-dashboard .reference-dashboard-grid .summary-values em {

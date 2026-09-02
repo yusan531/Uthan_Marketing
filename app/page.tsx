@@ -587,6 +587,7 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
   const [batchPlanValues, setBatchPlanValues] = useState<Record<BatchPlanKey, string>>(emptyBatchPlan);
   const [batchPlanTouched, setBatchPlanTouched] = useState<Set<BatchPlanKey>>(new Set());
   const [reviewPlanModule, setReviewPlanModule] = useState<"payment" | "post" | "ads">("payment");
+  const reviewEditPostNo = !isPayment && Boolean(row) && !readOnly ? Number(row?.postNo || 0) : 0;
   const selected = plans.find(item => item.postNo === selectedPlan) || plans[0] || emptyReviewPlan31();
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || "ID", creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), kolSpecialist: row?.kolSpecialist || (isPayment ? "Nafa Augustina" : String(relatedPayment?.kolSpecialist || "")), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || (isPayment ? "350000" : String(relatedPayment?.unitPrice || "")), notes: row?.notes || "",
@@ -806,7 +807,7 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
             {showReviewModules && <><th className="plan-post-info-field plan-module-start plan-stacked-header">Post ID<br />Boost Code Value</th><th className="plan-post-info-field plan-stacked-header">Post Link<br />Post Date</th><th className="plan-ads-info-field plan-module-start plan-stacked-header">Review Status<br />Spark Ads Status</th><th className="plan-ads-info-field plan-stacked-header">Ad Date<br />Ads PIC</th></>}
           </tr>
         </thead>
-        <tbody>{plans.map((item, index) => <tr key={item.postNo} className={selectedPlan === item.postNo ? "selected-plan" : ""}>
+        <tbody>{plans.map((item, index) => <tr key={item.postNo} className={`${selectedPlan === item.postNo ? "selected-plan" : ""}${reviewEditPostNo === item.postNo ? " review-edit-highlight" : ""}`}>
           <td className="plan-check-cell"><input type="checkbox" disabled={readOnly} aria-label={label("选择", "Select", language) + " Post No. " + item.postNo} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>
           {hasReviewPlanSelector && <td className="plan-payment-info-cell plan-select-field"><input type="radio" disabled={readOnly || !reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}
           <td className="plan-payment-info-cell"><b>{item.postNo}</b></td>

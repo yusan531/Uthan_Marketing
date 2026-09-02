@@ -3892,6 +3892,8 @@ thead .operation-column {
 .review-edit-mode .review-link-grid select { color: var(--muted); background: var(--surface-2); cursor: not-allowed; }
 .v31-plan-table th { position: sticky; top: 0; z-index: 1; }
 .v31-plan-table tr.selected-plan td { background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
+.v31-plan-table tr.review-edit-highlight td { background: color-mix(in srgb, var(--dashboard-success) 10%, var(--surface)); }
+.v31-plan-table tr.review-edit-highlight td:first-child { box-shadow: inset 3px 0 0 var(--dashboard-success); }
 .v31-plan-table td > span { display: block; min-width: 88px; padding: 7px 5px; white-space: nowrap; }
 .v31-plan-table .plan-stacked-header { min-width: 160px; white-space: normal; line-height: 1.3; }
 .v31-plan-table .plan-stacked-cell { min-width: 160px; padding: 0 7px; vertical-align: middle; }

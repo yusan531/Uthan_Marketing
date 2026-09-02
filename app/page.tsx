@@ -2149,11 +2149,11 @@ const postPlanScheduleStatusMeta: Record<PostPlanScheduleStatus, { zh: string; e
   "overdue-completed": { zh: "延期完成", en: "Completed late", className: "overdue-completed" },
 };
 
-const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string }> = {
-  completed: { zh: "已发布", en: "Published" },
-  planned: { zh: "待发布", en: "Pending" },
-  overdue: { zh: "已延期", en: "Overdue" },
-  "overdue-completed": { zh: "已延期发布", en: "Published late" },
+const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string; className: string }> = {
+  completed: { zh: "已发布", en: "Published", className: "completed" },
+  planned: { zh: "待发布", en: "Pending", className: "planned" },
+  overdue: { zh: "已延期", en: "Overdue", className: "overdue" },
+  "overdue-completed": { zh: "已延期发布", en: "Published late", className: "overdue-completed" },
 };
 
 function postPlanScheduleDate(entry: Record<string, unknown>) {

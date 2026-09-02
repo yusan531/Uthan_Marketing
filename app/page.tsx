@@ -2284,7 +2284,7 @@ function PostPlanScheduleChart({
   const maxCount = Math.max(...periodSegments.map((item) => item.total), 1);
   const formatScheduleValue = (value: number) => metric === "amount" ? compactNumber(value) : `${value}`;
   const metricLabel = metric === "amount" ? label("金额", "Amount", language) : label("数量", "Quantity", language);
-  return <div className={`post-plan-schedule-chart ${period} ${metric}`}>
+  return <div className={`post-plan-schedule-chart ${period} ${metric}`} aria-label={`${heading || metricLabel} · ${dimensionLabel}`}>
     <div className="post-plan-schedule-toolbar">
       <div><strong>{heading || metricLabel}</strong><small>{label("按", "By", language)} {dimensionLabel} · {period === "month" ? "7" : "16"} {period === "month" ? label("个月", "months", language) : label("周", "weeks", language)}</small></div>
       <div className="post-plan-schedule-legend">{statusOrder.map((status) => <span key={status} className={`schedule-legend-item ${postPlanScheduleStatusMeta[status].className}`}><i />{label(postPlanScheduleStatusMeta[status].zh, postPlanScheduleStatusMeta[status].en, language)}</span>)}</div>

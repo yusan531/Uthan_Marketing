@@ -2066,6 +2066,7 @@ function TargetDashboard({
       tier: plan.rate || payment.rate || label("未分级", "Unrated", language),
     }));
   });
+  const paidPlanPriceByKey = new Map(paidPlanEntries.map((plan) => [`${plan.paymentNo}|${String(plan.postNo)}`, numeric(plan.eachPrice)]));
   const postedPlanEntries = reviewRows.filter((review) => {
     const postDate = String(review.actualPostDate || review.postDate || "");
     const hasPost = Boolean(String(review.postId || "").trim() || postDate || String(review.postStatus || "") === "Published");
@@ -2081,7 +2082,7 @@ function TargetDashboard({
     submitter: review.submitter || label("未分配 Submitter", "Unassigned Submitter", language),
     brand: review.brand || label("未分配品牌", "Unassigned Brand", language),
     tier: review.rate || review.tier || label("未分级", "Unrated", language),
-    eachPrice: review.eachPrice || 0,
+    eachPrice: review.eachPrice || paidPlanPriceByKey.get(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`) || review.unitPrice || 0,
   }));
   const publishedPlanKeys = new Set(reviewRows.filter((review) => String(review.postStatus || "") === "Published" || Boolean(review.actualPostDate || review.postDate)).map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
   const publishedPaidPlans = paidPlanEntries.filter((plan) => publishedPlanKeys.has(`${plan.paymentNo}|${String(plan.postNo)}`));

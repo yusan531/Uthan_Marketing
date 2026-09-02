@@ -3000,7 +3000,7 @@ thead .operation-column {
 .review-grouped-plan-table .plan-post-info-cell:not(.plan-stacked-cell) input { min-width: 220px; }
 .review-grouped-plan-table .plan-ads-info-field:not(.plan-module-start),
 .review-grouped-plan-table .plan-ads-info-cell:not(.plan-module-start) { min-width: 125px; }
-.review-link-grid > .form-field:nth-child(4) { display: none; }
+.review-link-grid:not(.review-base-info-grid) > .form-field:nth-child(4) { display: none; }
 .review-edit-mode .review-link-grid { position: relative; }
 .review-edit-mode .review-link-grid .form-field { pointer-events: none; }
 .review-edit-mode .review-link-grid input,
@@ -3020,6 +3020,12 @@ thead .operation-column {
 .v31-plan-table .plan-check-cell { width: 42px; min-width: 42px; text-align: center; }
 .v31-plan-table .plan-check-cell input[type="checkbox"] { width: 16px; min-width: 16px; height: 16px; padding: 0; accent-color: var(--primary); cursor: pointer; }
 .v31-plan-table .plan-system-field { color: var(--muted); border-style: dashed; background: var(--surface-2); cursor: not-allowed; }
+.v31-plan-table .plan-generated-link { width: 100%; min-width: 0; display: flex; align-items: center; gap: 4px; }
+.v31-plan-table .plan-generated-link input { min-width: 0; flex: 1; }
+.v31-plan-table .plan-generated-link a,.v31-plan-table .plan-generated-link-readonly { color: var(--primary); font-weight: 700; text-decoration: none; }
+.v31-plan-table .plan-generated-link a { flex: 0 0 auto; font-size: 16px; line-height: 1; }
+.v31-plan-table .plan-generated-link a:hover,.v31-plan-table .plan-generated-link-readonly:hover { text-decoration: underline; }
+.v31-plan-table .plan-generated-link-readonly { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v31-plan-actions .button:disabled { opacity: 0.45; cursor: not-allowed; }
 .v31-modal .form-field input:not([readonly]):not(:disabled),
 .v31-modal .form-field select:not(:disabled),

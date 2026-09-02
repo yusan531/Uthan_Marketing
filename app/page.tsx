@@ -2080,12 +2080,14 @@ function PostPlanCalendar({
   period,
   language,
   today,
+  publishedPlanKeys,
 }: {
   entries: Record<string, unknown>[];
   month: string;
   period: PostPlanCalendarPeriod;
   language: Language;
   today: string;
+  publishedPlanKeys: Set<string>;
 }) {
   const monthStart = dashboardLocalDate(`${month}-01`);
   const monthEntries = entries
@@ -2113,24 +2115,29 @@ function PostPlanCalendar({
     return dashboardDateKey(date);
   });
   const weekdayLabels = language === "zh" ? ["一", "二", "三", "四", "五", "六", "日"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const renderEntry = ({ entry }: { entry: Record<string, unknown> }) => (
-    <div className="post-plan-calendar-entry" key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`}>
+  const renderEntry = ({ entry }: { entry: Record<string, unknown> }) => {
+    const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
+    const statusMeta = postPlanCalendarStatusMeta[status];
+    return <div className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`}>
       <b>{String(entry.product || label("未分配产品", "Unassigned Product", language))}</b>
       <small>#{String(entry.postNo || "—")} · {String(entry.owner || "—")}</small>
-    </div>
-  );
+      <em>{label(statusMeta.zh, statusMeta.en, language)}</em>
+      {status === "overdue-completed" && <i className="post-plan-calendar-late-dot" aria-label={label("延期完成", "Published late", language)} />}
+    </div>;
+  };
   const renderCell = (date: string, index: number) => {
     const dayEntries = entriesByDate.get(date) || [];
     return <div className={`post-plan-calendar-cell${date ? "" : " empty"}`} key={date || `empty-${index}`}>
       {date && <><strong>{Number(date.slice(-2))}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className="post-plan-calendar-entries">{dayEntries.slice(0, 3).map(renderEntry)}{dayEntries.length > 3 && <small className="post-plan-calendar-more">+{dayEntries.length - 3}</small>}</div></>}
     </div>;
   };
-  if (period === "day") {
-    const dayGroups = Array.from(entriesByDate.entries());
-    return <div className="post-plan-day-list">{dayGroups.length ? dayGroups.map(([date, dayEntries]) => <article key={date}><strong>{date}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div>{dayEntries.map(renderEntry)}</div></article>) : <div className="post-plan-calendar-empty">{label("当前月份没有已选择的 Post Plan", "No selected Post Plans in this month", language)}</div>}</div>;
-  }
   const dates = period === "week" ? weekDates : monthDates;
-  return <div className={`post-plan-calendar-grid ${period}`}><div className="post-plan-calendar-weekdays">{weekdayLabels.map((weekday) => <span key={weekday}>{weekday}</span>)}</div><div className="post-plan-calendar-days">{dates.map((date, index) => renderCell(date, index))}</div></div>;
+  return <>
+    <div className="post-plan-calendar-legend">
+      {(Object.keys(postPlanCalendarStatusMeta) as PostPlanScheduleStatus[]).map((status) => <span key={status} className={`post-plan-calendar-legend-item ${status}`}><i />{label(postPlanCalendarStatusMeta[status].zh, postPlanCalendarStatusMeta[status].en, language)}</span>)}
+    </div>
+    <div className={`post-plan-calendar-grid ${period}`}><div className="post-plan-calendar-weekdays">{weekdayLabels.map((weekday) => <span key={weekday}>{weekday}</span>)}</div><div className="post-plan-calendar-days">{dates.map((date, index) => renderCell(date, index))}</div></div>
+  </>;
 }
 
 type PostPlanScheduleStatus = "completed" | "planned" | "overdue" | "overdue-completed";
@@ -2140,6 +2147,13 @@ const postPlanScheduleStatusMeta: Record<PostPlanScheduleStatus, { zh: string; e
   planned: { zh: "计划内未完成", en: "Planned", className: "planned" },
   overdue: { zh: "计划内延期", en: "Overdue", className: "overdue" },
   "overdue-completed": { zh: "延期完成", en: "Completed late", className: "overdue-completed" },
+};
+
+const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string }> = {
+  completed: { zh: "已发布", en: "Published" },
+  planned: { zh: "待发布", en: "Pending" },
+  overdue: { zh: "已延期", en: "Overdue" },
+  "overdue-completed": { zh: "已延期发布", en: "Published late" },
 };
 
 function postPlanScheduleDate(entry: Record<string, unknown>) {
@@ -2164,6 +2178,9 @@ function PostPlanScheduleChart({
   dimension,
   dimensionLabel,
   publishedPlanKeys,
+  heading,
+  visibleStatuses = ["planned", "overdue", "completed", "overdue-completed"],
+  dimensionValueOverride,
 }: {
   entries: Record<string, unknown>[];
   period: Exclude<PostPlanCalendarPeriod, "day">;
@@ -2172,9 +2189,12 @@ function PostPlanScheduleChart({
   dimension: DashboardDimension;
   dimensionLabel: string;
   publishedPlanKeys: Set<string>;
+  heading?: string;
+  visibleStatuses?: PostPlanScheduleStatus[];
+  dimensionValueOverride?: (entry: Record<string, unknown>) => string;
 }) {
   const anchor = dashboardLocalDate(today);
-  const statusOrder: PostPlanScheduleStatus[] = ["planned", "overdue", "completed", "overdue-completed"];
+  const statusOrder = visibleStatuses;
   const dimensionValue = (entry: Record<string, unknown>) => {
     if (dimension === "product") return entry.product;
     if (dimension === "tier") return entry.rate || entry.tier;
@@ -2183,11 +2203,14 @@ function PostPlanScheduleChart({
     if (dimension === "submitter") return entry.submitter;
     return entry.brand;
   };
-  const scheduleEntries = entries.map((entry) => ({
-    entry,
-    date: postPlanScheduleDate(entry),
-    status: postPlanScheduleStatus(entry, today, publishedPlanKeys),
-  })).filter((item) => item.date);
+  const scheduleEntries = entries.map((entry) => {
+    const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
+    return {
+      entry,
+      date: postPlanScheduleDate(entry),
+      status: status === "overdue-completed" && !statusOrder.includes("overdue-completed") ? "completed" : status,
+    };
+  }).filter((item) => item.date);
   const monthPeriods = Array.from({ length: 7 }, (_, index) => {
     const offset = index - 3;
     const date = new Date(anchor.getFullYear(), anchor.getMonth() + offset, 1);
@@ -2226,7 +2249,7 @@ function PostPlanScheduleChart({
     };
   });
   const dimensionCounts = Array.from(scheduleEntries.reduce((groups, current) => {
-    const name = String(dimensionValue(current.entry) || label("未分配", "Unassigned", language));
+    const name = String(dimensionValueOverride?.(current.entry) || dimensionValue(current.entry) || label("未分配", "Unassigned", language));
     const currentValue = groups.get(name) || { total: 0, statuses: new Set<PostPlanScheduleStatus>() };
     currentValue.total += 1;
     currentValue.statuses.add(current.status);
@@ -2237,7 +2260,7 @@ function PostPlanScheduleChart({
   const formatCount = (count: number) => `${count}`;
   return <div className={`post-plan-schedule-chart ${period}`}>
     <div className="post-plan-schedule-toolbar">
-      <div><strong>{label("柱状排期", "Schedule", language)}</strong><small>{label("按", "By", language)} {dimensionLabel} · {period === "month" ? "7" : "16"} {period === "month" ? label("个月", "months", language) : label("周", "weeks", language)}</small></div>
+      <div><strong>{heading || label("柱状排期", "Schedule", language)}</strong><small>{label("按", "By", language)} {dimensionLabel} · {period === "month" ? "7" : "16"} {period === "month" ? label("个月", "months", language) : label("周", "weeks", language)}</small></div>
       <div className="post-plan-schedule-legend">{statusOrder.map((status) => <span key={status} className={`schedule-legend-item ${postPlanScheduleStatusMeta[status].className}`}><i />{label(postPlanScheduleStatusMeta[status].zh, postPlanScheduleStatusMeta[status].en, language)}</span>)}</div>
     </div>
     {dimensionCounts.length > 0 && <div className="post-plan-schedule-dimensions" aria-label={`${dimensionLabel} breakdown`}>
@@ -2511,6 +2534,13 @@ function TargetDashboard({
     ...(version31 ? [["brand", "品牌", "Brand"]] as const : []),
   ] as const;
   const currentPostPlanDimensionLabel = tabs.find(([key]) => key === postPlanTab)?.[language === "zh" ? 1 : 2] || "Product";
+  const secondaryPostPlanDimension: DashboardDimension = postPlanTab === "product" ? "tier" : "product";
+  const secondaryPostPlanDimensionLabel = postPlanTab === "product"
+    ? label("产品下 Tier", "Tier within Product", language)
+    : label("产品", "Product", language);
+  const secondaryPostPlanDimensionValue = postPlanTab === "product"
+    ? (entry: Record<string, unknown>) => `${String(entry.product || label("未分配产品", "Unassigned Product", language))} · ${String(entry.rate || entry.tier || label("未分级", "Unrated", language))}`
+    : undefined;
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -2666,8 +2696,11 @@ function TargetDashboard({
             <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-tabs">{([[
               "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={selectedPaidPlanEntries} month={filters.month} period="day" language={language} today={today} />
-              : <PostPlanScheduleChart entries={selectedPaidPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} />}
+              ? <PostPlanCalendar entries={selectedPaidPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} />
+              : <div className="post-plan-schedule-views">
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPaidPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("按上方 Tab", "By top Tab", language)} visibleStatuses={["planned", "overdue", "completed"]} /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPaidPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={secondaryPostPlanDimension} dimensionLabel={secondaryPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("按产品视图", "By product view", language)} visibleStatuses={["planned", "overdue", "completed"]} dimensionValueOverride={secondaryPostPlanDimensionValue} /></div>
+              </div>}
           </div>
         </section>
       </div>}

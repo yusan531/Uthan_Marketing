@@ -2947,11 +2947,28 @@ thead .operation-column {
 }
 
 .post-plan-calendar-entry {
+  position: relative;
   min-width: 0;
-  padding: 4px 5px;
+  padding: 4px 13px 4px 5px;
   border-left: 2px solid var(--dashboard-primary);
   border-radius: 3px;
   background: color-mix(in srgb, var(--dashboard-primary-soft) 66%, var(--surface));
+}
+
+.post-plan-calendar-entry.planned {
+  border-left-color: var(--dashboard-primary);
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 66%, var(--surface));
+}
+
+.post-plan-calendar-entry.overdue {
+  border-left-color: var(--dashboard-danger);
+  background: color-mix(in srgb, var(--dashboard-danger-soft) 66%, var(--surface));
+}
+
+.post-plan-calendar-entry.completed,
+.post-plan-calendar-entry.overdue-completed {
+  border-left-color: var(--dashboard-success);
+  background: color-mix(in srgb, var(--dashboard-success-soft) 66%, var(--surface));
 }
 
 .post-plan-calendar-entry b,
@@ -2970,6 +2987,38 @@ thead .operation-column {
   margin-top: 2px;
   color: var(--muted);
   font-size: 7px;
+}
+
+.post-plan-calendar-entry em {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 7px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.post-plan-calendar-late-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--surface);
+  border-radius: 50%;
+  background: var(--dashboard-danger);
+}
+
+.post-plan-calendar-today {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 2px 4px;
+  border-radius: 999px;
+  color: var(--dashboard-primary);
+  background: var(--dashboard-primary-soft);
+  font-size: 7px;
+  font-style: normal;
+  line-height: 1;
 }
 
 .post-plan-calendar-more {
@@ -3011,8 +3060,58 @@ thead .operation-column {
   text-align: center;
 }
 
+.post-plan-calendar-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 10px;
+}
+
+.post-plan-calendar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.post-plan-calendar-legend-item > i {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--dashboard-success);
+}
+
+.post-plan-calendar-legend-item.planned > i { background: var(--dashboard-primary); }
+.post-plan-calendar-legend-item.overdue > i { background: var(--dashboard-danger); }
+.post-plan-calendar-legend-item.overdue-completed > i { background: var(--dashboard-success); }
+.post-plan-calendar-legend-item.overdue-completed > i::after {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 4px;
+  height: 4px;
+  border: 1px solid var(--surface);
+  border-radius: 50%;
+  background: var(--dashboard-danger);
+  content: "";
+}
+
 .post-plan-schedule-chart {
   padding: 3px 2px 0;
+}
+
+.post-plan-schedule-views {
+  display: grid;
+  gap: 16px;
+}
+
+.post-plan-schedule-view + .post-plan-schedule-view {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 
 .post-plan-schedule-toolbar,

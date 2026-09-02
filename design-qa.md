@@ -1,27 +1,50 @@
-# Design QA — Marketing 3.0 restoration
+# Post Plan Schedule Chart Design QA
 
-## Comparison setup
+## Source visual truth
 
-- Reference: authenticated source Target Dashboard at 1327 × 874.
-- Implementation: local Target Dashboard at 1328 × 874, dark theme, administrator role, Chinese language.
-- Mobile implementation: 390 × 844.
-- Combined desktop comparisons: `work/qa-desktop-pass1.jpg` and `work/qa-desktop-pass2.jpg`.
+- Source: `/Users/thanu/Downloads/20260902-175727.jpeg`
+- Reference: dark-theme stacked column charts with period labels, stacked counts, and a legend.
 
-## Pass 1 findings and fixes
+## Implementation evidence
 
-1. **Sidebar density — medium:** The first implementation used a 224 px sidebar while the source used about 160–170 px at the same viewport. This reduced dashboard room and clipped the right side of the progress table. Fixed by reducing the fixed sidebar to 168 px while preserving its independent scrolling and collapse behavior.
-2. **Budget remaining value — medium:** The secondary budget value wrapped `IDR` onto its own line. Fixed with a wider secondary value area, a smaller secondary metric size, and no wrapping.
-3. **Source density — low:** The implementation intentionally keeps filter controls and result cards more compact, matching the user's explicit request to reduce whitespace while preserving the source hierarchy.
+- Screenshot: `.playwright-cli/post-plan-month-full.png`
+- Focus crop used for comparison: `.playwright-cli/post-plan-month-focus.png`
+- Viewport: 1280 x 874 CSS pixels; full-page capture is 1280 x 3136 pixels.
+- Source pixels: 1055 x 483. The focused implementation region was compared as a chart-region crop; no density normalization was required for the browser viewport capture.
+- State: Dashboard3.1, Post Plan, dark theme, Product tab, Month period.
 
-## Pass 2 verification
+## Comparison
 
-- **Typography:** Compact 8–13 px operational hierarchy remains readable; headings, metric values, table labels, and helper copy preserve the source's visual priority.
-- **Spacing and layout:** Fixed sidebar, top breadcrumb bar, page tabs, filters, Publishing Progress, AI analysis, data table, Publishing Results, and breakdown follow the source content order. Cards use tight 4–5 px radii and restrained borders/shadows.
-- **Colors and tokens:** Dark neutral surfaces, blue active states, green progress, amber budget pacing, red risk, and purple AI controls match the source semantics. Light theme was also verified.
-- **Icons:** All visible controls use Lucide icons with a consistent stroke family; no emoji or handcrafted SVG substitutes are used.
-- **Responsiveness:** Desktop and 390 px mobile layouts were checked. The mobile sidebar opens as a fixed overlay, filters become one column, metric cards stack, and wide operational tables remain horizontally scrollable rather than crushing fields.
-- **States and interactions:** Expand/collapse menus, fixed sidebar, filters, add, edit, delete, CSV import, CSV export trigger, supervisor approval, language switch, theme switch, role-based menu visibility, mobile menu, AI analysis, tabs, and pagination were exercised. No browser console errors or warnings were present.
-- **Coverage:** 35 menu pages resolve to implemented screens; 32 field-driven modules plus 3 specialized screens cover 269 editable fields and 325 visible columns across 7 roles.
-- **Accessibility:** Form controls are labeled, dialogs support Escape, focus states are visible, status colors include text, buttons use semantic elements, and mobile controls retain practical hit areas.
+The implementation preserves the existing Marketing 3.0 shell and embeds the reference visual language in the Post Plan module. Month renders seven stacked columns, Week renders sixteen columns, the active month/week is highlighted, and Day remains a calendar/list view. The four requested status colors are visible in the legend and chart segments; delayed completions use a red dot on a green segment. Product/Tier and row checkbox changes update the chart's dimension summary and included data.
+
+The reference image is a standalone two-chart composition while the implementation is intentionally integrated into the existing dashboard panel. This is an expected product-layout difference, not a fidelity defect.
+
+## Primary interactions tested
+
+- Month: one chart with exactly 7 period columns and one current-period highlight.
+- Week: one chart with exactly 16 period columns and one current-week highlight.
+- Day: calendar/list view remains available through the same tabs.
+- Product to Creator Tier: chart dimension label and dimension chips update.
+- Row checkbox: deselecting a product removes its dimension chip and entries from the schedule data.
+- Status segments: planned, overdue, completed, and overdue-completed classes all rendered in the local data set.
+- Build: `npm run build` passed.
+
+## Required fidelity surfaces
+
+- Fonts and typography: uses the existing Marketing 3.0 Geist tokens and compact dashboard hierarchy.
+- Spacing and layout rhythm: chart is contained within the existing panel, with a scroll-safe 16-week axis and consistent bar baseline.
+- Colors and visual tokens: status colors map to existing primary, success, and danger dashboard tokens; current period uses the existing primary soft token.
+- Image quality and asset fidelity: no image asset is required by the reference; existing icon library and native DOM chart elements are used.
+- Copy and content: Month/Week/Day, This month/This week/Today, dimension, and four status labels are exposed in the active language.
+
+## Findings
+
+- No actionable P0/P1/P2 findings remain.
+- P3 follow-up: the source shows two standalone chart cards; a future iteration could optionally add a second comparison chart inside Post Plan if the product needs parallel series.
+
+## Comparison history
+
+- Initial pass: replaced Month/Week calendar grids with status-stacked columns, added period markers and dimension chips.
+- Post-fix pass: verified the same implementation after build and interaction checks; no actionable P0/P1/P2 differences remained.
 
 final result: passed

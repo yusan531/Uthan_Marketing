@@ -3011,6 +3011,248 @@ thead .operation-column {
   text-align: center;
 }
 
+.post-plan-schedule-chart {
+  padding: 3px 2px 0;
+}
+
+.post-plan-schedule-toolbar,
+.post-plan-schedule-toolbar > div:first-child,
+.post-plan-schedule-legend,
+.post-plan-schedule-dimensions {
+  display: flex;
+  align-items: center;
+}
+
+.post-plan-schedule-toolbar {
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 11px;
+}
+
+.post-plan-schedule-toolbar > div:first-child {
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.post-plan-schedule-toolbar strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.post-plan-schedule-toolbar small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.post-plan-schedule-legend {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.schedule-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.schedule-legend-item > i {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 2px;
+  background: var(--dashboard-success);
+}
+
+.schedule-legend-item.planned > i { background: var(--dashboard-primary); }
+.schedule-legend-item.overdue > i { background: var(--dashboard-danger); }
+.schedule-legend-item.overdue-completed > i { background: var(--dashboard-success); }
+.schedule-legend-item.overdue-completed > i::after,
+.schedule-overdue-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--surface);
+  border-radius: 50%;
+  background: var(--dashboard-danger);
+  content: "";
+}
+
+.schedule-legend-item.overdue-completed > i::after {
+  top: -3px;
+  right: -3px;
+}
+
+.post-plan-schedule-dimensions {
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.post-plan-schedule-dimensions > span {
+  max-width: 180px;
+  padding: 4px 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.post-plan-schedule-dimensions b {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-plan-schedule-dimensions small {
+  min-width: 14px;
+  color: var(--dashboard-primary);
+  font-size: 8px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.post-plan-schedule-more {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.post-plan-schedule-plot {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+
+.post-plan-schedule-y-axis {
+  min-height: 194px;
+  padding: 3px 0 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 8px;
+  text-align: right;
+}
+
+.post-plan-schedule-columns {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(42px, 1fr));
+  gap: 7px;
+  overflow-x: auto;
+  padding: 0 2px;
+}
+
+.post-plan-schedule-chart.week .post-plan-schedule-columns {
+  grid-template-columns: repeat(16, minmax(54px, 1fr));
+  gap: 5px;
+}
+
+.post-plan-schedule-column {
+  min-width: 0;
+  padding: 0 3px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+
+.post-plan-schedule-column.current {
+  border-color: color-mix(in srgb, var(--dashboard-primary) 38%, var(--line));
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 72%, var(--surface));
+}
+
+.post-plan-schedule-bar-area {
+  width: 100%;
+  height: 166px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.post-plan-schedule-bar {
+  width: min(48px, 80%);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 1px;
+}
+
+.schedule-segment {
+  position: relative;
+  min-height: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px 4px 2px 2px;
+  color: #ffffff;
+  font-style: normal;
+  overflow: visible;
+}
+
+.schedule-segment b {
+  font-size: 8px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(15, 28, 48, 0.25);
+}
+
+.schedule-segment.planned { background: var(--dashboard-primary); }
+.schedule-segment.overdue { background: var(--dashboard-danger); }
+.schedule-segment.completed,
+.schedule-segment.overdue-completed { background: var(--dashboard-success); }
+
+.schedule-overdue-dot {
+  top: -3px;
+  right: -3px;
+}
+
+.post-plan-schedule-label {
+  max-width: 100%;
+  margin-top: 7px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 8px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-plan-schedule-marker {
+  margin-top: 3px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  color: var(--dashboard-primary);
+  background: var(--dashboard-primary-soft);
+  font-size: 7px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .post-plan-schedule-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .post-plan-schedule-legend {
+    justify-content: flex-start;
+  }
+}
+
 .target-dashboard .reference-dashboard-grid .progress-summary {
   min-height: 154px;
   padding: 18px 20px;

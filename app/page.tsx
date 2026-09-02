@@ -1920,6 +1920,10 @@ function formatDashboardMetric(value: number, suffix = "") {
   return `${suffix}${compactNumber(Math.max(0, value))}`;
 }
 
+function dashboardRatioPercent(actual: number, base: number) {
+  return base > 0 ? Math.round((actual / base) * 100) : 0;
+}
+
 function DualProgressMeter({
   post,
   payment,
@@ -1933,13 +1937,13 @@ function DualProgressMeter({
   tone: "green" | "amber";
   compact?: boolean;
 }) {
-  const postRate = target > 0 ? percent(post, target) : 0;
-  const paymentRate = target > 0 ? percent(payment, target) : 0;
+  const paymentTargetRate = dashboardRatioPercent(payment, target);
+  const postTargetRate = dashboardRatioPercent(post, target);
+  const postPaymentRate = dashboardRatioPercent(post, payment);
   return (
     <div className={`dual-progress-meter ${compact ? "compact" : ""} ${tone}`}>
-      <div className="dual-progress-line"><small>Payment</small><div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(paymentRate, 100)}%` }} /></div></div>
-      <div className="dual-progress-line"><small>Post</small><div className="dual-progress-track"><i className="post-fill" style={{ width: `${Math.min(postRate, 100)}%` }} /></div></div>
-      <div className="dual-progress-foot"><span>Post <b>{postRate}%</b></span><span>Payment <b>{paymentRate}%</b></span><span>Target <b>100%</b></span></div>
+      <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(paymentTargetRate, 100)}%` }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%` }} /></div>
+      <div className="dual-progress-foot"><span>Post / Payment <b>{postPaymentRate}%</b></span><span>Payment / Target <b>{paymentTargetRate}%</b></span><span>Post / Target <b>{postTargetRate}%</b></span></div>
     </div>
   );
 }
@@ -1968,12 +1972,13 @@ function ProgressSummary({
       <div className="summary-top">
         <strong>{title}</strong>
       </div>
-      <div className="summary-values summary-values-three">
-        <div><b>{formatDashboardMetric(post, suffix)}</b><small>Post</small></div>
-        <div><b>{formatDashboardMetric(payment, suffix)}</b><small>Payment</small></div>
-        <div><b>{formatDashboardMetric(target, suffix)}</b><small>{label("目标", "Target", language)}</small></div>
+      <div className="summary-body">
+        <div className="summary-values summary-values-three">
+          <div><b>{formatDashboardMetric(post, suffix)}</b><small>Post</small></div><i>/</i><div><b>{formatDashboardMetric(payment, suffix)}</b><small>Payment</small></div><i>/</i><div><b>{formatDashboardMetric(target, suffix)}</b><small>{label("目标", "Target", language)}</small></div>
+        </div>
+        <i className="summary-divider" aria-hidden="true" />
+        <div className="summary-gaps"><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>Post GAP</small></span><i>/</i><span><b>{formatDashboardMetric(paymentGap, suffix)}</b><small>Payment GAP</small></span></div>
       </div>
-      <div className="summary-gaps"><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>Post GAP</small></span><span><b>{formatDashboardMetric(paymentGap, suffix)}</b><small>Payment GAP</small></span></div>
       <DualProgressMeter post={post} payment={payment} target={target} tone={tone} />
     </article>
   );
@@ -1986,13 +1991,9 @@ function PostPlanMetricCells({ row }: { row: DashboardBreakdown }) {
   const postAmount = row.postAmountMtd ?? 0;
   const paymentAmount = row.paymentAmountMtd ?? row.budgetMtd;
   const targetAmount = row.budgetTarget;
-  const renderSnapshot = (values: [number, number, number], suffix = "") => (
-    <div className="dashboard-metric-triplet">
-      {["Post", "Payment", "Target"].map((name, index) => <span key={name}><b>{formatDashboardMetric(values[index], suffix)}</b><small>{name}</small></span>)}
-    </div>
-  );
+  const renderSnapshot = (values: [number, number, number], suffix = "") => <div className="dashboard-metric-triplet">{values.map((value, index) => <Fragment key={index}><b>{formatDashboardMetric(value, suffix)}</b>{index < values.length - 1 && <span>/</span>}</Fragment>)}</div>;
   const renderGaps = (postValue: number, paymentValue: number, targetValue: number, suffix = "") => (
-    <div className="dashboard-gap-stack"><span><b>{formatDashboardMetric(Math.max(targetValue - postValue, 0), suffix)}</b><small>Post GAP</small></span><span><b>{formatDashboardMetric(Math.max(targetValue - paymentValue, 0), suffix)}</b><small>Payment GAP</small></span></div>
+    <div className="dashboard-gap-stack"><b>{formatDashboardMetric(Math.max(targetValue - postValue, 0), suffix)}</b><span>/</span><b>{formatDashboardMetric(Math.max(targetValue - paymentValue, 0), suffix)}</b></div>
   );
   return <>
     <td className="dashboard-metric-snapshot">{renderSnapshot([post, payment, target])}</td>

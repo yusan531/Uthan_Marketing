@@ -1969,9 +1969,12 @@ function DualProgressMeter({
   const planTargetRate = dashboardRatioPercent(plan, target);
   const postTargetRate = dashboardRatioPercent(post, target);
   const paceRate = Math.max(0, 100 - postTargetRate);
+  const postTargetRatio = target > 0 ? (post / target) * 100 : 0;
+  const progressColor = postTargetRatio < 60 ? "var(--dashboard-danger)" : postTargetRatio < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
+  const progressSoftColor = `color-mix(in srgb, ${progressColor} 42%, var(--surface))`;
   return (
     <div className={`dual-progress-meter ${compact ? "compact" : ""} ${tone}`}>
-      <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(planTargetRate, 100)}%` }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%` }} /></div>
+      <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(planTargetRate, 100)}%`, background: progressSoftColor }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%`, background: progressColor }} /></div>
       <div className="dual-progress-foot"><span>{actualLabel} <b>{postTargetRate}%</b> - {planLabel} <b>{planTargetRate}%</b></span><span>{paceLabel} <b>{paceRate}%</b></span></div>
     </div>
   );
@@ -2119,6 +2122,7 @@ function PostPlanCalendar({
   language,
   today,
   publishedPlanKeys,
+  onNavigate,
 }: {
   entries: Record<string, unknown>[];
   month: string;
@@ -2126,7 +2130,9 @@ function PostPlanCalendar({
   language: Language;
   today: string;
   publishedPlanKeys: Set<string>;
+  onNavigate: (page: PageKey) => void;
 }) {
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const monthStart = dashboardLocalDate(`${month}-01`);
   const monthEntries = entries
     .map((entry) => ({
@@ -2159,16 +2165,17 @@ function PostPlanCalendar({
   const renderEntry = ({ entry }: { entry: Record<string, unknown> }) => {
     const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
     const statusMeta = postPlanCalendarStatusMeta[status];
-    return <div className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language))}>
-      <b>{String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language))}</b>
+    const creatorName = String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language));
+    return <button type="button" className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={creatorName} title={creatorName} onClick={() => onNavigate("review31b")}>
+      <b>{creatorName}</b>
       {status === "overdue-completed" && <i className="post-plan-calendar-late-dot" aria-label={label("延期完成", "Published late", language)} />}
-    </div>;
+    </button>;
   };
   const renderCell = (date: string, index: number) => {
     const dayEntries = entriesByDate.get(date) || [];
     const outsideMonth = !date.startsWith(month);
     return <div className={`post-plan-calendar-cell${outsideMonth ? " outside-month" : ""}`} key={date || `empty-${index}`}>
-      <><strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className="post-plan-calendar-entries">{dayEntries.slice(0, 3).map(renderEntry)}{dayEntries.length > 3 && <small className="post-plan-calendar-more">+{dayEntries.length - 3}</small>}</div></>
+      <><strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className="post-plan-calendar-entries">{dayEntries.slice(0, 3).map(renderEntry)}{dayEntries.length > 3 && <button type="button" className="post-plan-calendar-more" onClick={() => setExpandedDate((current) => current === date ? null : date)} aria-expanded={expandedDate === date}>+{dayEntries.length - 3}</button>}{expandedDate === date && <div className="post-plan-calendar-popover" role="dialog" aria-label={label("当天全部排期", "All entries for this day", language)}><div className="post-plan-calendar-popover-head"><strong>{date}</strong><button type="button" aria-label={label("关闭", "Close", language)} onClick={() => setExpandedDate(null)}><X size={12} /></button></div><div className="post-plan-calendar-popover-list">{dayEntries.map(renderEntry)}</div></div>}</div></>
     </div>;
   };
   const dates = period === "week" ? weekDates : monthDates;
@@ -2363,6 +2370,7 @@ function TargetDashboard({
   paymentRows,
   reviewRows,
   notify,
+  onNavigate,
   version31 = false,
 }: {
   language: Language;
@@ -2370,6 +2378,7 @@ function TargetDashboard({
   paymentRows: Row[];
   reviewRows: Row[];
   notify: (message: string) => void;
+  onNavigate: (page: PageKey) => void;
   version31?: boolean;
 }) {
   const [tab, setTab] = useState<DashboardDimension>("product");
@@ -2431,6 +2440,9 @@ function TargetDashboard({
     if (dimension === "submitter") return String(row.submitter || label("未分配 Submitter", "Unassigned Submitter", language));
     return String(row.brand || label("未分配品牌", "Unassigned Brand", language));
   };
+  const creatorTierKey = (value: unknown) => String(value || "").replace(/\s*tier$/i, "").trim().toUpperCase();
+  const isAllowedCreatorTier = (value: unknown) => ["S", "A", "B"].includes(creatorTierKey(value));
+  const creatorTierRank = (value: unknown) => ({ S: 0, A: 1, B: 2 }[creatorTierKey(value)] ?? 99);
   const paidPlanPriceByKey = new Map(paidPlanEntries.map((plan) => [`${plan.paymentNo}|${String(plan.postNo)}`, numeric(plan.eachPrice)]));
   const paidPlanTierByKey = new Map(paidPlanEntries.map((plan) => [`${plan.paymentNo}|${String(plan.postNo)}`, String(plan.tier || "")]));
   const postedPlanEntries = reviewRows.filter((review) => {
@@ -2530,7 +2542,7 @@ function TargetDashboard({
   };
   const paidRowsByDimension: Record<DashboardDimension, DashboardBreakdown[]> = {
     product: buildPaidPlanBreakdowns("product"),
-    tier: buildPaidPlanBreakdowns("tier"),
+    tier: buildPaidPlanBreakdowns("tier").filter((row) => isAllowedCreatorTier(row.name)).sort((a, b) => creatorTierRank(a.name) - creatorTierRank(b.name)),
     strategist: buildPaidPlanBreakdowns("strategist"),
     specialist: buildPaidPlanBreakdowns("specialist"),
     submitter: buildPaidPlanBreakdowns("submitter"),
@@ -2582,7 +2594,9 @@ function TargetDashboard({
       const childName = postPlanDimensionValue(entry, childDimension);
       groups.set(childName, [...(groups.get(childName) || []), entry]);
       return groups;
-    }, new Map<string, Record<string, unknown>[]>()).entries()).sort((a, b) => b[1].length - a[1].length);
+    }, new Map<string, Record<string, unknown>[]>()).entries())
+      .filter(([childName]) => childDimension !== "tier" || isAllowedCreatorTier(childName))
+      .sort((a, b) => childDimension === "tier" ? creatorTierRank(a[0]) - creatorTierRank(b[0]) : b[1].length - a[1].length);
     let assignedTargetCount = 0;
     let assignedTargetAmount = 0;
     return childGroups.map(([childName, childEntries], index) => {
@@ -2647,7 +2661,7 @@ function TargetDashboard({
   }];
   const rowsByDimension: Record<DashboardDimension, DashboardBreakdown[]> = {
     product: productRows,
-    tier: tierRows,
+    tier: tierRows.filter((row) => isAllowedCreatorTier(row.name)).sort((a, b) => creatorTierRank(a.name) - creatorTierRank(b.name)),
     strategist: strategistRows,
     specialist: paidRowsByDimension.specialist,
     submitter: paidRowsByDimension.submitter,
@@ -2838,10 +2852,10 @@ function TargetDashboard({
             <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-tabs">{([[
               "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={selectedPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} />
+              ? <PostPlanCalendar entries={postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onNavigate={onNavigate} />
               : <div className="post-plan-schedule-views">
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} /></div>
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" stackBy="dimension" /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading={label("数量", "Quantity", language)} metric="quantity" stackBy="dimension" /></div>
               </div>}
           </div>
         </section>
@@ -3167,7 +3181,7 @@ function Mobile31Workspace({
   const basePage = mobile31BasePage[activePage];
   const baseConfig = pageConfigs[basePage];
   const content = activePage === "mobileDashboard31" ? (
-    <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} version31 />
+    <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={onNavigate} version31 />
   ) : baseConfig ? (
     <TablePage
       key={activePage}
@@ -3526,7 +3540,7 @@ export default function MarketingSystem() {
   if (activePage === "home") {
     pageContent = <HomePage language={language} onNavigate={navigate} />;
   } else if (activePage === "targetDashboard" || activePage === "dashboard31") {
-    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} version31={activePage === "dashboard31"} />;
+    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={navigate} version31={activePage === "dashboard31"} />;
   } else if (activePage === "creator") {
     pageContent = <CreatorManagementPage language={language} rows={rows.creator || []} setRows={(next) => savePageRows("creator", next)} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} canEdit={canEdit} notify={notify} onNavigate={navigate} />;
   } else if (["mobilePayment31", "mobileReview31", "mobileDashboard31"].includes(activePage)) {

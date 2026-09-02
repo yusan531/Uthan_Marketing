@@ -2905,7 +2905,7 @@ thead .operation-column {
 }
 
 .post-plan-calendar-grid {
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--surface);
@@ -2931,6 +2931,7 @@ thead .operation-column {
 }
 
 .post-plan-calendar-cell {
+  position: relative;
   min-height: 76px;
   padding: 7px;
   border-right: 1px solid var(--line);
@@ -2978,11 +2979,24 @@ thead .operation-column {
 
 .post-plan-calendar-entry {
   position: relative;
+  width: 100%;
   min-width: 0;
   padding: 4px 13px 4px 5px;
+  border: 0;
   border-left: 2px solid var(--dashboard-primary);
   border-radius: 3px;
+  color: var(--text);
   background: color-mix(in srgb, var(--dashboard-primary-soft) 66%, var(--surface));
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.post-plan-calendar-entry:hover,
+.post-plan-calendar-entry:focus-visible {
+  filter: brightness(0.98);
+  outline: 2px solid color-mix(in srgb, var(--dashboard-primary) 45%, transparent);
+  outline-offset: 1px;
 }
 
 .post-plan-calendar-entry.planned {
@@ -3052,9 +3066,62 @@ thead .operation-column {
 }
 
 .post-plan-calendar-more {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--dashboard-primary);
   font-size: 8px;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.post-plan-calendar-more:hover,
+.post-plan-calendar-more:focus-visible {
+  text-decoration: underline;
+}
+
+.post-plan-calendar-popover {
+  position: absolute;
+  top: 28px;
+  left: 7px;
+  z-index: 12;
+  width: min(235px, calc(100% - 14px));
+  max-height: 220px;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  box-shadow: 0 8px 22px rgba(25, 52, 85, 0.18);
+}
+
+.post-plan-calendar-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 9px;
+}
+
+.post-plan-calendar-popover-head button {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--muted);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.post-plan-calendar-popover-list {
+  display: grid;
+  gap: 4px;
 }
 
 .post-plan-day-list {
@@ -4519,6 +4586,8 @@ thead .operation-column {
 .target-dashboard .post-plan-dashboard-grid .progress-summary {
   min-height: 110px;
   padding: 10px 18px;
+  border-top-color: var(--line);
+  background: var(--surface);
 }
 
 .target-dashboard .post-plan-dashboard-grid .summary-body {

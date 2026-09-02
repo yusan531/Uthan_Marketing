@@ -1982,6 +1982,212 @@ thead .operation-column {
   color: var(--amber);
 }
 
+.summary-values-three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+}
+
+.summary-values-three > div,
+.summary-values-three > div + div {
+  max-width: none;
+  min-width: 0;
+  padding-left: 0;
+  border-left: 0;
+}
+
+.summary-values-three > div + div {
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+}
+
+.summary-values-three b {
+  display: block;
+  overflow: hidden;
+  font-size: clamp(18px, 2vw, 28px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-values-three small {
+  display: block;
+  margin-top: 4px;
+}
+
+.summary-gaps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.summary-gaps > span {
+  min-width: 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--line);
+}
+
+.summary-gaps > span:first-child {
+  border-left-color: color-mix(in srgb, var(--green) 55%, var(--line));
+}
+
+.summary-gaps > span:last-child {
+  border-left-color: color-mix(in srgb, var(--amber) 55%, var(--line));
+}
+
+.summary-gaps b,
+.summary-gaps small {
+  display: block;
+}
+
+.summary-gaps b {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-gaps small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.dual-progress-meter {
+  display: grid;
+  gap: 4px;
+}
+
+.dual-progress-line {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.dual-progress-line small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.dual-progress-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.dual-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.progress-summary.green .dual-progress-track .payment-fill,
+.dashboard-metric-progress .green .dual-progress-track .payment-fill {
+  background: color-mix(in srgb, var(--green) 42%, var(--surface));
+}
+
+.progress-summary.green .dual-progress-track .post-fill,
+.dashboard-metric-progress .green .dual-progress-track .post-fill {
+  background: var(--green);
+}
+
+.progress-summary.amber .dual-progress-track .payment-fill,
+.dashboard-metric-progress .amber .dual-progress-track .payment-fill {
+  background: color-mix(in srgb, var(--amber) 42%, var(--surface));
+}
+
+.progress-summary.amber .dual-progress-track .post-fill,
+.dashboard-metric-progress .amber .dual-progress-track .post-fill {
+  background: var(--amber);
+}
+
+.dual-progress-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.dual-progress-foot b {
+  color: var(--text);
+}
+
+.dashboard-metric-triplet {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.dashboard-metric-triplet span,
+.dashboard-gap-stack span {
+  display: block;
+  min-width: 0;
+}
+
+.dashboard-metric-triplet b,
+.dashboard-metric-triplet small,
+.dashboard-gap-stack b,
+.dashboard-gap-stack small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-metric-triplet b,
+.dashboard-gap-stack b {
+  font-size: 10px;
+}
+
+.dashboard-metric-triplet small,
+.dashboard-gap-stack small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.dashboard-gap-stack {
+  display: grid;
+  gap: 5px;
+}
+
+.dashboard-metric-progress {
+  min-width: 0;
+}
+
+.dual-progress-meter.compact {
+  gap: 3px;
+}
+
+.dual-progress-meter.compact .dual-progress-line {
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 4px;
+}
+
+.dual-progress-meter.compact .dual-progress-line small,
+.dual-progress-meter.compact .dual-progress-foot {
+  font-size: 7px;
+}
+
+.dual-progress-meter.compact .dual-progress-track {
+  height: 4px;
+}
+
+.dual-progress-meter.compact .dual-progress-foot {
+  gap: 3px;
+}
+
+.post-plan-summary-panel .dashboard-metric-progress .dual-progress-meter {
+  padding: 0 2px;
+}
+
 .progress-panel > .dashboard-tabs {
   margin: 0 13px 8px;
 }

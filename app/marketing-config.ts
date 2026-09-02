@@ -437,7 +437,7 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
   const brandName = brands[index % brands.length];
   const owner = owners[index % owners.length];
   const specialist = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"][index % 4];
-  const qty = 2 + (index % 4);
+  const qty = 5 + (index % 4);
   const unitPrice = [350000, 420000, 500000, 280000][index % 4];
   const expectedPostDate = `2026-09-${String(5 + (index % 5) * 3).padStart(2, "0")}`;
   const paid = index % 3 === 0;
@@ -512,7 +512,7 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
 });
 
 const review31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string }[]).map((plan, planIndex) => {
-  const published = paymentIndex % 3 === 0 && planIndex === 0;
+  const published = paymentIndex % 3 === 0 && planIndex < 3;
   const postId = published ? `76774464559797${String(24040 + paymentIndex * 10 + planIndex)}` : "";
   return {
     id: 3101 + paymentIndex * 10 + planIndex,

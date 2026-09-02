@@ -790,7 +790,7 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
     <div className="plan-table-wrap v31-plan-wrap">
       <table className={"plan-table v31-plan-table" + (showReviewModules ? " review-grouped-plan-table" : "")}>
         <thead>
-          {showReviewModules && <tr className="plan-module-head"><th className="plan-module-payment" colSpan={planPaymentInfoColSpan}>Payment Info</th><th className="plan-module-post" colSpan={2}>Post Info</th><th className="plan-module-ads" colSpan={2}>Ads Info</th></tr>}
+          {showReviewModules && <tr className="plan-module-head"><th className="plan-module-payment" colSpan={planPaymentInfoColSpan} aria-hidden="true" /><th className="plan-module-post" colSpan={2}>Post Info</th><th className="plan-module-ads" colSpan={2}>Ads Info</th></tr>}
           <tr>
             <th className="plan-check-cell"><input type="checkbox" disabled={readOnly} aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>
             {hasReviewPlanSelector && <th className="plan-payment-info-field plan-select-field" />}
@@ -1947,7 +1947,7 @@ function DualProgressMeter({
 }) {
   const planTargetRate = dashboardRatioPercent(plan, target);
   const postTargetRate = dashboardRatioPercent(post, target);
-  const paceRate = dashboardRatioPercent(post, plan);
+  const paceRate = Math.max(0, 100 - postTargetRate);
   return (
     <div className={`dual-progress-meter ${compact ? "compact" : ""} ${tone}`}>
       <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(planTargetRate, 100)}%` }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%` }} /></div>
@@ -2298,8 +2298,8 @@ function PostPlanScheduleChart({
       <div className="post-plan-schedule-columns">
         {periodSegments.map((item) => <div className={`post-plan-schedule-column${item.marker ? " current" : ""}`} key={item.key}>
           <div className="post-plan-schedule-bar-area">
-            <div className="post-plan-schedule-bar" title={item.total ? `${item.label}: ${formatScheduleValue(item.total)}` : item.label}>
-              {item.segments.map((segment) => segment.value > 0 && <i key={segment.status} className={`schedule-segment ${postPlanScheduleStatusMeta[segment.status].className}`} style={{ height: `${(segment.value / maxCount) * 100}%` }} title={`${label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
+            <div className="post-plan-schedule-bar" style={{ height: `${item.total ? Math.max((item.total / maxCount) * 100, 5) : 0}%` }} title={item.total ? `${item.label}: ${formatScheduleValue(item.total)}` : item.label}>
+              {item.segments.map((segment) => segment.value > 0 && <i key={segment.status} className={`schedule-segment ${postPlanScheduleStatusMeta[segment.status].className}`} style={{ height: `${(segment.value / Math.max(item.total, 1)) * 100}%` }} title={`${label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{label(postPlanScheduleStatusMeta[segment.status].zh, postPlanScheduleStatusMeta[segment.status].en, language)} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
             </div>
           </div>
           <strong className="post-plan-schedule-label">{item.label}</strong>
@@ -2374,18 +2374,19 @@ function TargetDashboard({
       specialist: payment.kolSpecialist || payment.specialist || ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"][paymentIndex % 4],
       submitter: payment.submitter || "Uthan",
       brand: payment.brand || label("未分配品牌", "Unassigned Brand", language),
-      tier: plan.rate || payment.rate || label("未分级", "Unrated", language),
+      tier: plan.rate || plan.tier || plan.rateTier || payment.rate || payment.rateTier || label("未分级", "Unrated", language),
     }));
   });
   const postPlanDimensionValue = (row: Record<string, unknown>, dimension: DashboardDimension) => {
     if (dimension === "product") return String(row.product || label("未分配产品", "Unassigned Product", language));
-    if (dimension === "tier") return String(row.rate || row.tier || label("未分级", "Unrated", language));
+    if (dimension === "tier") return String(row.rate || row.tier || row.rateTier || label("未分级", "Unrated", language));
     if (dimension === "strategist") return String(row.owner || label("未分配负责人", "Unassigned Strategist", language));
     if (dimension === "specialist") return String(row.kolSpecialist || row.specialist || label("未分配 Specialist", "Unassigned Specialist", language));
     if (dimension === "submitter") return String(row.submitter || label("未分配 Submitter", "Unassigned Submitter", language));
     return String(row.brand || label("未分配品牌", "Unassigned Brand", language));
   };
   const paidPlanPriceByKey = new Map(paidPlanEntries.map((plan) => [`${plan.paymentNo}|${String(plan.postNo)}`, numeric(plan.eachPrice)]));
+  const paidPlanTierByKey = new Map(paidPlanEntries.map((plan) => [`${plan.paymentNo}|${String(plan.postNo)}`, String(plan.tier || "")]));
   const postedPlanEntries = reviewRows.filter((review) => {
     const postDate = String(review.actualPostDate || review.postDate || "");
     const hasPost = Boolean(String(review.postId || "").trim() || postDate || String(review.postStatus || "") === "Published");
@@ -2400,7 +2401,7 @@ function TargetDashboard({
     specialist: review.kolSpecialist || label("未分配 Specialist", "Unassigned Specialist", language),
     submitter: review.submitter || label("未分配 Submitter", "Unassigned Submitter", language),
     brand: review.brand || label("未分配品牌", "Unassigned Brand", language),
-    tier: review.rate || review.tier || label("未分级", "Unrated", language),
+    tier: review.rate || review.tier || review.rateTier || paidPlanTierByKey.get(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`) || label("未分级", "Unrated", language),
     eachPrice: review.eachPrice || paidPlanPriceByKey.get(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`) || review.unitPrice || 0,
   }));
   const publishedPlanKeys = new Set(reviewRows.filter((review) => String(review.postStatus || "") === "Published" || Boolean(review.actualPostDate || review.postDate)).map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
@@ -2498,7 +2499,7 @@ function TargetDashboard({
   const selectedPlanEntries = paidPlanEntries.filter((plan) => selectedPostPlanRows.has(`paid-${postPlanTab}-${postPlanDimensionValue(plan, postPlanTab)}`));
   const paidPlanChildrenFor = (dimension: DashboardDimension, row: DashboardBreakdown) => {
     if (dimension === "product") {
-      return buildPaidPlanBreakdowns("tier").filter((child) => child.postTarget > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.targetCount, 1)));
+      return buildPaidPlanBreakdowns("tier").filter((child) => (child.planMtd || 0) > 0).map((child) => scaleBreakdown(row, child.name, row.name, child.postTarget / Math.max(postPlanSummary.targetCount, 1)));
     }
     const productPlans = paidRowsByDimension.product;
     if (dimension === "brand") return productPlans.filter((product) => product.sub.includes(row.name));
@@ -3129,6 +3130,51 @@ export default function MarketingSystem() {
       const specialists = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"];
       const nextPayments = payments.map((payment, index) => {
         const paid = String(payment.sendPayment || payment.paid || "") === "Yes" || Boolean(payment.paymentDate);
+        const isDemoPayment = String(payment.paymentNo || "").startsWith("PID20260826");
+        const existingPlans = Array.isArray(payment.postPlans) ? payment.postPlans as Record<string, unknown>[] : [];
+        const demoMigrationPending = isDemoPayment && numeric(payment.demoPostProgressVersion) < 2;
+        const desiredQty = isDemoPayment ? Math.max(numeric(payment.qty), 5 + (index % 4)) : numeric(payment.qty);
+        const demoProducts = ["Tone Up Sunscreen", "Day Cream", "Body Scrub", "Serum Spray", "Hair Oil"];
+        const demoPlatforms = ["TikTok", "Instagram", "YouTube"];
+        const normalizedExistingPlans = demoMigrationPending
+          ? existingPlans.map((plan, planIndex) => {
+              const tierValue = [plan.rate, plan.tier, plan.rateTier, payment.rate, payment.rateTier]
+                .find((value) => value && !["Unrated", "未分级"].includes(String(value))) || (numeric(payment.unitPrice) >= 300000 ? "A" : "B");
+              return {
+                ...plan,
+                postNo: plan.postNo || planIndex + 1,
+                reviewId: plan.reviewId || `RID${String(payment.paymentNo || "PID20260826")}${String(plan.postNo || planIndex + 1).padStart(2, "0")}`,
+                rate: tierValue,
+                product: plan.product || payment.product || demoProducts[(index + planIndex + 1) % demoProducts.length],
+              };
+            })
+          : existingPlans;
+        const demoPlans = demoMigrationPending && existingPlans.length < desiredQty
+          ? [
+              ...normalizedExistingPlans,
+              ...Array.from({ length: desiredQty - normalizedExistingPlans.length }, (_, extraIndex) => {
+                const postNo = normalizedExistingPlans.length + extraIndex + 1;
+                return {
+                  postNo,
+                  strategist: payment.owner || "",
+                  reviewId: `RID${String(payment.paymentNo || "PID20260826")}${String(postNo).padStart(2, "0")}`,
+                  platform: demoPlatforms[(index + postNo) % demoPlatforms.length],
+                  contentType: ["Vlog", "TTS", "Photoslide", "Livetalk"][postNo % 4],
+                  contentAngle: ["Review", "Tutorial", "Lifestyle", "Before & After"][postNo % 4],
+                  planningPostDate: index === 3 || index === 6
+                    ? `2026-08-${String(12 + (postNo - 1) * 2).padStart(2, "0")}`
+                    : `2026-09-${String(5 + ((index + postNo) % 5) * 3).padStart(2, "0")}`,
+                  eachPrice: String(payment.unitPrice || 0),
+                  rate: numeric(payment.unitPrice) >= 300000 ? "A" : "B",
+                  product: demoProducts[(index + postNo) % demoProducts.length],
+                  yellowCart: "No",
+                  boostCode: "",
+                  owning: "",
+                  sparkStatus: "not Provided",
+                };
+              }),
+            ]
+          : existingPlans;
         return {
           ...payment,
           createdAt: payment.createdAt || `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
@@ -3164,15 +3210,33 @@ export default function MarketingSystem() {
           source: payment.source || "Manual",
           picIsMe: payment.picIsMe ?? String(payment.owner || "") === "Ajeng Salma Nadhifa Fitriani",
           supervisorIsMe: payment.supervisorIsMe ?? String(payment.supervisor || "") === "Desy Chintya",
+          ...(demoMigrationPending ? {
+            qty: demoPlans.length || payment.qty,
+            totalPrice: (demoPlans.length || numeric(payment.qty)) * numeric(payment.unitPrice),
+            reviewQty: demoPlans.length || payment.reviewQty,
+            postPlans: demoPlans,
+            demoPostProgressVersion: 2,
+          } : {}),
         };
       });
       const changed = nextPayments.some((payment, index) => Object.keys(payment).some((key) => payment[key] !== payments[index][key]));
       const reviews = current.review31b || [];
       const nextReviews = reviews.map((review, index) => {
         const payment = nextPayments.find((item) => String(item.paymentNo || "") === String(review.paymentNo || ""));
+        const paymentIndex = nextPayments.findIndex((item) => String(item.paymentNo || "") === String(review.paymentNo || ""));
         const plan = Array.isArray(payment?.postPlans)
           ? (payment.postPlans as Record<string, unknown>[]).find((item) => String(item.postNo || "") === String(review.postNo || ""))
           : undefined;
+        const isDemoPayment = String(payment?.paymentNo || "").startsWith("PID20260826");
+        const postNo = numeric(review.postNo);
+        const shouldDemoPublish = isDemoPayment && paymentIndex >= 0 && paymentIndex % 3 === 0 && postNo > 0 && postNo <= 3;
+        const hasPostId = Boolean(String(review.postId || "").trim());
+        const demoPostId = shouldDemoPublish
+          ? (hasPostId ? String(review.postId) : `76774464559797${24040 + paymentIndex * 10 + postNo - 1}`)
+          : "";
+        const demoActualPostDate = shouldDemoPublish && !String(review.actualPostDate || review.postDate || "").trim()
+          ? `2026-08-${String(12 + paymentIndex + postNo).padStart(2, "0")}`
+          : "";
         const source = String(payment?.source || "") === "Manual" ? "GST" : "Private";
         return {
           ...review,
@@ -3194,12 +3258,58 @@ export default function MarketingSystem() {
           sparkAdsStatus: normalizeReviewSparkAdsStatus(review.sparkAdsStatus || (review.postId ? "Done" : ["Required", "Yes"].includes(String(plan?.sparkStatus || "")) ? "Done" : "None")),
           postStatus: normalizeReviewPostStatus(review.postStatus || "Normal"),
           source: review.source || source,
+          ...(shouldDemoPublish ? {
+            postId: demoPostId,
+            postLink: `https://www.tiktok.com/@${String(review.creatorName || payment?.creatorName || "creator")}/video/${demoPostId}`,
+            actualPostDate: demoActualPostDate || review.actualPostDate || review.postDate || `2026-08-${String(12 + paymentIndex + postNo).padStart(2, "0")}`,
+          } : {}),
         };
       });
-      const reviewsChanged = nextReviews.some((review, index) => Object.keys(review).some((key) => review[key] !== reviews[index][key]));
-      return changed || reviewsChanged ? { ...current, payment31: nextPayments, review31b: nextReviews } : current;
+      const existingReviewKeys = new Set(nextReviews.map((review) => `${String(review.paymentNo || "")}|${String(review.postNo || "")}`));
+      const generatedDemoReviews = nextPayments.flatMap((payment, paymentIndex) => {
+        if (!String(payment.paymentNo || "").startsWith("PID20260826")) return [];
+        const plans = Array.isArray(payment.postPlans) ? payment.postPlans as Record<string, unknown>[] : [];
+        return plans.filter((plan) => !existingReviewKeys.has(`${String(payment.paymentNo || "")}|${String(plan.postNo || "")}`)).map((plan) => ({
+          id: 43000 + paymentIndex * 100 + numeric(plan.postNo),
+          reviewNo: String(plan.reviewId || `RID${String(payment.paymentNo || "")}${String(plan.postNo || "")}`),
+          paymentNo: String(payment.paymentNo || ""),
+          postNo: String(plan.postNo || ""),
+          creatorName: payment.creatorName,
+          country: payment.country || "ID",
+          brand: payment.brand,
+          owner: payment.owner,
+          kolSpecialist: payment.kolSpecialist,
+          supervisor: payment.supervisor,
+          submitter: payment.submitter,
+          ownerDept: payment.department,
+          department: payment.department,
+          platform: plan.platform,
+          contentType: plan.contentType,
+          contentAngle: plan.contentAngle,
+          product: plan.product,
+          planningPostDate: plan.planningPostDate,
+          postId: "",
+          postLink: "",
+          actualPostDate: "",
+          createdAt: payment.createdAt,
+          eachPrice: plan.eachPrice ?? payment.unitPrice ?? "",
+          ranking: "Normal",
+          targetTraffic: "Yes",
+          shouldCpm: "No",
+          picIsMe: payment.picIsMe,
+          sparkCodeNotice: "No",
+          sparkAdsStatus: "None",
+          postStatus: "Normal",
+          linkStatus: "Linked",
+          source: payment.source,
+          postPlans: payment.postPlans,
+        }));
+      });
+      const mergedReviews = [...nextReviews, ...generatedDemoReviews];
+      const reviewsChanged = mergedReviews.length !== reviews.length || mergedReviews.some((review, index) => !reviews[index] || Object.keys(review).some((key) => review[key] !== reviews[index][key]));
+      return changed || reviewsChanged ? { ...current, payment31: nextPayments, review31b: mergedReviews } : current;
     });
-  }, [setRows]);
+  }, [rows, setRows]);
 
   useEffect(() => {
     if (!roleConfig.groups.includes(pageGroup(activePage))) setActivePage("home");

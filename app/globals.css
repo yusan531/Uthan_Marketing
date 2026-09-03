@@ -2194,6 +2194,10 @@ thead .operation-column {
   margin: 18px 0 12px;
 }
 
+.legacy-summary-values.no-payment {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .legacy-summary-values > div {
   min-width: 0;
 }
@@ -2227,6 +2231,10 @@ thead .operation-column {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0 0 10px;
+}
+
+.legacy-summary-gaps.no-payment {
+  grid-template-columns: 1fr;
 }
 
 .legacy-summary-gaps > span {

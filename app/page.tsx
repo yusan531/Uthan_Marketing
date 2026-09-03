@@ -2028,19 +2028,21 @@ function LegacyDualProgressMeter({
   payment,
   target,
   tone,
+  showPayment = true,
 }: {
   post: number;
   payment: number;
   target: number;
   tone: "green" | "amber";
+  showPayment?: boolean;
 }) {
   const postRate = target > 0 ? percent(post, target) : 0;
   const paymentRate = target > 0 ? percent(payment, target) : 0;
   return (
     <div className={`legacy-dual-progress-meter ${tone}`}>
-      <div className="legacy-dual-progress-line"><small>Payment</small><div className="legacy-dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(paymentRate, 100)}%` }} /></div></div>
+      {showPayment && <div className="legacy-dual-progress-line"><small>Payment</small><div className="legacy-dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(paymentRate, 100)}%` }} /></div></div>}
       <div className="legacy-dual-progress-line"><small>Post</small><div className="legacy-dual-progress-track"><i className="post-fill" style={{ width: `${Math.min(postRate, 100)}%` }} /></div></div>
-      <div className="legacy-dual-progress-foot"><span>Post <b>{postRate}%</b></span><span>Payment <b>{paymentRate}%</b></span><span>Target <b>100%</b></span></div>
+      <div className="legacy-dual-progress-foot"><span>Post <b>{postRate}%</b></span>{showPayment && <span>Payment <b>{paymentRate}%</b></span>}<span>Target <b>100%</b></span></div>
     </div>
   );
 }
@@ -2052,6 +2054,7 @@ function LegacyProgressSummary({
   target,
   suffix,
   tone,
+  showPayment = true,
 }: {
   title: string;
   post: number;
@@ -2059,6 +2062,7 @@ function LegacyProgressSummary({
   target: number;
   suffix?: string;
   tone: "green" | "amber";
+  showPayment?: boolean;
 }) {
   const postGap = Math.max(target - post, 0);
   const paymentGap = Math.max(target - payment, 0);
@@ -2067,13 +2071,13 @@ function LegacyProgressSummary({
       <div className="summary-top">
         <strong>{title}</strong>
       </div>
-      <div className="legacy-summary-values">
+      <div className={`legacy-summary-values${showPayment ? "" : " no-payment"}`}>
         <div><b>{formatDashboardMetric(post, suffix)}</b><small>Post</small></div>
-        <div><b>{formatDashboardMetric(payment, suffix)}</b><small>Payment</small></div>
+        {showPayment && <div><b>{formatDashboardMetric(payment, suffix)}</b><small>Payment</small></div>}
         <div><b>{formatDashboardMetric(target, suffix)}</b><small>Target</small></div>
       </div>
-      <div className="legacy-summary-gaps"><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>Post GAP</small></span><span><b>{formatDashboardMetric(paymentGap, suffix)}</b><small>Payment GAP</small></span></div>
-      <LegacyDualProgressMeter post={post} payment={payment} target={target} tone={tone} />
+      <div className={`legacy-summary-gaps${showPayment ? "" : " no-payment"}`}><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>Post GAP</small></span>{showPayment && <span><b>{formatDashboardMetric(paymentGap, suffix)}</b><small>Payment GAP</small></span>}</div>
+      <LegacyDualProgressMeter post={post} payment={payment} target={target} tone={tone} showPayment={showPayment} />
     </article>
   );
 }
@@ -2865,8 +2869,8 @@ function TargetDashboard({
         <section className="panel progress-panel">
           <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publishing Progress", language)}</div>
           <div className="progress-pair">
-            <LegacyProgressSummary title={label("发布数量", "Post", language)} post={postMtd} payment={version31 ? postPlanSummary.paidCount : postMtd} target={postTarget} tone="green" />
-            <LegacyProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} post={budgetMtd} payment={version31 ? postPlanSummary.paidAmount : budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" />
+            <LegacyProgressSummary title={label("发布数量", "Post", language)} post={postMtd} payment={version31 ? postPlanSummary.paidCount : postMtd} target={postTarget} tone="green" showPayment={!version31} />
+            <LegacyProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} post={budgetMtd} payment={version31 ? postPlanSummary.paidAmount : budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" showPayment={!version31} />
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}

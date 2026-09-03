@@ -545,13 +545,14 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
 type PostPlan31 = PostPlan & { strategist: string; reviewId: string; eachPrice: string; rate: string; product: string; sparkStatus: string; postId?: string; postDate?: string; postLink?: string; boostCodeValue?: string; postStatus?: string; sparkAdsStatus?: string; addDate?: string; adsPic?: string; createdAfterApproval?: boolean };
 type BatchPlanKey = "strategist" | "platform" | "contentType" | "contentAngle" | "planningPostDate" | "eachPrice" | "product" | "yellowCart" | "owning" | "boostCode";
 const plan31Seed: PostPlan31[] = [
-  { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "Yes", owning: "", sparkStatus: "Yes" },
-  { postNo: 2, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "TikTok", contentType: "TTS", contentAngle: "Tutorial", planningPostDate: "2026-09-12", eachPrice: "350000", rate: "A", product: "Day Cream", yellowCart: "Yes", boostCode: "Yes", owning: "", sparkStatus: "Yes" },
-  { postNo: 3, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", eachPrice: "350000", rate: "A", product: "Body Scrub", yellowCart: "No", boostCode: "Yes", owning: "", sparkStatus: "Yes" },
+  { postNo: 1, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "RID20260826000031", platform: "TikTok", contentType: "Vlog", contentAngle: "Review", planningPostDate: "2026-09-05", eachPrice: "350000", rate: "A", product: "Tone Up Sunscreen", yellowCart: "Yes", boostCode: "Yes", owning: "No", sparkStatus: "Yes" },
+  { postNo: 2, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "TikTok", contentType: "TTS", contentAngle: "Tutorial", planningPostDate: "2026-09-12", eachPrice: "350000", rate: "A", product: "Day Cream", yellowCart: "Yes", boostCode: "Yes", owning: "No", sparkStatus: "Yes" },
+  { postNo: 3, strategist: "Ajeng Salma Nadhifa Fitriani", reviewId: "", platform: "Instagram", contentType: "Photoslide", contentAngle: "Lifestyle", planningPostDate: "2026-09-18", eachPrice: "350000", rate: "A", product: "Body Scrub", yellowCart: "No", boostCode: "Yes", owning: "No", sparkStatus: "Yes" },
 ];
-const emptyReviewPlan31 = (postNo = 1): PostPlan31 => ({ ...plan31Seed[0], postNo, strategist: "", reviewId: "", platform: "", contentType: "", contentAngle: "", planningPostDate: "", eachPrice: "", rate: "C", product: "", yellowCart: "", boostCode: "Yes", owning: "", sparkStatus: "Yes" });
+const emptyReviewPlan31 = (postNo = 1): PostPlan31 => ({ ...plan31Seed[0], postNo, strategist: "", reviewId: "", platform: "", contentType: "", contentAngle: "", planningPostDate: "", eachPrice: "", rate: "C", product: "", yellowCart: "No", boostCode: "Yes", owning: "No", sparkStatus: "Yes" });
 
 const normalizeBoostCodeStatus = (value: unknown) => String(value || "").toLowerCase() === "no" ? "No" : "Yes";
+const normalizeYesNo = (value: unknown) => String(value || "").toLowerCase() === "yes" ? "Yes" : "No";
 const normalizeReviewPostStatus = (value: unknown) => String(value || "") === "Video Removed" ? "Video Removed" : "Normal";
 const normalizeReviewSparkAdsStatus = (value: unknown) => {
   const status = String(value || "");
@@ -576,6 +577,8 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
     });
     return savedPlans.map(item => ({
       ...item,
+      yellowCart: normalizeYesNo(item.yellowCart),
+      owning: normalizeYesNo(item.owning),
       sparkStatus: normalizeBoostCodeStatus(item.boostCode || item.sparkStatus),
       boostCode: normalizeBoostCodeStatus(item.boostCode || item.sparkStatus),
       postStatus: item.postStatus ? normalizeReviewPostStatus(item.postStatus) : item.postStatus,
@@ -618,7 +621,7 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
   const changeReviewPayment = (value: string) => {
     const payment = relatedRows.find(item => String(item.paymentNo || "") === value);
     const paymentPlans = value ? (Array.isArray(payment?.postPlans) ? payment.postPlans as PostPlan31[] : plan31Seed) : [];
-    setPlans(paymentPlans.map(item => ({ ...item, sparkStatus: normalizeBoostCodeStatus(item.boostCode || item.sparkStatus), boostCode: normalizeBoostCodeStatus(item.boostCode || item.sparkStatus) })));
+    setPlans(paymentPlans.map(item => ({ ...item, yellowCart: normalizeYesNo(item.yellowCart), owning: normalizeYesNo(item.owning), sparkStatus: normalizeBoostCodeStatus(item.boostCode || item.sparkStatus), boostCode: normalizeBoostCodeStatus(item.boostCode || item.sparkStatus) })));
     setForm(current => ({ ...current, paymentNo: value, reviewNo: "", creatorName: String(payment?.creatorName || current.creatorName || ""), brand: String(payment?.brand || current.brand || ""), owner: String(payment?.owner || current.owner || ""), supervisor: String(payment?.supervisor || current.supervisor || ""), submitter: String(payment?.submitter || current.submitter || ""), department: String(payment?.department || current.department || ""), unitPrice: value ? (payment?.unitPrice || current.unitPrice) : "", reviewPlatform: "TikTok", reviewContentType: "", reviewContentAngle: "", reviewProduct: "", reviewPlanningPost: "", reviewEachPrice: "", reviewRate: "C", reviewYellowCart: "No", reviewOwning: "Creator", reviewSparkStatus: "None", reviewBoostCode: "" }));
     setSelectedPlan(value ? 0 : 0);
     setSelectedPlanRows(new Set());
@@ -764,7 +767,13 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
     if (isPaymentLocked && item.createdAfterApproval && key === "eachPrice") return <input className="plan-system-field" value="0" readOnly title={label("审批后新增计划单价固定为 0，不可编辑", "Post-approval plans have a fixed price of 0 and cannot be edited", language)} />;
     if (["reviewId", "rate", "sparkStatus"].includes(String(key))) return <input className="plan-system-field" value={item[key]} readOnly placeholder={key === "reviewId" ? label("创建 Review 后自动生成", "Generated after Review is created", language) : label("系统自动带出", "Auto-filled", language)} title={key === "reviewId" ? label("Review 创建成功后生成并回写，不可编辑", "Generated and written back after Review creation; read-only", language) : label("系统字段，不可编辑", "System field; read-only", language)} />;
     const options = planOptions[key];
-    if (options) return <select required={["strategist", "platform"].includes(String(key))} value={String(item[key])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)}>{key !== "boostCode" && <option value="">{label("请选择", "Select", language)}</option>}{options.map(option => <option key={option}>{option}</option>)}</select>;
+    if (options) {
+      if (["yellowCart", "owning", "boostCode"].includes(String(key))) {
+        const selectedValue = normalizeYesNo(item[key]);
+        return <div className="plan-binary-control" role="group" aria-label={String(key)}>{(["Yes", "No"] as const).map(option => <button type="button" key={option} className={selectedValue === option ? "active" : ""} aria-pressed={selectedValue === option} onClick={() => { setSelectedPlan(item.postNo); updatePlan(index, key, option); }}>{option}</button>)}</div>;
+      }
+      return <select required={["strategist", "platform"].includes(String(key))} value={String(item[key])} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)}>{key !== "boostCode" && <option value="">{label("请选择", "Select", language)}</option>}{options.map(option => <option key={option}>{option}</option>)}</select>;
+    }
     return <input required={key === "planningPostDate" || key === "eachPrice"} type={key === "planningPostDate" ? "date" : key === "eachPrice" ? "number" : "text"} min={key === "eachPrice" ? 0 : undefined} value={item[key]} onFocus={() => setSelectedPlan(item.postNo)} onChange={event => updatePlan(index, key, event.target.value)} />;
   };
   const reviewInlineControl = (item: PostPlan31, index: number, key: "postId" | "postDate" | "postLink" | "boostCodeValue" | "postStatus" | "sparkAdsStatus" | "addDate" | "adsPic") => {
@@ -805,8 +814,8 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
             <th className="plan-payment-info-field plan-stacked-header">Each Price *<br />Rate</th>
             <th className="plan-payment-info-field plan-product-header">Product</th>
             <th className="plan-payment-info-field plan-stacked-header">Content Type<br />Content Angle</th>
-            <th className="plan-payment-info-field plan-stacked-header">Yellow Cart<br />Owning</th>
-            <th className="plan-payment-info-field">Boost Code</th>
+            <th className="plan-payment-info-field plan-stacked-header plan-binary-header">Yellow Cart<br />Owning</th>
+            <th className="plan-payment-info-field plan-binary-header">Boost Code</th>
             {showReviewModules && <><th className="plan-post-info-field plan-module-start plan-stacked-header">Post ID<br />Boost Code Value</th><th className="plan-post-info-field plan-stacked-header">Post Link<br />Post Date</th><th className="plan-ads-info-field plan-module-start plan-stacked-header">Review Status<br />Spark Ads Status</th><th className="plan-ads-info-field plan-stacked-header">Ad Date<br />Ads PIC</th></>}
           </tr>
         </thead>
@@ -818,8 +827,8 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
           {stackedPlanCell(item, index, ["eachPrice", "rate"], "plan-payment-info-cell")}
           <td className="plan-payment-info-cell plan-product-cell">{renderPlanControl(item, index, "product")}</td>
           {stackedPlanCell(item, index, ["contentType", "contentAngle"], "plan-payment-info-cell")}
-          {stackedPlanCell(item, index, ["yellowCart", "owning"], "plan-payment-info-cell")}
-          <td className="plan-payment-info-cell">{renderPlanControl(item, index, "boostCode")}</td>
+          {stackedPlanCell(item, index, ["yellowCart", "owning"], "plan-payment-info-cell plan-binary-cell")}
+          <td className="plan-payment-info-cell plan-binary-cell">{renderPlanControl(item, index, "boostCode")}</td>
           {showReviewModules && <>{stackedReviewInfoCell(item, index, ["postId", "boostCodeValue"], "plan-post-info-cell plan-module-start")}{stackedReviewInfoCell(item, index, ["postLink", "postDate"], "plan-post-info-cell")}{stackedReviewInfoCell(item, index, ["postStatus", "sparkAdsStatus"], "plan-ads-info-cell plan-module-start")}<td className="plan-ads-info-cell plan-stacked-cell"><div>{reviewInlineControl(item, index, "addDate")}</div><div>{reviewInlineControl(item, index, "adsPic")}</div></td></>}
         </tr>)}</tbody>
       </table>

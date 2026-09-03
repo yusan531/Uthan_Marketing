@@ -2330,16 +2330,27 @@ const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; e
   "overdue-completed": { zh: "逾期发布", en: "Posted Late", className: "overdue-completed" },
 };
 
+function postPlanActualDate(entry: Record<string, unknown>) {
+  return String(entry.actualPostDate || entry.postDate || "").slice(0, 10);
+}
+
+function postPlanPlannedDate(entry: Record<string, unknown>) {
+  return String(entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10);
+}
+
 function postPlanScheduleDate(entry: Record<string, unknown>) {
-  return String(entry.actualPostDate || entry.postDate || entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10);
+  return postPlanActualDate(entry) || postPlanPlannedDate(entry);
 }
 
 function postPlanScheduleStatus(entry: Record<string, unknown>, today: string, publishedPlanKeys: Set<string>): PostPlanScheduleStatus {
   const key = `${String(entry.paymentNo || "")}|${String(entry.postNo || "")}`;
+  const actualDate = postPlanActualDate(entry);
+  const plannedDate = postPlanPlannedDate(entry);
   const scheduleDate = postPlanScheduleDate(entry);
-  const completed = publishedPlanKeys.has(key) && Boolean(scheduleDate) && scheduleDate <= today;
-  const overdue = Boolean(scheduleDate) && scheduleDate < today;
-  if (completed && overdue) return "overdue-completed";
+  const completed = publishedPlanKeys.has(key) && Boolean(scheduleDate) && (actualDate ? actualDate <= today : plannedDate <= today);
+  const postedLate = completed && Boolean(actualDate && plannedDate) && actualDate > plannedDate;
+  const overdue = !completed && Boolean(plannedDate) && plannedDate < today;
+  if (postedLate) return "overdue-completed";
   if (completed) return "completed";
   if (overdue) return "overdue";
   return "planned";

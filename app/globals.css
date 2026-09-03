@@ -3392,12 +3392,25 @@ thead .operation-column {
 }
 
 .post-plan-schedule-bar {
+  position: relative;
   width: min(48px, 80%);
   min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   gap: 1px;
+}
+
+.post-plan-schedule-total {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .schedule-segment {

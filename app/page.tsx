@@ -2776,22 +2776,6 @@ function TargetDashboard({
     ? paymentPivotDimension === "tier" ? label("达人等级", "Creator Tier", language) : label("产品", "Product", language)
     : currentPostPlanDimensionLabel;
   const calendarEntries = postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries;
-  const calendarSummary = calendarEntries.reduce((summary, entry) => {
-    const date = postPlanScheduleDate(entry);
-    const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
-    const posted = status === "completed" || status === "overdue-completed";
-    const delayed = status === "overdue";
-    if (date < today) {
-      if (posted) summary.beforePosted += 1;
-      if (delayed) summary.beforeDelayed += 1;
-    } else if (date === today) {
-      if (posted) summary.todayPosted += 1;
-      if (!posted) summary.todayPlanned += 1;
-    } else if (!posted) {
-      summary.afterPlanned += 1;
-    }
-    return summary;
-  }, { beforePosted: 0, beforeDelayed: 0, todayPosted: 0, todayPlanned: 0, afterPlanned: 0 });
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -2959,7 +2943,7 @@ function TargetDashboard({
             </table>
           </div>
           <div className="post-plan-calendar-module">
-            <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-header-actions"><div className="post-plan-calendar-summary" aria-label={label("排期汇总", "Schedule summary", language)}><span><em>{label("今天前", "Before today", language)}</em><b>{calendarSummary.beforePosted}</b>{label("发布", "Posted", language)}<b>{calendarSummary.beforeDelayed}</b>{label("延迟", "Delay", language)}</span><span><em>{label("今天", "Today", language)}</em><b>{calendarSummary.todayPosted}</b>{label("发布", "Posted", language)}<b>{calendarSummary.todayPlanned}</b>{label("计划", "Planned", language)}</span><span><em>{label("今天后", "After today", language)}</em><b>{calendarSummary.afterPlanned}</b>{label("计划", "Planned", language)}</span></div><div className="post-plan-calendar-tabs">{([[
+            <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-header-actions"><div className="post-plan-calendar-tabs">{([[
               "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div></div>
             {postPlanCalendarPeriod === "day"
               ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />

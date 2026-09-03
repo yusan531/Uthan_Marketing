@@ -3355,6 +3355,17 @@ export default function MarketingSystem() {
       const nextTargets = needsSeptemberDemoMigration
         ? [...storedTargets, ...dashboard31SeptemberTargets.filter((target) => !storedTargetNumbers.has(String(target.targetNo))).map((target) => ({ ...target }))]
         : storedTargets;
+      const toneUpDemoPaymentMap = new Map(dashboard31SeptemberPayments.map((payment) => [String(payment.paymentNo || ""), payment]));
+      const toneUpDemoReviewMap = new Map(dashboard31SeptemberReviews.map((review) => [`${String(review.paymentNo || "")}|${String(review.postNo || "")}`, review]));
+      const toneUpDemoTargetMap = new Map(dashboard31SeptemberTargets.map((target) => [String(target.targetNo || ""), target]));
+      const needsToneUpDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardToneUpDemoVersion) < 1)
+        || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && String(target.product || "") === "Tone Up Sunscreen" && numeric(target.dashboardToneUpDemoVersion) < 1);
+      const migratedTargets = nextTargets.map((target) => {
+        const canonicalTarget = needsToneUpDemoMigration ? toneUpDemoTargetMap.get(String(target.targetNo || "")) : undefined;
+        return canonicalTarget
+          ? { ...target, ...canonicalTarget, id: target.id }
+          : target;
+      });
       const specialists = ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"];
       const nextPayments = payments.map((payment, index) => {
         const paid = String(payment.sendPayment || payment.paid || "") === "Yes" || Boolean(payment.paymentDate);
@@ -3403,7 +3414,11 @@ export default function MarketingSystem() {
               }),
             ]
           : existingPlans;
+        const canonicalSeptemberPayment = needsToneUpDemoMigration && String(payment.paymentNo || "").startsWith("PID20260901")
+          ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
+          : undefined;
         return {
+          ...(canonicalSeptemberPayment || {}),
           ...payment,
           createdAt: payment.createdAt || `2026-08-${String(20 + (index % 9)).padStart(2, "0")}`,
           kolSpecialist: payment.kolSpecialist || specialists[index % specialists.length],
@@ -3446,6 +3461,14 @@ export default function MarketingSystem() {
             postPlans: demoPlans,
             demoPostProgressVersion: 2,
           } : {}),
+          ...(canonicalSeptemberPayment ? {
+            id: payment.id,
+            qty: canonicalSeptemberPayment.qty,
+            totalPrice: canonicalSeptemberPayment.totalPrice,
+            reviewQty: canonicalSeptemberPayment.reviewQty,
+            postPlans: canonicalSeptemberPayment.postPlans,
+            dashboardToneUpDemoVersion: 1,
+          } : {}),
         };
       });
       const changed = nextPayments.length !== storedPayments.length || nextPayments.some((payment, index) => !storedPayments[index] || Object.keys(payment).some((key) => payment[key] !== storedPayments[index][key]));
@@ -3454,7 +3477,15 @@ export default function MarketingSystem() {
       const reviews = needsSeptemberDemoMigration
         ? [...storedReviews, ...dashboard31SeptemberReviews.filter((review) => !storedReviewKeys.has(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`)).map((review) => ({ ...review, id: Number(review.id) + 1000 }))]
         : storedReviews;
-      const nextReviews = reviews.map((review, index) => {
+      const migratedReviews = needsToneUpDemoMigration
+        ? reviews.map((review) => {
+            const canonicalReview = toneUpDemoReviewMap.get(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`);
+            return canonicalReview
+              ? { ...review, ...canonicalReview, id: review.id }
+              : review;
+          })
+        : reviews;
+      const nextReviews = migratedReviews.map((review, index) => {
         const payment = nextPayments.find((item) => String(item.paymentNo || "") === String(review.paymentNo || ""));
         const paymentIndex = nextPayments.findIndex((item) => String(item.paymentNo || "") === String(review.paymentNo || ""));
         const plan = Array.isArray(payment?.postPlans)
@@ -3540,8 +3571,8 @@ export default function MarketingSystem() {
       });
       const mergedReviews = [...nextReviews, ...generatedDemoReviews];
       const reviewsChanged = mergedReviews.length !== storedReviews.length || mergedReviews.some((review, index) => !storedReviews[index] || Object.keys(review).some((key) => review[key] !== storedReviews[index][key]));
-      const targetsChanged = nextTargets.length !== storedTargets.length;
-      return changed || reviewsChanged || targetsChanged ? { ...current, target1: nextTargets, payment31: nextPayments, review31b: mergedReviews } : current;
+      const targetsChanged = migratedTargets.length !== storedTargets.length || migratedTargets.some((target, index) => !storedTargets[index] || Object.keys(target).some((key) => target[key] !== storedTargets[index][key]));
+      return changed || reviewsChanged || targetsChanged ? { ...current, target1: migratedTargets, payment31: nextPayments, review31b: mergedReviews } : current;
     });
   }, [rows, setRows]);
 

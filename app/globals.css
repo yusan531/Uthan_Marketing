@@ -2995,6 +2995,15 @@ thead .operation-column {
   display: grid;
   gap: 3px;
   margin-top: 5px;
+  max-height: 58px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-color: color-mix(in srgb, var(--dashboard-primary) 42%, var(--line)) transparent;
+  scrollbar-width: thin;
+}
+
+.post-plan-calendar-entries.is-scrollable {
+  overscroll-behavior: contain;
 }
 
 .post-plan-calendar-dimension-entry {

@@ -2869,7 +2869,7 @@ function TargetDashboard({
   const paymentPivotDimensionLabel = paymentPivotDrilldown
     ? paymentPivotDimension === "tier" ? label("达人等级", "Creator Tier", language) : label("产品", "Product", language)
     : currentPostPlanDimensionLabel;
-  const calendarEntries = postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries;
+  const calendarEntries = paymentPivotEntries;
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -3040,7 +3040,7 @@ function TargetDashboard({
             <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-header-actions"><div className="post-plan-calendar-tabs">{([[
               "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" dimension={postPlanTab} language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
+              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" dimension={paymentPivotDimension} language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
               : <div className="post-plan-schedule-views">
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} /></div>
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={paymentPivotEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={paymentPivotDimension} dimensionLabel={paymentPivotDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Plan Pivot" metric="quantity" stackBy="dimension" /></div>

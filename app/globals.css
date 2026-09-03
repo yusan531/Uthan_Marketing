@@ -3609,7 +3609,7 @@ thead .operation-column {
 }
 
 .post-plan-schedule-column.current {
-  border-color: color-mix(in srgb, var(--dashboard-warning) 35%, var(--line));
+  border-color: transparent;
   background: color-mix(in srgb, var(--dashboard-warning-soft) 58%, var(--surface));
 }
 

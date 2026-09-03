@@ -3021,7 +3021,6 @@ thead .operation-column {
   justify-content: space-between;
   gap: 5px;
   border: 0;
-  border-left: 2px solid var(--dashboard-primary);
   border-radius: 3px;
   color: var(--text);
   background: color-mix(in srgb, var(--dashboard-primary-soft) 66%, var(--surface));

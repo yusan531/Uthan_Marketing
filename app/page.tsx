@@ -3345,6 +3345,7 @@ export default function MarketingSystem() {
       const needsToneUpDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardToneUpDemoVersion) < 3)
         || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && String(target.product || "") === "Tone Up Sunscreen" && numeric(target.dashboardToneUpDemoVersion) < 3);
       const needsTierDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardTierDemoVersion) < 1);
+      const needsScheduleDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardScheduleDemoVersion) < 1);
       const migratedTargets = nextTargets.map((target) => {
         const canonicalTarget = needsToneUpDemoMigration ? toneUpDemoTargetMap.get(String(target.targetNo || "")) : undefined;
         return canonicalTarget
@@ -3403,6 +3404,9 @@ export default function MarketingSystem() {
           ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
           : undefined;
         const canonicalTierDemoPayment = needsTierDemoMigration && String(payment.paymentNo || "").startsWith("PID20260901")
+          ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
+          : undefined;
+        const canonicalScheduleDemoPayment = needsScheduleDemoMigration && String(payment.paymentNo || "").startsWith("PID20260901")
           ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
           : undefined;
         return {
@@ -3465,6 +3469,11 @@ export default function MarketingSystem() {
             postPlans: canonicalTierDemoPayment.postPlans,
             dashboardTierDemoVersion: 1,
           } : {}),
+          ...(canonicalScheduleDemoPayment ? {
+            id: payment.id,
+            postPlans: canonicalScheduleDemoPayment.postPlans,
+            dashboardScheduleDemoVersion: 1,
+          } : {}),
         };
       });
       const changed = nextPayments.length !== storedPayments.length || nextPayments.some((payment, index) => !storedPayments[index] || Object.keys(payment).some((key) => payment[key] !== storedPayments[index][key]));
@@ -3473,7 +3482,7 @@ export default function MarketingSystem() {
       const reviews = needsSeptemberDemoMigration
         ? [...storedReviews, ...dashboard31SeptemberReviews.filter((review) => !storedReviewKeys.has(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`)).map((review) => ({ ...review, id: Number(review.id) + 1000 }))]
         : storedReviews;
-      const migratedReviews = needsToneUpDemoMigration || needsTierDemoMigration
+      const migratedReviews = needsToneUpDemoMigration || needsTierDemoMigration || needsScheduleDemoMigration
         ? reviews.map((review) => {
             const canonicalReview = toneUpDemoReviewMap.get(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`);
             return canonicalReview

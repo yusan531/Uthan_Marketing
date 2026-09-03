@@ -545,6 +545,12 @@ for (let globalIndex = 0; globalIndex < dashboard31SeptemberTotalPlans; globalIn
   dashboard31SeptemberProductOccurrences.set(productName, occurrence + 1);
 }
 const dashboard31SeptemberTierAt = (globalIndex: number) => dashboard31SeptemberTierByIndex.get(globalIndex) || dashboard31SeptemberTierSequence[0];
+const dashboard31SeptemberOctoberPlanIndexes = new Set([54, 56, 58, 60, 62, 63, 64, 66, 68, 70, 72, 74, 75, 76, 78, 80, 82, 84, 86, 87, 88, 90, 92, 94, 96]);
+const dashboard31SeptemberNovemberPlanIndexes = new Set([98, 99, 100, 102, 104, 106, 108, 109, 110, 111, 112, 114, 116, 118, 120]);
+const dashboard31SeptemberAugustPlanIndexes = new Set(
+  Array.from({ length: dashboard31SeptemberTotalPlans }, (_, globalIndex) => globalIndex)
+    .filter((globalIndex) => (globalIndex % 3 === 0 || globalIndex % 5 === 0) && !dashboard31SeptemberOctoberPlanIndexes.has(globalIndex) && !dashboard31SeptemberNovemberPlanIndexes.has(globalIndex)),
+);
 
 export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((qty, index) => {
   const paymentNo = `PID20260901${String(index + 1).padStart(6, "0")}`;
@@ -562,6 +568,12 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
       ? "2026-09-01"
       : planOffset === 2
         ? "2026-09-02"
+        : dashboard31SeptemberOctoberPlanIndexes.has(planOffset)
+          ? `2026-10-${String(3 + ((planOffset * 5) % 27)).padStart(2, "0")}`
+          : dashboard31SeptemberNovemberPlanIndexes.has(planOffset)
+            ? `2026-11-${String(4 + ((planOffset * 7) % 26)).padStart(2, "0")}`
+            : dashboard31SeptemberAugustPlanIndexes.has(planOffset)
+              ? `2026-08-${String(3 + ((planOffset * 5) % 28)).padStart(2, "0")}`
         : planOffset % 5 === 0
           ? `2026-08-${String(8 + (planOffset % 20)).padStart(2, "0")}`
           : `2026-09-${String(3 + (planOffset % 26)).padStart(2, "0")}`;
@@ -586,6 +598,7 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
     id: 3201 + index,
     dashboardSeptemberDemoVersion: 1,
     dashboardTierDemoVersion: 1,
+    dashboardScheduleDemoVersion: 1,
     paymentNo,
     dashboardToneUpDemoVersion: 3,
     targetMonth: "2026-09",

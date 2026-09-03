@@ -78,11 +78,11 @@ const owner = () => select("owner", "负责人", "KOL Strategist", ownerOptions)
 const commonTargetFields = [date("targetMonth", "目标月份", "Target Month"), brand(), product(), owner()];
 
 export const dashboard31SeptemberTargets = [
-  { id: 9101, country: "ID", targetNo: "TG-202609-001", targetMonth: "2026-09", brand: "Glowsicha", product: "Tone Up Sunscreen", owner: "Nadia", contentType: "Vlog", rateTier: "A", budgetTarget: 18000000, actualCost: 9160000, budgetRate: "51%", viewsTarget: 2400000, actualViews: 1520000, viewsRate: "63%", qtyTarget: 45, qty: 54, qtyRate: "120%", qtyRatio: "0.8", targetCpm: 7500, realCpm: 6026, dashboardToneUpDemoVersion: 3 },
-  { id: 9102, country: "ID", targetNo: "TG-202609-002", targetMonth: "2026-09", brand: "Glowsicha", product: "Day Cream", owner: "Delvi", contentType: "TTS", rateTier: "A", budgetTarget: 17000000, actualCost: 9200000, budgetRate: "54%", viewsTarget: 2100000, actualViews: 1370000, viewsRate: "65%", qtyTarget: 34, qty: 20, qtyRate: "59%", qtyRatio: "1.7", targetCpm: 8095, realCpm: 6715 },
-  { id: 9103, country: "ID", targetNo: "TG-202609-003", targetMonth: "2026-09", brand: "Glowsicha", product: "Body Scrub", owner: "Shafi", contentType: "Photoslide", rateTier: "B", budgetTarget: 18000000, actualCost: 8780000, budgetRate: "49%", viewsTarget: 1900000, actualViews: 1210000, viewsRate: "64%", qtyTarget: 32, qty: 19, qtyRate: "59%", qtyRatio: "1.7", targetCpm: 9474, realCpm: 7256 },
-  { id: 9104, country: "ID", targetNo: "TG-202609-004", targetMonth: "2026-09", brand: "Glowsicha", product: "Serum Spray", owner: "Cilla", contentType: "Livetalk", rateTier: "S", budgetTarget: 18000000, actualCost: 8660000, budgetRate: "48%", viewsTarget: 1800000, actualViews: 1180000, viewsRate: "66%", qtyTarget: 30, qty: 19, qtyRate: "63%", qtyRatio: "1.6", targetCpm: 10000, realCpm: 7339 },
-  { id: 9105, country: "ID", targetNo: "TG-202609-005", targetMonth: "2026-09", brand: "Glowsicha", product: "Hair Oil", owner: "Ajeng Salma Nadhifa Fitriani", contentType: "Vlog", rateTier: "C", budgetTarget: 17000000, actualCost: 9200000, budgetRate: "54%", viewsTarget: 1700000, actualViews: 1140000, viewsRate: "67%", qtyTarget: 26, qty: 20, qtyRate: "77%", qtyRatio: "1.3", targetCpm: 10000, realCpm: 8070 },
+  { id: 9101, country: "ID", targetNo: "TG-202609-001", targetMonth: "2026-09", brand: "Glowsicha", product: "Tone Up Sunscreen", owner: "Nadia", contentType: "Vlog", rateTier: "A", budgetTarget: 18000000, actualCost: 8400000, budgetRate: "47%", viewsTarget: 2400000, actualViews: 960000, viewsRate: "40%", qtyTarget: 45, qty: 20, qtyRate: "44%", qtyRatio: "0.9", targetCpm: 7500, realCpm: 8750, dashboardToneUpDemoVersion: 3, dashboardDataDemoVersion: 2 },
+  { id: 9102, country: "ID", targetNo: "TG-202609-002", targetMonth: "2026-09", brand: "Glowsicha", product: "Day Cream", owner: "Delvi", contentType: "TTS", rateTier: "A", budgetTarget: 17000000, actualCost: 2400000, budgetRate: "14%", viewsTarget: 2100000, actualViews: 420000, viewsRate: "20%", qtyTarget: 20, qty: 6, qtyRate: "30%", qtyRatio: "0.6", targetCpm: 8095, realCpm: 5714, dashboardDataDemoVersion: 2 },
+  { id: 9103, country: "ID", targetNo: "TG-202609-003", targetMonth: "2026-09", brand: "Glowsicha", product: "Body Scrub", owner: "Shafi", contentType: "Photoslide", rateTier: "B", budgetTarget: 18000000, actualCost: 6000000, budgetRate: "33%", viewsTarget: 1900000, actualViews: 1080000, viewsRate: "57%", qtyTarget: 16, qty: 12, qtyRate: "75%", qtyRatio: "1.2", targetCpm: 9474, realCpm: 5556, dashboardDataDemoVersion: 2 },
+  { id: 9104, country: "ID", targetNo: "TG-202609-004", targetMonth: "2026-09", brand: "Glowsicha", product: "Serum Spray", owner: "Cilla", contentType: "Livetalk", rateTier: "S", budgetTarget: 18000000, actualCost: 7000000, budgetRate: "39%", viewsTarget: 1800000, actualViews: 1260000, viewsRate: "70%", qtyTarget: 24, qty: 14, qtyRate: "58%", qtyRatio: "1.4", targetCpm: 10000, realCpm: 5556, dashboardDataDemoVersion: 2 },
+  { id: 9105, country: "ID", targetNo: "TG-202609-005", targetMonth: "2026-09", brand: "Glowsicha", product: "Hair Oil", owner: "Ajeng Salma Nadhifa Fitriani", contentType: "Vlog", rateTier: "C", budgetTarget: 17000000, actualCost: 1800000, budgetRate: "11%", viewsTarget: 1700000, actualViews: 360000, viewsRate: "21%", qtyTarget: 18, qty: 4, qtyRate: "22%", qtyRatio: "0.5", targetCpm: 10000, realCpm: 5000, dashboardDataDemoVersion: 2 },
 ];
 
 export const pageConfigs: Partial<Record<PageKey, PageConfig>> = {
@@ -522,7 +522,6 @@ const payment31Seed = Array.from({ length: 15 }, (_, index) => {
 });
 
 const dashboard31SeptemberQuantities = [14, 13, 13, 13, 12, 12, 12, 12, 12, 11];
-const dashboard31SeptemberPublished = [12, 11, 11, 10, 10, 10, 9, 9, 8, 8];
 const dashboard31SeptemberOffsets = dashboard31SeptemberQuantities.map((_, index) => dashboard31SeptemberQuantities.slice(0, index).reduce((sum, value) => sum + value, 0));
 const dashboard31SeptemberProducts = ["Tone Up Sunscreen", "Day Cream", "Body Scrub", "Serum Spray", "Hair Oil"];
 const dashboard31SeptemberTotalPlans = dashboard31SeptemberQuantities.reduce((sum, value) => sum + value, 0);
@@ -545,8 +544,10 @@ for (let globalIndex = 0; globalIndex < dashboard31SeptemberTotalPlans; globalIn
   dashboard31SeptemberProductOccurrences.set(productName, occurrence + 1);
 }
 const dashboard31SeptemberTierAt = (globalIndex: number) => dashboard31SeptemberTierByIndex.get(globalIndex) || dashboard31SeptemberTierSequence[0];
-const dashboard31SeptemberOctoberPlanIndexes = new Set([54, 56, 58, 60, 62, 63, 64, 66, 68, 70, 72, 74, 75, 76, 78, 80, 82, 84, 86, 87, 88, 90, 92, 94, 96]);
-const dashboard31SeptemberNovemberPlanIndexes = new Set([98, 99, 100, 102, 104, 106, 108, 109, 110, 111, 112, 114, 116, 118, 120]);
+const dashboard31SeptemberFuturePlanIndexes = Array.from({ length: dashboard31SeptemberTotalPlans }, (_, globalIndex) => globalIndex)
+  .filter((globalIndex) => globalIndex !== 1 && globalIndex !== 2 && !dashboard31SeptemberToneUpPlanIndexes.has(globalIndex));
+const dashboard31SeptemberOctoberPlanIndexes = new Set(dashboard31SeptemberFuturePlanIndexes.slice(0, 25));
+const dashboard31SeptemberNovemberPlanIndexes = new Set(dashboard31SeptemberFuturePlanIndexes.slice(25, 40));
 const dashboard31SeptemberAugustPlanIndexes = new Set(
   Array.from({ length: dashboard31SeptemberTotalPlans }, (_, globalIndex) => globalIndex)
     .filter((globalIndex) => (globalIndex % 3 === 0 || globalIndex % 5 === 0) && !dashboard31SeptemberOctoberPlanIndexes.has(globalIndex) && !dashboard31SeptemberNovemberPlanIndexes.has(globalIndex)),
@@ -599,6 +600,7 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
     dashboardSeptemberDemoVersion: 1,
     dashboardTierDemoVersion: 1,
     dashboardScheduleDemoVersion: 1,
+    dashboardDataDemoVersion: 2,
     paymentNo,
     dashboardToneUpDemoVersion: 3,
     targetMonth: "2026-09",
@@ -653,11 +655,18 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
   };
 });
 
-let dashboard31SeptemberToneUpPublished = 0;
+const dashboard31SeptemberProductPostLimits: Record<string, number> = {
+  "Tone Up Sunscreen": 20,
+  "Day Cream": 6,
+  "Body Scrub": 12,
+  "Serum Spray": 14,
+  "Hair Oil": 4,
+};
+const dashboard31SeptemberProductPublishedCounts = new Map<string, number>();
 export const dashboard31SeptemberReviews = dashboard31SeptemberPayments.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string; eachPrice: string; rate: string; sparkStatus: string }[]).map((plan, planIndex) => {
-  const published = plan.product === "Tone Up Sunscreen"
-    ? dashboard31SeptemberToneUpPublished++ < 54
-    : planIndex < dashboard31SeptemberPublished[paymentIndex];
+  const productPublishedCount = dashboard31SeptemberProductPublishedCounts.get(plan.product) || 0;
+  const published = productPublishedCount < (dashboard31SeptemberProductPostLimits[plan.product] || 0);
+  if (published) dashboard31SeptemberProductPublishedCounts.set(plan.product, productPublishedCount + 1);
   const globalIndex = dashboard31SeptemberOffsets[paymentIndex] + planIndex;
   const postId = published ? `7681090202609${String(10000 + globalIndex)}` : "";
   return {

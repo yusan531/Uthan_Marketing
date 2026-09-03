@@ -1985,8 +1985,7 @@ function DualProgressMeter({
     ? Math.round((postTargetRate - planTargetRate) / 10) * 10
     : Math.max(0, 100 - postTargetRate);
   const postProgressColor = postTargetRate < 60 ? "var(--dashboard-danger)" : postTargetRate < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
-  const planProgressColor = planTargetRate < 60 ? "var(--dashboard-danger)" : planTargetRate < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
-  const planProgressSoftColor = `color-mix(in srgb, ${planProgressColor} 42%, var(--surface))`;
+  const planProgressSoftColor = `color-mix(in srgb, ${postProgressColor} 42%, var(--surface))`;
   return (
     <div className={`dual-progress-meter ${compact ? "compact" : ""} ${tone}`}>
       <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(planTargetRate, 100)}%`, background: planProgressSoftColor }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%`, background: postProgressColor }} /></div>
@@ -2445,7 +2444,7 @@ function TargetDashboard({
 }) {
   const [tab, setTab] = useState<DashboardDimension>("product");
   const [postPlanTab, setPostPlanTab] = useState<DashboardDimension>("product");
-  const [postPlanCalendarPeriod, setPostPlanCalendarPeriod] = useState<PostPlanCalendarPeriod>("month");
+  const [postPlanCalendarPeriod, setPostPlanCalendarPeriod] = useState<PostPlanCalendarPeriod>("week");
   const [excludedPostPlanRows, setExcludedPostPlanRows] = useState<Set<string>>(new Set());
   const [resultTab, setResultTab] = useState<DashboardDimension>("product");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-09", brand: "", owner: "" });
@@ -3326,12 +3325,14 @@ export default function MarketingSystem() {
       const toneUpDemoPaymentMap = new Map(dashboard31SeptemberPayments.map((payment) => [String(payment.paymentNo || ""), payment]));
       const toneUpDemoReviewMap = new Map(dashboard31SeptemberReviews.map((review) => [`${String(review.paymentNo || "")}|${String(review.postNo || "")}`, review]));
       const toneUpDemoTargetMap = new Map(dashboard31SeptemberTargets.map((target) => [String(target.targetNo || ""), target]));
+      const needsDataDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardDataDemoVersion) < 2)
+        || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && numeric(target.dashboardDataDemoVersion) < 2);
       const needsToneUpDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardToneUpDemoVersion) < 3)
         || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && String(target.product || "") === "Tone Up Sunscreen" && numeric(target.dashboardToneUpDemoVersion) < 3);
       const needsTierDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardTierDemoVersion) < 1);
       const needsScheduleDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardScheduleDemoVersion) < 1);
       const migratedTargets = nextTargets.map((target) => {
-        const canonicalTarget = needsToneUpDemoMigration ? toneUpDemoTargetMap.get(String(target.targetNo || "")) : undefined;
+        const canonicalTarget = needsToneUpDemoMigration || needsDataDemoMigration ? toneUpDemoTargetMap.get(String(target.targetNo || "")) : undefined;
         return canonicalTarget
           ? { ...target, ...canonicalTarget, id: target.id }
           : target;
@@ -3391,6 +3392,9 @@ export default function MarketingSystem() {
           ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
           : undefined;
         const canonicalScheduleDemoPayment = needsScheduleDemoMigration && String(payment.paymentNo || "").startsWith("PID20260901")
+          ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
+          : undefined;
+        const canonicalDataDemoPayment = needsDataDemoMigration && String(payment.paymentNo || "").startsWith("PID20260901")
           ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
           : undefined;
         return {
@@ -3458,6 +3462,14 @@ export default function MarketingSystem() {
             postPlans: canonicalScheduleDemoPayment.postPlans,
             dashboardScheduleDemoVersion: 1,
           } : {}),
+          ...(canonicalDataDemoPayment ? {
+            id: payment.id,
+            qty: canonicalDataDemoPayment.qty,
+            totalPrice: canonicalDataDemoPayment.totalPrice,
+            reviewQty: canonicalDataDemoPayment.reviewQty,
+            postPlans: canonicalDataDemoPayment.postPlans,
+            dashboardDataDemoVersion: 2,
+          } : {}),
         };
       });
       const changed = nextPayments.length !== storedPayments.length || nextPayments.some((payment, index) => !storedPayments[index] || Object.keys(payment).some((key) => payment[key] !== storedPayments[index][key]));
@@ -3466,7 +3478,7 @@ export default function MarketingSystem() {
       const reviews = needsSeptemberDemoMigration
         ? [...storedReviews, ...dashboard31SeptemberReviews.filter((review) => !storedReviewKeys.has(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`)).map((review) => ({ ...review, id: Number(review.id) + 1000 }))]
         : storedReviews;
-      const migratedReviews = needsToneUpDemoMigration || needsTierDemoMigration || needsScheduleDemoMigration
+      const migratedReviews = needsToneUpDemoMigration || needsTierDemoMigration || needsScheduleDemoMigration || needsDataDemoMigration
         ? reviews.map((review) => {
             const canonicalReview = toneUpDemoReviewMap.get(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`);
             return canonicalReview

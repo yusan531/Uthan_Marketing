@@ -3121,12 +3121,10 @@ thead .operation-column {
   overflow-y: auto;
 }
 
-.post-plan-calendar-entries.creator-mode {
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-}
-
+.post-plan-calendar-entries.creator-mode,
 .post-plan-calendar-entries.category-mode {
-  grid-template-rows: repeat(3, minmax(0, 1fr));
+  grid-template-rows: none;
+  grid-auto-rows: calc((100% - 6px) / 3);
 }
 
 .post-plan-calendar-group {

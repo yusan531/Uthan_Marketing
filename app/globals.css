@@ -2997,9 +2997,15 @@ thead .operation-column {
   margin-top: 5px;
   max-height: 58px;
   overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-color: color-mix(in srgb, var(--dashboard-primary) 42%, var(--line)) transparent;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.post-plan-calendar-entries::-webkit-scrollbar,
+.post-plan-calendar-popover::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .post-plan-calendar-entries.is-scrollable {
@@ -3188,6 +3194,8 @@ thead .operation-column {
   max-height: 220px;
   padding: 8px;
   overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border: 1px solid var(--line-strong);
   border-radius: 7px;
   background: var(--surface);

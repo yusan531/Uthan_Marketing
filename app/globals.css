@@ -4237,11 +4237,13 @@ thead .operation-column {
 .review-grouped-plan-table .plan-module-head th:nth-child(1) { color: #245a9b; background: #eaf3ff; }
 .review-grouped-plan-table .plan-module-head th:nth-child(2) { color: #08745b; background: #e7f8f2; border-left: 3px solid #20a47a; }
 .review-grouped-plan-table .plan-module-head th:nth-child(3) { color: #9a5b00; background: #fff4df; border-left: 3px solid #e49a24; }
-.review-grouped-plan-table .plan-module-head + tr th { top: 34px; }
-.review-grouped-plan-table .plan-module-head + tr .plan-payment-info-field { background: #f4f8ff; }
-.review-grouped-plan-table .plan-module-head + tr .plan-post-info-field { background: #f0faf7; }
-.review-grouped-plan-table .plan-module-head + tr .plan-ads-info-field { background: #fff8ec; }
+.review-grouped-plan-table > thead > tr:last-child th { top: 0; }
+.review-grouped-plan-table > thead > tr:last-child .plan-payment-info-field { background: #f4f8ff; }
+.review-grouped-plan-table > thead > tr:last-child .plan-post-info-field { color: #08745b; background: #f0faf7; }
+.review-grouped-plan-table > thead > tr:last-child .plan-ads-info-field { color: #9a5b00; background: #fff8ec; }
 .review-grouped-plan-table .plan-module-start { border-left: 2px solid var(--primary); }
+.review-grouped-plan-table > thead > tr:last-child .plan-post-info-field.plan-module-start { border-left-color: #20a47a; }
+.review-grouped-plan-table > thead > tr:last-child .plan-ads-info-field.plan-module-start { border-left-color: #e49a24; }
 .review-grouped-plan-table .plan-post-info-cell:not(.plan-stacked-cell) input { min-width: 220px; }
 .review-grouped-plan-table .plan-ads-info-field:not(.plan-module-start),
 .review-grouped-plan-table .plan-ads-info-cell:not(.plan-module-start) { min-width: 125px; }

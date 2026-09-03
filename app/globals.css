@@ -2951,6 +2951,32 @@ thead .operation-column {
   box-shadow: 0 2px 7px rgba(25, 52, 85, 0.08);
 }
 
+.post-plan-calendar-mode-tabs {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-3);
+}
+
+.post-plan-calendar-mode-tabs button {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.post-plan-calendar-mode-tabs button.active {
+  color: var(--dashboard-primary);
+  background: var(--surface);
+  box-shadow: 0 2px 7px rgba(25, 52, 85, 0.08);
+}
+
 .post-plan-calendar-grid {
   overflow: visible;
   border: 1px solid var(--line);
@@ -2999,7 +3025,8 @@ thead .operation-column {
   background: color-mix(in srgb, var(--surface-2) 78%, var(--surface));
 }
 
-.post-plan-calendar-cell.outside-month > strong {
+.post-plan-calendar-cell.outside-month > strong,
+.post-plan-calendar-cell.outside-month .post-plan-calendar-day-toggle strong {
   color: var(--muted);
 }
 
@@ -3011,6 +3038,34 @@ thead .operation-column {
   display: block;
   color: var(--text);
   font-size: 11px;
+}
+
+.post-plan-calendar-day-toggle {
+  width: fit-content;
+  min-height: 16px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.post-plan-calendar-day-toggle:hover,
+.post-plan-calendar-day-toggle:focus-visible {
+  color: var(--dashboard-primary);
+  outline: 0;
+}
+
+.post-plan-calendar-day-toggle strong {
+  display: block;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.post-plan-calendar-day-toggle.is-expanded strong {
+  color: var(--dashboard-primary);
 }
 
 .post-plan-calendar-month-label {
@@ -3041,6 +3096,16 @@ thead .operation-column {
   overscroll-behavior: contain;
 }
 
+.post-plan-calendar-entries.is-expanded {
+  max-height: none;
+  overflow: visible;
+}
+
+.post-plan-calendar-group {
+  display: grid;
+  gap: 3px;
+}
+
 .post-plan-calendar-dimension-entry {
   width: 100%;
   min-width: 0;
@@ -3063,6 +3128,17 @@ thead .operation-column {
   filter: brightness(0.98);
   outline: 2px solid color-mix(in srgb, var(--dashboard-primary) 45%, transparent);
   outline-offset: 1px;
+}
+
+.post-plan-calendar-dimension-entry.is-expanded {
+  color: var(--dashboard-primary);
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 82%, var(--surface));
+}
+
+.post-plan-calendar-inline-details {
+  display: grid;
+  gap: 3px;
+  padding-left: 5px;
 }
 
 .post-plan-calendar-dimension-entry b {

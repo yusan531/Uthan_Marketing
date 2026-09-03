@@ -1477,10 +1477,11 @@ thead .operation-column {
 }
 
 .review-exact-modal {
-  width: 75vw;
+  width: 100vw;
+  max-width: 100vw;
   height: 100vh;
   max-height: 100vh;
-  border-radius: 8px 0 0 8px;
+  border-radius: 0;
 }
 
 .review-exact-modal .modal-header {
@@ -1560,10 +1561,11 @@ thead .operation-column {
 .creator-library > span { color: var(--muted); font-size: 12px; }
 
 .payment-exact-modal {
-  width: 75vw;
+  width: 100vw;
+  max-width: 100vw;
   height: 100vh;
   max-height: 100vh;
-  border-radius: 8px 0 0 8px;
+  border-radius: 0;
 }
 .payment-exact-modal .modal-header { height: 76px; padding: 0 34px; }
 .payment-exact-modal .modal-header h3 { width: 100%; }
@@ -1606,7 +1608,7 @@ thead .operation-column {
 @keyframes drawer-in { from { transform: translateX(24px); opacity: .7; } to { transform: translateX(0); opacity: 1; } }
 
 @media (max-width: 900px) {
-  .review-exact-modal { width: calc(100vw - 16px); }
+  .review-exact-modal { width: 100vw; max-width: 100vw; }
   .review-exact-grid { grid-template-columns: 1fr; padding: 0 14px 18px; }
   .qr-placeholder { display: none; }
   .rg.three, .rg.two, .rg.spark-row, .rg.spark-status-row { grid-template-columns: 1fr; }
@@ -4104,6 +4106,9 @@ thead .operation-column {
 .mobile31-page-content > .page-stack { margin: 0; }
 
 .v11-modal { width: min(1240px, 96vw); }
+.v11-payment-review-modal { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; display: flex; flex-direction: column; }
+.drawer-backdrop .v11-payment-review-modal form { height: calc(100vh - 48px); max-height: none; }
+.v11-payment-review-modal .modal-scroll-area { flex: 1; min-height: 0; }
 .v11-form .modal-scroll-area { padding: 18px 22px 24px; }
 .v11-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .v11-grid.auto-filled { padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
@@ -4122,7 +4127,7 @@ thead .operation-column {
 .plan-table td { padding: 7px; border-bottom: 1px solid var(--line); }
 .plan-table input,.plan-table select { width: 100%; min-width: 105px; height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--text); }
 .v11-form .form-section-title { margin-top: 18px; }
-.v31-modal { width: 75vw; max-width: calc(100vw - 16px); height: 100vh; max-height: 100vh; display: flex; flex-direction: column; border-radius: 0; }
+.v31-modal { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; display: flex; flex-direction: column; border-radius: 0; }
 .v31-modal .modal-header { flex: 0 0 48px; }
 .drawer-backdrop .v31-modal form { flex: 1; min-height: 0; height: auto; max-height: none; }
 .v31-modal .modal-scroll-area { flex: 1; min-height: 0; padding-bottom: 28px; }
@@ -5108,14 +5113,14 @@ thead .operation-column {
 .own-media-avatar { width: 24px; height: 24px; display: inline-grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: #fff; background: #172b47; font-size: 8px; font-weight: 700; }
 .own-media-avatar.large { width: 25px; height: 25px; }
 
-.own-media-modal { width: min(1060px, calc(100vw - 42px)); max-height: calc(100vh - 42px); }
+.own-media-modal { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; display: flex; flex-direction: column; }
 .own-media-modal .modal-header { height: 60px; padding: 0 28px; }
 .own-media-modal .modal-header h3 { flex: 1; }
 .own-media-dialog-heading { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; }
 .own-media-dialog-heading b { font-size: 18px; font-weight: 500; }
 .own-media-dialog-heading strong { justify-self: center; font-size: 18px; font-weight: 500; }
 .own-media-dialog-heading em { justify-self: end; padding-right: 4px; font-size: 14px; font-style: normal; font-weight: 500; }
-.own-media-form { max-height: calc(100vh - 102px) !important; }
+.own-media-form { height: calc(100vh - 60px) !important; max-height: none !important; flex: 1; min-height: 0; }
 .own-media-form .modal-scroll-area { padding: 0 28px 22px; }
 .own-media-form .form-section-title { margin: 0; padding: 16px 0 9px; }
 .own-media-base-layout { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 22px; }

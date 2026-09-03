@@ -524,7 +524,7 @@ function Version11Modal({ config, row, language, onSave, onClose }: { config: Pa
   const selectBox = (key: string, labelText: string, values: string[], disabled = false) => <label className="form-field"><span>{labelText}</span><select value={String(form[key] ?? "")} disabled={disabled} onChange={event => set(key, event.target.value)}><option value="">{label("请选择", "Select", language)}</option>{values.map(value => <option key={value}>{value}</option>)}</select></label>;
   const save = (event: FormEvent) => { event.preventDefault(); onSave({ ...(row || {}), ...form, id: row?.id || Date.now(), qty, totalPrice: total, expectedPostDate: expected, expiredStatus: form.expiredDate && String(form.expiredDate) < new Date().toISOString().slice(0, 10) ? "Expired" : "Normal", planStatus: "Planning" }); };
 
-  return <Modal title={<span className="review-dialog-heading"><b>{isPayment ? label("Payment1.1 付款计划", "Payment1.1 Payment Plan", language) : label("Reviews1.1 发布结果", "Reviews1.1 Publishing Result", language)}</b><strong>{String(isPayment ? form.paymentNo : form.reviewNo)}</strong></span>} onClose={onClose} wide variant="v11-modal">
+  return <Modal title={<span className="review-dialog-heading"><b>{isPayment ? label("Payment1.1 付款计划", "Payment1.1 Payment Plan", language) : label("Reviews1.1 发布结果", "Reviews1.1 Publishing Result", language)}</b><strong>{String(isPayment ? form.paymentNo : form.reviewNo)}</strong></span>} onClose={onClose} wide variant="v11-modal v11-payment-review-modal">
     <form onSubmit={save} className="v11-form"><div className="modal-scroll-area">
       <div className="form-section-title"><i />{label("基础信息", "Basic Information", language)}</div>
       <div className="v11-grid">{input("paymentNo", "Payment ID", "text", isPayment)}{!isPayment && selectBox("postNo", "Post No.", (linkedPlans[String(form.paymentNo)] || []).map(item => String(item.postNo)))}{input("creatorName", label("达人名称", "Creator Name", language), "text", !isPayment)}{selectBox("brand", label("品牌", "Brand", language), ["Glowsicha", "Glad2Glow", "Skintific"])}{input("owner", "PIC")}{isPayment && input("followersK", "Followers (K)")}{isPayment && input("unitPrice", "Each Price", "number")}</div>
@@ -796,7 +796,7 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
   const stackedReviewInfoCell = (item: PostPlan31, index: number, keys: readonly ("postId" | "postDate" | "postLink" | "boostCodeValue" | "postStatus" | "sparkAdsStatus")[], className = "") => <td className={`plan-stacked-cell ${className}`}>{keys.map(key => <div key={key}>{reviewInlineControl(item, index, key)}</div>)}</td>;
   const showReviewModules = !isPayment || readOnly;
   const hasReviewPlanSelector = !isPayment && scheme === "C";
-  const planPaymentInfoColSpan = hasReviewPlanSelector ? 12 : 11;
+  const planPaymentInfoColSpan = hasReviewPlanSelector ? 13 : 12;
   const planPaymentFields = (["reviewId", "strategist", "platform", "planningPostDate"] as const);
   const planTable = (
     <div className="plan-table-wrap v31-plan-wrap">
@@ -814,7 +814,8 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
             <th className="plan-payment-info-field plan-stacked-header">Each Price *<br />Rate</th>
             <th className="plan-payment-info-field plan-product-header">Product</th>
             <th className="plan-payment-info-field plan-stacked-header">Content Type<br />Content Angle</th>
-            <th className="plan-payment-info-field plan-stacked-header plan-binary-header">Yellow Cart<br />Owning</th>
+            <th className="plan-payment-info-field plan-binary-header">Yellow Cart</th>
+            <th className="plan-payment-info-field plan-binary-header">Owning</th>
             <th className="plan-payment-info-field plan-binary-header">Boost Code</th>
             {showReviewModules && <><th className="plan-post-info-field plan-module-start plan-stacked-header">Post ID<br />Boost Code Value</th><th className="plan-post-info-field plan-stacked-header">Post Link<br />Post Date</th><th className="plan-ads-info-field plan-module-start plan-stacked-header">Review Status<br />Spark Ads Status</th><th className="plan-ads-info-field plan-stacked-header">Ad Date<br />Ads PIC</th></>}
           </tr>
@@ -827,7 +828,8 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
           {stackedPlanCell(item, index, ["eachPrice", "rate"], "plan-payment-info-cell")}
           <td className="plan-payment-info-cell plan-product-cell">{renderPlanControl(item, index, "product")}</td>
           {stackedPlanCell(item, index, ["contentType", "contentAngle"], "plan-payment-info-cell")}
-          {stackedPlanCell(item, index, ["yellowCart", "owning"], "plan-payment-info-cell plan-binary-cell")}
+          <td className="plan-payment-info-cell plan-binary-cell">{renderPlanControl(item, index, "yellowCart")}</td>
+          <td className="plan-payment-info-cell plan-binary-cell">{renderPlanControl(item, index, "owning")}</td>
           <td className="plan-payment-info-cell plan-binary-cell">{renderPlanControl(item, index, "boostCode")}</td>
           {showReviewModules && <>{stackedReviewInfoCell(item, index, ["postId", "boostCodeValue"], "plan-post-info-cell plan-module-start")}{stackedReviewInfoCell(item, index, ["postLink", "postDate"], "plan-post-info-cell")}{stackedReviewInfoCell(item, index, ["postStatus", "sparkAdsStatus"], "plan-ads-info-cell plan-module-start")}<td className="plan-ads-info-cell plan-stacked-cell"><div>{reviewInlineControl(item, index, "addDate")}</div><div>{reviewInlineControl(item, index, "adsPic")}</div></td></>}
         </tr>)}</tbody>
@@ -940,7 +942,6 @@ function OwnMediaReviewModal({ config, row, language, onSave, onClose, readOnly 
       title={<span className="own-media-dialog-heading"><b>{ownLabel(row ? "编辑 Own Media Review" : "新增 Own Media Review", row ? "Edit Own Media Review" : "Add Own Media Review")}</b><strong>{String(form.reviewNo)}</strong><em><span className="fi fi-id flag-id" /> ID</em></span>}
       onClose={onClose}
       wide
-      centered
       variant="own-media-modal"
     >
       <form onSubmit={submit} className="own-media-form">

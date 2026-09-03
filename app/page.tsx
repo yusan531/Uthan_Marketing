@@ -2442,7 +2442,7 @@ function TargetDashboard({
   const [tab, setTab] = useState<DashboardDimension>("product");
   const [postPlanTab, setPostPlanTab] = useState<DashboardDimension>("product");
   const [postPlanCalendarPeriod, setPostPlanCalendarPeriod] = useState<PostPlanCalendarPeriod>("month");
-  const [excludedPostPlanRows, setExcludedPostPlanRows] = useState<Set<string> | null>(null);
+  const [excludedPostPlanRows, setExcludedPostPlanRows] = useState<Set<string>>(new Set());
   const [resultTab, setResultTab] = useState<DashboardDimension>("product");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-09", brand: "", owner: "" });
   const [expandedProgress, setExpandedProgress] = useState<Set<string>>(new Set());
@@ -2608,7 +2608,7 @@ function TargetDashboard({
   };
   const paidPlanRows = paidRowsByDimension[postPlanTab];
   const allPostPlanEntryKeys = paidPlanEntries.map(planEntryKey);
-  const effectiveExcludedPostPlanRows = excludedPostPlanRows ?? new Set(allPostPlanEntryKeys);
+  const effectiveExcludedPostPlanRows = excludedPostPlanRows;
   const postPlanSelectionState = (entryKeys: string[]) => {
     const selectedCount = entryKeys.filter((key) => !effectiveExcludedPostPlanRows.has(key)).length;
     return {
@@ -3676,7 +3676,6 @@ export default function MarketingSystem() {
       postPlans: [entry],
     };
     setCalendarReviewRow(matchedReview || fallback);
-    navigate("review31b");
   }
 
   function saveCalendarReview(nextRow: Row) {

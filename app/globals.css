@@ -3617,6 +3617,25 @@ thead .operation-column {
   box-shadow: 0 2px 8px rgba(25, 52, 85, 0.09);
 }
 
+.target-dashboard .post-plan-summary-panel .post-plan-dashboard-tabs {
+  width: auto;
+}
+
+.target-dashboard .post-plan-summary-panel .dashboard-tab-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  color: var(--dashboard-primary);
+  background: var(--surface);
+}
+
+.target-dashboard .post-plan-summary-panel .dashboard-tab-reset:hover {
+  background: var(--blue-soft);
+}
+
 .target-dashboard .progress-panel .dashboard-table-wrap {
   width: auto;
   max-width: calc(100% - 36px);

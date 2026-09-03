@@ -2886,11 +2886,12 @@ function TargetDashboard({
         <section className="panel progress-panel post-plan-summary-panel">
           <div className="section-caption"><span />Post Plan</div>
           <div className="progress-pair">
-            <ProgressSummary title="Post" post={selectedPostPlanSummary.postCount} plan={selectedPostPlanSummary.planCount} target={selectedPostPlanSummary.targetCount} tone="green" language={language} actualLabel="Post" planLabel="Plan" gapLabel="Post GAP" paceLabel="Post Pace" />
-            <ProgressSummary title="Budget" post={selectedPostPlanSummary.postAmount} plan={selectedPostPlanSummary.planAmount} target={selectedPostPlanSummary.targetAmount} tone="amber" language={language} actualLabel="Budget" planLabel="Plan" gapLabel="Budget GAP" paceLabel="Budget Pace" />
+            <ProgressSummary title="Post" post={postPlanSummary.postCount} plan={postPlanSummary.planCount} target={postPlanSummary.targetCount} tone="green" language={language} actualLabel="Post" planLabel="Plan" gapLabel="Post GAP" paceLabel="Post Pace" />
+            <ProgressSummary title="Budget" post={postPlanSummary.postAmount} plan={postPlanSummary.planAmount} target={postPlanSummary.targetAmount} tone="amber" language={language} actualLabel="Budget" planLabel="Plan" gapLabel="Budget GAP" paceLabel="Budget Pace" />
           </div>
-          <div className="dashboard-tabs">
-            {tabs.map(([key, zh, en]) => <button key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
+          <div className="dashboard-tabs post-plan-dashboard-tabs">
+            {tabs.map(([key, zh, en]) => <button type="button" key={key} className={postPlanTab === key ? "active" : ""} onClick={() => setPostPlanTab(key)}>{label(zh, en, language)}</button>)}
+            <button type="button" className="dashboard-tab-reset" onClick={() => setExcludedPostPlanRows(new Set())}><RefreshCcw size={13} />{label("重置勾选", "Reset Selection", language)}</button>
           </div>
           <div className="data-table-wrap dashboard-table-wrap">
             <table className="data-table dashboard-table">

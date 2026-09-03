@@ -2893,40 +2893,6 @@ thead .operation-column {
   min-width: 0;
 }
 
-.post-plan-calendar-summary {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.post-plan-calendar-summary > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  min-height: 24px;
-  padding: 3px 6px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--muted);
-  background: var(--surface);
-  font-size: 8px;
-  white-space: nowrap;
-}
-
-.post-plan-calendar-summary em {
-  margin-right: 2px;
-  color: var(--muted);
-  font-style: normal;
-  font-weight: 700;
-}
-
-.post-plan-calendar-summary b {
-  color: var(--text);
-  font-size: 10px;
-}
-
 .post-plan-calendar-tabs {
   display: flex;
   gap: 4px;
@@ -2982,6 +2948,8 @@ thead .operation-column {
 
 .post-plan-calendar-cell {
   position: relative;
+  display: flex;
+  flex-direction: column;
   min-height: 76px;
   padding: 7px;
   border-right: 1px solid var(--line);
@@ -3025,6 +2993,46 @@ thead .operation-column {
   display: grid;
   gap: 3px;
   margin-top: 5px;
+}
+
+.post-plan-calendar-dimension-entry {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  border: 0;
+  border-left: 2px solid var(--dashboard-primary);
+  border-radius: 3px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--dashboard-primary-soft) 66%, var(--surface));
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.post-plan-calendar-dimension-entry:hover,
+.post-plan-calendar-dimension-entry:focus-visible {
+  filter: brightness(0.98);
+  outline: 2px solid color-mix(in srgb, var(--dashboard-primary) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.post-plan-calendar-dimension-entry b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.post-plan-calendar-dimension-entry small {
+  flex: 0 0 auto;
+  color: var(--dashboard-primary);
+  font-size: 7px;
+  font-weight: 800;
 }
 
 .post-plan-calendar-entry {
@@ -3130,6 +3138,36 @@ thead .operation-column {
 .post-plan-calendar-more:focus-visible {
   text-decoration: underline;
 }
+
+.post-plan-calendar-day-summary {
+  min-height: 16px;
+  margin-top: auto;
+  padding-top: 5px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.post-plan-calendar-day-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.post-plan-calendar-day-summary b {
+  color: var(--text);
+  font-size: 9px;
+}
+
+.post-plan-calendar-day-summary .posted b { color: var(--dashboard-success); }
+.post-plan-calendar-day-summary .delayed b { color: var(--dashboard-danger); }
+.post-plan-calendar-day-summary .planned b { color: var(--dashboard-primary); }
 
 .post-plan-calendar-popover {
   position: absolute;
@@ -3585,11 +3623,6 @@ thead .operation-column {
   .post-plan-calendar-header-actions {
     width: 100%;
     flex-wrap: wrap;
-  }
-
-  .post-plan-calendar-summary {
-    flex: 1 1 100%;
-    justify-content: flex-start;
   }
 
   .post-plan-schedule-legend {

@@ -2166,6 +2166,7 @@ function PostPlanCalendar({
   entries,
   month,
   period,
+  dimension,
   language,
   today,
   publishedPlanKeys,
@@ -2174,6 +2175,7 @@ function PostPlanCalendar({
   entries: Record<string, unknown>[];
   month: string;
   period: PostPlanCalendarPeriod;
+  dimension: DashboardDimension;
   language: Language;
   today: string;
   publishedPlanKeys: Set<string>;
@@ -2214,6 +2216,20 @@ function PostPlanCalendar({
     return dashboardDateKey(date);
   });
   const weekdayLabels = language === "zh" ? ["一", "二", "三", "四", "五", "六", "日"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const calendarDimensionValue = (entry: Record<string, unknown>) => {
+    const rawValue = dimension === "product"
+      ? entry.product
+      : dimension === "tier"
+        ? entry.tier || entry.rate || entry.rateTier
+        : dimension === "strategist"
+          ? entry.owner
+          : dimension === "specialist"
+            ? entry.kolSpecialist || entry.specialist
+            : dimension === "submitter"
+              ? entry.submitter
+              : entry.brand;
+    return String(rawValue || label("未分配", "Unassigned", language));
+  };
   const renderEntry = ({ entry }: { entry: Record<string, unknown> }) => {
     const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
     const statusMeta = postPlanCalendarStatusMeta[status];
@@ -2227,9 +2243,27 @@ function PostPlanCalendar({
   };
   const renderCell = (date: string, index: number) => {
     const dayEntries = entriesByDate.get(date) || [];
+    const dimensionGroups = Array.from(dayEntries.reduce((groups, item) => {
+      const name = calendarDimensionValue(item.entry);
+      groups.set(name, [...(groups.get(name) || []), item]);
+      return groups;
+    }, new Map<string, typeof monthEntries>()).entries());
+    const dayCounts = dayEntries.reduce((counts, item) => {
+      const status = postPlanScheduleStatus(item.entry, today, publishedPlanKeys);
+      if (status === "completed" || status === "overdue-completed") counts.posted += 1;
+      if (status === "overdue") counts.delayed += 1;
+      if (status === "planned") counts.planned += 1;
+      return counts;
+    }, { posted: 0, delayed: 0, planned: 0 });
+    const summaryItems = date < today
+      ? [["posted", dayCounts.posted, label("Posted", "Posted", language)], ["delayed", dayCounts.delayed, label("Delayed", "Delayed", language)]] as const
+      : date === today
+        ? [["posted", dayCounts.posted, label("Posted", "Posted", language)], ["planned", dayCounts.planned, label("Planned", "Planned", language)]] as const
+        : [["planned", dayCounts.planned, label("Planned", "Planned", language)]] as const;
+    const toggleDetails = () => setExpandedDate((current) => current === date ? null : date);
     const outsideMonth = !date.startsWith(month);
     return <div className={`post-plan-calendar-cell${outsideMonth ? " outside-month" : ""}`} key={date || `empty-${index}`}>
-      <><strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className="post-plan-calendar-entries">{dayEntries.slice(0, 3).map(renderEntry)}{dayEntries.length > 3 && <button type="button" className="post-plan-calendar-more" onClick={() => setExpandedDate((current) => current === date ? null : date)} aria-expanded={expandedDate === date}>+{dayEntries.length - 3}</button>}{expandedDate === date && <div className="post-plan-calendar-popover" role="dialog" aria-label={label("当天全部排期", "All entries for this day", language)}><div className="post-plan-calendar-popover-head"><strong>{date}</strong><button type="button" aria-label={label("关闭", "Close", language)} onClick={() => setExpandedDate(null)}><X size={12} /></button></div><div className="post-plan-calendar-popover-list">{dayEntries.map(renderEntry)}</div></div>}</div></>
+      <><strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className="post-plan-calendar-entries">{dimensionGroups.slice(0, 3).map(([name, group]) => <button type="button" className="post-plan-calendar-dimension-entry" key={name} onClick={toggleDetails} aria-expanded={expandedDate === date} title={label("展开 Tier + Creator 详情", "Expand Tier + Creator details", language)}><b>{name}</b>{group.length > 1 && <small>×{group.length}</small>}</button>)}{dimensionGroups.length > 3 && <button type="button" className="post-plan-calendar-more" onClick={toggleDetails} aria-expanded={expandedDate === date}>+{dimensionGroups.length - 3}</button>}{expandedDate === date && <div className="post-plan-calendar-popover" role="dialog" aria-label={label("当天全部排期", "All entries for this day", language)}><div className="post-plan-calendar-popover-head"><strong>{date}</strong><button type="button" aria-label={label("关闭", "Close", language)} onClick={() => setExpandedDate(null)}><X size={12} /></button></div><div className="post-plan-calendar-popover-list">{dayEntries.map(renderEntry)}</div></div>}</div><div className="post-plan-calendar-day-summary">{summaryItems.map(([key, count, itemLabel]) => <span key={key} className={key}><b>{count}</b>{itemLabel}</span>)}</div></>
     </div>;
   };
   const dates = period === "week" ? weekDates : monthDates;
@@ -2945,7 +2979,7 @@ function TargetDashboard({
             <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-header-actions"><div className="post-plan-calendar-tabs">{([[
               "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
+              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" dimension={postPlanTab} language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
               : <div className="post-plan-schedule-views">
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} /></div>
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={paymentPivotEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={paymentPivotDimension} dimensionLabel={paymentPivotDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Plan Pivot" metric="quantity" stackBy="dimension" /></div>

@@ -2178,21 +2178,21 @@ function dashboardLocalDate(value: string) {
 }
 
 const dashboardCalendarCreatorNames: Record<string, string> = {
-  alkkna: "Alkna Permatasari",
-  adelapermatasari: "Adela Permatasari",
-  sharonatas: "Sharon Atas",
-  zizaakarr: "Ziza Karr",
-  reyhansyphtg: "Reyhan Syaputra",
-  nadiaglow: "Nadia Putri",
-  delvibeauty: "Delvi Ananda",
-  shafiskin: "Shafi Rahman",
-  cillareview: "Cilla Maharani",
-  ajengdaily: "Ajeng Larasati",
-  raniskincare: "Rani Kartika",
-  miaglowup: "Mia Kusuma",
-  salsabeauty: "Salsa Aulia",
-  nafadiary: "Nafa Rahma",
-  putrireview: "Putri Amalia",
+  alkkna: "Aluna Kaysha",
+  adelapermatasari: "Dela Vionna",
+  sharonatas: "Sharon Aveline",
+  zizaakarr: "Ziza Karmila",
+  reyhansyphtg: "Reyhan Azzam",
+  nadiaglow: "Nayla Arumi",
+  delvibeauty: "Della Mahira",
+  shafiskin: "Safa Kirana",
+  cillareview: "Citra Melati",
+  ajengdaily: "Ayla Nirmala",
+  raniskincare: "Rara Kinasih",
+  miaglowup: "Mika Alviani",
+  salsabeauty: "Salsa Nadine",
+  nafadiary: "Naya Kharisma",
+  putrireview: "Puti Arunika",
 };
 
 function dashboardCalendarCreatorName(value: unknown, language: Language) {

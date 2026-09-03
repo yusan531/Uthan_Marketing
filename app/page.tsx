@@ -2177,6 +2177,30 @@ function dashboardLocalDate(value: string) {
   return new Date(year || 2026, Math.max((month || 1) - 1, 0), day || 1);
 }
 
+const dashboardCalendarCreatorNames: Record<string, string> = {
+  alkkna: "Alkna Permatasari",
+  adelapermatasari: "Adela Permatasari",
+  sharonatas: "Sharon Atas",
+  zizaakarr: "Ziza Karr",
+  reyhansyphtg: "Reyhan Syaputra",
+  nadiaglow: "Nadia Putri",
+  delvibeauty: "Delvi Ananda",
+  shafiskin: "Shafi Rahman",
+  cillareview: "Cilla Maharani",
+  ajengdaily: "Ajeng Larasati",
+  raniskincare: "Rani Kartika",
+  miaglowup: "Mia Kusuma",
+  salsabeauty: "Salsa Aulia",
+  nafadiary: "Nafa Rahma",
+  putrireview: "Putri Amalia",
+};
+
+function dashboardCalendarCreatorName(value: unknown, language: Language) {
+  const rawName = String(value || "").trim();
+  if (!rawName) return label("未分配达人", "Unassigned creator", language);
+  return dashboardCalendarCreatorNames[rawName.toLowerCase()] || rawName;
+}
+
 function PostPlanCalendar({
   entries,
   month,
@@ -2248,9 +2272,9 @@ function PostPlanCalendar({
   const renderEntry = ({ entry }: { entry: Record<string, unknown> }) => {
     const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
     const statusMeta = postPlanCalendarStatusMeta[status];
-    const creatorName = String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language));
+    const creatorName = dashboardCalendarCreatorName(entry.creatorName || entry.creator || entry.owner, language);
     const tier = String(entry.tier || entry.rate || entry.rateTier || "").trim();
-    const entryLabel = tier ? `${creatorName} · ${tier}` : creatorName;
+    const entryLabel = tier ? `${tier} · ${creatorName}` : creatorName;
     return <button type="button" className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={entryLabel} title={entryLabel} onClick={() => onOpenReview(entry)}>
       <b>{entryLabel}</b>
       {status === "overdue-completed" && <i className="post-plan-calendar-late-dot" aria-label={label("延期完成", "Published late", language)} />}
@@ -2534,6 +2558,7 @@ function TargetDashboard({
       postNo: plan.postNo || index + 1,
       eachPrice: plan.eachPrice ?? payment.unitPrice,
       planningPostDate: plan.planningPostDate || payment.expectedPostDate,
+      creatorName: payment.creatorName || label("未分配达人", "Unassigned creator", language),
       product: plan.product || payment.product || label("未分配产品", "Unassigned Product", language),
       owner: payment.owner || label("未分配负责人", "Unassigned Strategist", language),
       specialist: payment.kolSpecialist || payment.specialist || ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"][paymentIndex % 4],

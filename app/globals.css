@@ -3158,7 +3158,6 @@ thead .operation-column {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 7px;
-  border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 7px;
   font-weight: 700;

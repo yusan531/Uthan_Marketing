@@ -2225,7 +2225,7 @@ function PostPlanCalendar({
   const monthEntries = entries
     .map((entry) => ({
       entry,
-      date: String(entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10),
+      date: postPlanScheduleDate(entry),
     }))
     .filter((item) => item.date)
     .sort((a, b) => {
@@ -2331,13 +2331,14 @@ const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; e
 };
 
 function postPlanScheduleDate(entry: Record<string, unknown>) {
-  return String(entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10);
+  return String(entry.actualPostDate || entry.postDate || entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10);
 }
 
 function postPlanScheduleStatus(entry: Record<string, unknown>, today: string, publishedPlanKeys: Set<string>): PostPlanScheduleStatus {
   const key = `${String(entry.paymentNo || "")}|${String(entry.postNo || "")}`;
-  const completed = publishedPlanKeys.has(key);
-  const overdue = Boolean(postPlanScheduleDate(entry)) && postPlanScheduleDate(entry) < today;
+  const scheduleDate = postPlanScheduleDate(entry);
+  const completed = publishedPlanKeys.has(key) && Boolean(scheduleDate) && scheduleDate <= today;
+  const overdue = Boolean(scheduleDate) && scheduleDate < today;
   if (completed && overdue) return "overdue-completed";
   if (completed) return "completed";
   if (overdue) return "overdue";
@@ -2543,6 +2544,7 @@ function TargetDashboard({
     const paymentMonth = String(payment.targetMonth || payment.paymentDate || payment.expectedPostDate || "").slice(0, 7);
     return (String(payment.sendPayment || "") === "Yes" || Boolean(payment.paymentDate)) && (!filters.country || String(payment.country || "ID") === filters.country) && (!filters.month || paymentMonth === filters.month) && (!filters.brand || String(payment.brand || "") === filters.brand) && (!filters.owner || String(payment.owner || "") === filters.owner);
   });
+  const postPlanReviewByKey = new Map(reviewRows.map((review) => [`${String(review.paymentNo || "")}|${String(review.postNo || "")}`, review]));
   const paidPlanEntries = paidPayments.flatMap((payment, paymentIndex) => {
     const savedPlans = Array.isArray(payment.postPlans) ? payment.postPlans as Record<string, unknown>[] : [];
     const plans = savedPlans.length
@@ -2552,20 +2554,28 @@ function TargetDashboard({
           eachPrice: payment.unitPrice,
           planningPostDate: payment.expectedPostDate,
         }));
-    return plans.map((plan, index) => ({
-      ...plan,
-      paymentNo: String(payment.paymentNo || ""),
-      postNo: plan.postNo || index + 1,
-      eachPrice: plan.eachPrice ?? payment.unitPrice,
-      planningPostDate: plan.planningPostDate || payment.expectedPostDate,
-      creatorName: payment.creatorName || label("未分配达人", "Unassigned creator", language),
-      product: plan.product || payment.product || label("未分配产品", "Unassigned Product", language),
-      owner: payment.owner || label("未分配负责人", "Unassigned Strategist", language),
-      specialist: payment.kolSpecialist || payment.specialist || ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"][paymentIndex % 4],
-      submitter: payment.submitter || "Uthan",
-      brand: payment.brand || label("未分配品牌", "Unassigned Brand", language),
-      tier: plan.rate || plan.tier || plan.rateTier || payment.rate || payment.rateTier || label("未分级", "Unrated", language),
-    }));
+    return plans.map((plan, index) => {
+      const paymentNo = String(payment.paymentNo || "");
+      const postNo = plan.postNo || index + 1;
+      const review = postPlanReviewByKey.get(`${paymentNo}|${String(postNo)}`);
+      return {
+        ...plan,
+        paymentNo,
+        postNo,
+        eachPrice: plan.eachPrice ?? payment.unitPrice,
+        planningPostDate: plan.planningPostDate || payment.expectedPostDate,
+        actualPostDate: review?.actualPostDate || review?.postDate || plan.actualPostDate || plan.postDate || "",
+        postId: review?.postId || plan.postId || "",
+        postStatus: review?.postStatus || plan.postStatus || "",
+        creatorName: payment.creatorName || label("未分配达人", "Unassigned creator", language),
+        product: plan.product || payment.product || label("未分配产品", "Unassigned Product", language),
+        owner: payment.owner || label("未分配负责人", "Unassigned Strategist", language),
+        specialist: payment.kolSpecialist || payment.specialist || ["Nafa Augustina", "Rani Putri", "Mia Kurnia", "Salsa Anindya"][paymentIndex % 4],
+        submitter: payment.submitter || "Uthan",
+        brand: payment.brand || label("未分配品牌", "Unassigned Brand", language),
+        tier: plan.rate || plan.tier || plan.rateTier || payment.rate || payment.rateTier || label("未分级", "Unrated", language),
+      };
+    });
   });
   const postPlanDimensionValue = (row: Record<string, unknown>, dimension: DashboardDimension) => {
     if (dimension === "product") return String(row.product || label("未分配产品", "Unassigned Product", language));
@@ -3404,7 +3414,7 @@ export default function MarketingSystem() {
       const needsToneUpDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardToneUpDemoVersion) < 3)
         || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && String(target.product || "") === "Tone Up Sunscreen" && numeric(target.dashboardToneUpDemoVersion) < 3);
       const needsTierDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardTierDemoVersion) < 1);
-      const needsScheduleDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardScheduleDemoVersion) < 1);
+      const needsScheduleDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardScheduleDemoVersion) < 2);
       const migratedTargets = nextTargets.map((target) => {
         const canonicalTarget = needsToneUpDemoMigration || needsDataDemoMigration ? toneUpDemoTargetMap.get(String(target.targetNo || "")) : undefined;
         return canonicalTarget
@@ -3534,7 +3544,7 @@ export default function MarketingSystem() {
           ...(canonicalScheduleDemoPayment ? {
             id: payment.id,
             postPlans: canonicalScheduleDemoPayment.postPlans,
-            dashboardScheduleDemoVersion: 1,
+            dashboardScheduleDemoVersion: 2,
           } : {}),
           ...(canonicalDataDemoPayment ? {
             id: payment.id,

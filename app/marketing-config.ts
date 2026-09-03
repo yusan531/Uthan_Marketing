@@ -552,6 +552,8 @@ const dashboard31SeptemberAugustPlanIndexes = new Set(
   Array.from({ length: dashboard31SeptemberTotalPlans }, (_, globalIndex) => globalIndex)
     .filter((globalIndex) => (globalIndex % 3 === 0 || globalIndex % 5 === 0) && !dashboard31SeptemberOctoberPlanIndexes.has(globalIndex) && !dashboard31SeptemberNovemberPlanIndexes.has(globalIndex)),
 );
+const dashboard31SeptemberSeptember8PlanIndexes = new Set([71, 73, 99, 117, 121]);
+const dashboard31SeptemberAugust31PublishedIndexes = new Set([63, 95, 107, 113]);
 
 export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((qty, index) => {
   const paymentNo = `PID20260901${String(index + 1).padStart(6, "0")}`;
@@ -569,6 +571,8 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
       ? "2026-09-01"
       : planOffset === 2
         ? "2026-09-02"
+        : dashboard31SeptemberSeptember8PlanIndexes.has(planOffset)
+          ? "2026-09-08"
         : dashboard31SeptemberOctoberPlanIndexes.has(planOffset)
           ? `2026-10-${String(3 + ((planOffset * 5) % 27)).padStart(2, "0")}`
           : dashboard31SeptemberNovemberPlanIndexes.has(planOffset)
@@ -599,7 +603,7 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
     id: 3201 + index,
     dashboardSeptemberDemoVersion: 1,
     dashboardTierDemoVersion: 1,
-    dashboardScheduleDemoVersion: 1,
+    dashboardScheduleDemoVersion: 2,
     dashboardDataDemoVersion: 2,
     paymentNo,
     dashboardToneUpDemoVersion: 3,
@@ -664,11 +668,13 @@ const dashboard31SeptemberProductPostLimits: Record<string, number> = {
 };
 const dashboard31SeptemberProductPublishedCounts = new Map<string, number>();
 export const dashboard31SeptemberReviews = dashboard31SeptemberPayments.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string; eachPrice: string; rate: string; sparkStatus: string }[]).map((plan, planIndex) => {
+  const globalIndex = dashboard31SeptemberOffsets[paymentIndex] + planIndex;
   const productPublishedCount = dashboard31SeptemberProductPublishedCounts.get(plan.product) || 0;
   const published = productPublishedCount < (dashboard31SeptemberProductPostLimits[plan.product] || 0);
   if (published) dashboard31SeptemberProductPublishedCounts.set(plan.product, productPublishedCount + 1);
-  const globalIndex = dashboard31SeptemberOffsets[paymentIndex] + planIndex;
-  const postId = published ? `7681090202609${String(10000 + globalIndex)}` : "";
+  const forceAugust31Published = dashboard31SeptemberAugust31PublishedIndexes.has(globalIndex);
+  const shouldPublish = published || forceAugust31Published;
+  const postId = shouldPublish ? `7681090202609${String(10000 + globalIndex)}` : "";
   return {
     id: 90000 + globalIndex,
     reviewNo: plan.reviewId,
@@ -691,7 +697,7 @@ export const dashboard31SeptemberReviews = dashboard31SeptemberPayments.flatMap(
     planningPostDate: plan.planningPostDate,
     postId,
     postLink: postId ? `https://www.tiktok.com/@${payment.creatorName}/video/${postId}` : "",
-    actualPostDate: published ? `2026-09-${String(1 + (globalIndex % 2)).padStart(2, "0")}` : "",
+    actualPostDate: forceAugust31Published ? "2026-08-31" : published ? `2026-09-${String(1 + (globalIndex % 2)).padStart(2, "0")}` : "",
     createdAt: payment.createdAt,
     eachPrice: plan.eachPrice,
     ranking: globalIndex % 5 === 0 ? "Top" : "Normal",
@@ -699,7 +705,7 @@ export const dashboard31SeptemberReviews = dashboard31SeptemberPayments.flatMap(
     shouldCpm: globalIndex % 2 === 0 ? "Yes" : "No",
     picIsMe: payment.picIsMe,
     sparkCodeNotice: globalIndex % 7 === 0 ? "Yes" : "No",
-    sparkAdsStatus: published || plan.sparkStatus === "Yes" ? "Done" : "None",
+    sparkAdsStatus: shouldPublish || plan.sparkStatus === "Yes" ? "Done" : "None",
     postStatus: "Normal",
     linkStatus: "Linked",
     source: payment.source,

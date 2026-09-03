@@ -3007,8 +3007,10 @@ thead .operation-column {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 76px;
+  height: 92px;
+  min-height: 92px;
   padding: 7px;
+  overflow: hidden;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -3076,10 +3078,12 @@ thead .operation-column {
 }
 
 .post-plan-calendar-entries {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
   gap: 3px;
   margin-top: 5px;
-  max-height: 58px;
+  max-height: none;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -3098,7 +3102,7 @@ thead .operation-column {
 
 .post-plan-calendar-entries.is-expanded {
   max-height: none;
-  overflow: visible;
+  overflow-y: auto;
 }
 
 .post-plan-calendar-group {

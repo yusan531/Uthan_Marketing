@@ -2289,6 +2289,7 @@ function PostPlanScheduleChart({
   visibleStatuses = ["planned", "overdue", "completed", "overdue-completed"],
   metric = "quantity",
   stackBy = "status",
+  showDimensionBreakdown = true,
 }: {
   entries: Record<string, unknown>[];
   period: Exclude<PostPlanCalendarPeriod, "day">;

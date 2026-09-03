@@ -1943,6 +1943,10 @@ function formatDashboardMetric(value: number, suffix = "") {
   return `${suffix}${compactNumber(Math.max(0, value))}`;
 }
 
+function formatPublishBudget(value: number) {
+  return `${(Math.max(0, value) / 1_000_000).toFixed(1)}M`;
+}
+
 function dashboardRatioPercent(actual: number, base: number) {
   return base > 0 ? Math.round((actual / base) * 100) : 0;
 }
@@ -1969,12 +1973,12 @@ function DualProgressMeter({
   const planTargetRate = dashboardRatioPercent(plan, target);
   const postTargetRate = dashboardRatioPercent(post, target);
   const paceRate = Math.max(0, 100 - postTargetRate);
-  const postTargetRatio = target > 0 ? (post / target) * 100 : 0;
-  const progressColor = postTargetRatio < 60 ? "var(--dashboard-danger)" : postTargetRatio < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
-  const progressSoftColor = `color-mix(in srgb, ${progressColor} 42%, var(--surface))`;
+  const postProgressColor = postTargetRate < 60 ? "var(--dashboard-danger)" : postTargetRate < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
+  const planProgressColor = planTargetRate < 60 ? "var(--dashboard-danger)" : planTargetRate < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
+  const planProgressSoftColor = `color-mix(in srgb, ${planProgressColor} 42%, var(--surface))`;
   return (
     <div className={`dual-progress-meter ${compact ? "compact" : ""} ${tone}`}>
-      <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(planTargetRate, 100)}%`, background: progressSoftColor }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%`, background: progressColor }} /></div>
+      <div className="dual-progress-track"><i className="payment-fill" style={{ width: `${Math.min(planTargetRate, 100)}%`, background: planProgressSoftColor }} /><i className="post-fill" style={{ width: `${Math.min(postTargetRate, 100)}%`, background: postProgressColor }} /></div>
       <div className="dual-progress-foot"><span>{actualLabel} <b>{postTargetRate}%</b> - {planLabel} <b>{planTargetRate}%</b></span><span>{paceLabel} <b>{paceRate}%</b></span></div>
     </div>
   );
@@ -2078,6 +2082,35 @@ function LegacyProgressSummary({
       </div>
       <div className={`legacy-summary-gaps${showPayment ? "" : " no-payment"}`}><span><b>{formatDashboardMetric(postGap, suffix)}</b><small>Post GAP</small></span>{showPayment && <span><b>{formatDashboardMetric(paymentGap, suffix)}</b><small>Payment GAP</small></span>}</div>
       <LegacyDualProgressMeter post={post} payment={payment} target={target} tone={tone} showPayment={showPayment} />
+    </article>
+  );
+}
+
+function PublishProgressSummary({
+  title,
+  actual,
+  target,
+  formatValue = formatDashboardMetric,
+  tone,
+}: {
+  title: string;
+  actual: number;
+  target: number;
+  formatValue?: (value: number) => string;
+  tone: "post" | "budget";
+}) {
+  const actualRate = target > 0 ? Math.round((actual / target) * 100) : 0;
+  const pace = actualRate - 100;
+  const remaining = target - actual;
+  return (
+    <article className={`progress-summary publish-progress-summary ${tone}`}>
+      <div className="summary-top"><strong>{title}</strong></div>
+      <div className="publish-progress-values">
+        <div className="publish-progress-main"><b>{formatValue(actual)}</b><i>/</i><em>{formatValue(target)}</em><small>MTD / Target</small></div>
+        <div className="publish-progress-remaining"><b>{formatValue(remaining)}</b><small>Remaining</small></div>
+      </div>
+      <div className="publish-progress-track"><i style={{ width: `${Math.min(Math.max(actualRate, 0), 100)}%` }} /></div>
+      <div className="publish-progress-foot"><span>MTD <b>{actualRate}%</b></span><span>Pace <b className={pace >= 0 ? "good" : "bad"}>{pace > 0 ? "+" : ""}{pace}%</b></span></div>
     </article>
   );
 }
@@ -2695,9 +2728,11 @@ function TargetDashboard({
     ["product", "产品", "Product"],
     ["tier", "达人等级", "Creator Tier"],
     ["strategist", "KOL Strategist", "KOL Strategist"],
-    ["specialist", "KOL Specialist", "KOL Specialist"],
-    ["submitter", "提交人", "Submitter"],
-    ...(version31 ? [["brand", "品牌", "Brand"]] as const : []),
+    ...(version31 ? [
+      ["specialist", "KOL Specialist", "KOL Specialist"],
+      ["submitter", "提交人", "Submitter"],
+      ["brand", "品牌", "Brand"],
+    ] as const : [["brand", "品牌", "Brand"]] as const),
   ] as const;
   const currentPostPlanDimensionLabel = tabs.find(([key]) => key === postPlanTab)?.[language === "zh" ? 1 : 2] || "Product";
   const summaryMetrics = [
@@ -2806,6 +2841,19 @@ function TargetDashboard({
           ? label("品牌", "Brand", language)
         : label("产品名称", "Product Name", language);
   const renderVideoDetailRows = (records: typeof videoRecords) => records.map((record) => <tr key={record.cells[0]}>{record.cells.map((value, index) => <td key={`${record.cells[0]}-${index}`}>{index < 2 ? <button className="video-data-link">{value}</button> : value}</td>)}</tr>);
+  const renderLegacyProgressCells = (row: DashboardBreakdown) => {
+    const postPace = percent(row.postMtd, row.postTarget) - 100;
+    const budgetPace = percent(row.budgetMtd, row.budgetTarget) - 100;
+    const pace = (value: number) => <b className={value >= 0 ? "legacy-pace-good" : "legacy-pace-bad"}>{value > 0 ? "+" : ""}{value}%</b>;
+    return <>
+      <td><b>{row.postTarget}</b></td>
+      <td><b>{row.postMtd}</b></td>
+      <td>{pace(postPace)}</td>
+      <td><b>{formatPublishBudget(row.budgetTarget)}</b></td>
+      <td><b>{formatPublishBudget(row.budgetMtd)}</b></td>
+      <td>{pace(budgetPace)}</td>
+    </>;
+  };
 
   return (
     <div className="page-stack target-dashboard">
@@ -2866,18 +2914,23 @@ function TargetDashboard({
       </div>}
 
       <div className="dashboard-section-row reference-dashboard-grid single-dashboard-column">
-        <section className="panel progress-panel">
-          <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publishing Progress", language)}</div>
+        <section className={`panel progress-panel${version31 ? "" : " legacy-publishing-progress-panel"}`}>
+          <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publish Progress", language)}</div>
           <div className="progress-pair">
-            <LegacyProgressSummary title={label("发布数量", "Post", language)} post={postMtd} payment={version31 ? postPlanSummary.paidCount : postMtd} target={postTarget} tone="green" showPayment={!version31} />
-            <LegacyProgressSummary title={version31 ? "Price" : label("预算花费", "Budget", language)} post={budgetMtd} payment={version31 ? postPlanSummary.paidAmount : budgetMtd} target={budgetTarget} suffix="IDR " tone="amber" showPayment={!version31} />
+            {version31 ? <>
+              <LegacyProgressSummary title={label("发布数量", "Post", language)} post={postMtd} payment={postPlanSummary.paidCount} target={postTarget} tone="green" showPayment={false} />
+              <LegacyProgressSummary title="Price" post={budgetMtd} payment={postPlanSummary.paidAmount} target={budgetTarget} suffix="IDR " tone="amber" showPayment={false} />
+            </> : <>
+              <PublishProgressSummary title="Post" actual={postMtd} target={postTarget} tone="post" />
+              <PublishProgressSummary title="Budget" actual={budgetMtd} target={budgetTarget} formatValue={formatPublishBudget} tone="budget" />
+            </>}
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}
           </div>
-          <div className="data-table-wrap dashboard-table-wrap">
-            <table className="data-table dashboard-table">
-              <colgroup>
+          <div className={`data-table-wrap dashboard-table-wrap${version31 ? "" : " legacy-publish-table-wrap"}`}>
+            <table className={`data-table dashboard-table${version31 ? "" : " legacy-publish-table"}`}>
+              <colgroup>{version31 ? <>
                 <col className="breakdown-col" />
                 <col className="post-target-col" />
                 <col className="post-remaining-col" />
@@ -2885,10 +2938,23 @@ function TargetDashboard({
                 <col className="budget-target-col" />
                 <col className="budget-remaining-col" />
                 <col className="budget-pace-col" />
-              </colgroup>
+              </> : <>
+                <col className="legacy-publish-name-col" />
+                <col className="legacy-publish-value-col" />
+                <col className="legacy-publish-value-col" />
+                <col className="legacy-publish-pace-col" />
+                <col className="legacy-publish-value-col" />
+                <col className="legacy-publish-value-col" />
+                <col className="legacy-publish-pace-col" />
+              </>}</colgroup>
               <thead>
-                <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
-                <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
+                {version31 ? <>
+                  <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
+                  <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
+                </> : <>
+                  <tr><th rowSpan={2}>{label("产品 / 达人等级", "Product / Tier", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
+                  <tr><th>Target</th><th>MTD</th><th>Pace</th><th>Target</th><th>MTD</th><th>Pace</th></tr>
+                </>}
               </thead>
               <tbody>
                 {rows.map((row) => {
@@ -2902,12 +2968,14 @@ function TargetDashboard({
                   return <Fragment key={rowKey}>
                     <tr className="dashboard-parent-row">
                       <td><button className="expand-row-button" onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong></span></button></td>
-                      <td><b>{row.postMtd}/{row.postTarget}</b></td>
-                      <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
-                      <td><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td>
-                      <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
-                      <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
-                      <td><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td>
+                      {version31 ? <>
+                        <td><b>{row.postMtd}/{row.postTarget}</b></td>
+                        <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
+                        <td><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td>
+                        <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
+                        <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
+                        <td><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td>
+                      </> : renderLegacyProgressCells(row)}
                     </tr>
                     {isOpen && children.map((child) => {
                       const childPostRate = percent(child.postMtd, child.postTarget);
@@ -2917,12 +2985,14 @@ function TargetDashboard({
                       const grandChildren = tab === "brand" ? childrenFor("product", child) : [];
                       return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}>
                         <td><button className="expand-row-button nested" disabled={!grandChildren.length} onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(childKey) ? next.delete(childKey) : next.add(childKey); return next; })}><ChevronRight size={13} className={childOpen ? "rotate-90" : ""} /><strong>{child.name}</strong></button></td>
-                        <td><b>{child.postMtd}/{child.postTarget}</b></td>
-                        <td>{Math.max(child.postTarget - child.postMtd, 0)}</td>
-                        <td><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td>
-                        <td><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b></td>
-                        <td>IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</td>
-                        <td><div className="dashboard-rate"><span>MTD <b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></td>
+                        {version31 ? <>
+                          <td><b>{child.postMtd}/{child.postTarget}</b></td>
+                          <td>{Math.max(child.postTarget - child.postMtd, 0)}</td>
+                          <td><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td>
+                          <td><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b></td>
+                          <td>IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</td>
+                          <td><div className="dashboard-rate"><span>MTD <b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></td>
+                        </> : renderLegacyProgressCells(child)}
                       </tr>;
                     })}
                     {isOpen && tab === "brand" && children.flatMap((child) => {
@@ -2933,12 +3003,14 @@ function TargetDashboard({
                         const grandBudgetRate = percent(grandChild.budgetMtd, grandChild.budgetTarget);
                         return <tr className="nested-breakdown depth-2" key={`${childKey}-${grandChild.name}`}>
                           <td><strong>{grandChild.name}</strong></td>
-                          <td><b>{grandChild.postMtd}/{grandChild.postTarget}</b></td>
-                          <td>{Math.max(grandChild.postTarget - grandChild.postMtd, 0)}</td>
-                          <td><div className="dashboard-rate"><span>MTD <b>{grandPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(grandPostRate, 100)}%` }} /></div></td>
-                          <td><b>IDR {compactNumber(grandChild.budgetMtd)}/{compactNumber(grandChild.budgetTarget)}</b></td>
-                          <td>IDR {compactNumber(Math.max(grandChild.budgetTarget - grandChild.budgetMtd, 0))}</td>
-                          <td><div className="dashboard-rate"><span>MTD <b>{grandBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(grandBudgetRate, 100)}%` }} /></div></td>
+                          {version31 ? <>
+                            <td><b>{grandChild.postMtd}/{grandChild.postTarget}</b></td>
+                            <td>{Math.max(grandChild.postTarget - grandChild.postMtd, 0)}</td>
+                            <td><div className="dashboard-rate"><span>MTD <b>{grandPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(grandPostRate, 100)}%` }} /></div></td>
+                            <td><b>IDR {compactNumber(grandChild.budgetMtd)}/{compactNumber(grandChild.budgetTarget)}</b></td>
+                            <td>IDR {compactNumber(Math.max(grandChild.budgetTarget - grandChild.budgetMtd, 0))}</td>
+                            <td><div className="dashboard-rate"><span>MTD <b>{grandBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(grandBudgetRate, 100)}%` }} /></div></td>
+                          </> : renderLegacyProgressCells(grandChild)}
                         </tr>;
                       });
                     })}

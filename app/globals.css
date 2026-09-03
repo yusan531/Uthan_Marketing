@@ -4635,6 +4635,179 @@ thead .operation-column {
   padding: 10px 13px;
 }
 
+/* Restore the Target dashboard's original Publish Progress presentation. */
+.target-dashboard .legacy-publishing-progress-panel > .progress-pair {
+  gap: 12px;
+  padding: 14px 18px 16px;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .publish-progress-summary {
+  min-height: 146px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .publish-progress-summary .summary-top {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .publish-progress-summary .summary-top::before {
+  width: 4px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--dashboard-primary);
+  content: "";
+}
+
+.publish-progress-values {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(86px, .65fr);
+  align-items: center;
+  gap: 14px;
+  margin: 17px 0 12px;
+}
+
+.publish-progress-main,
+.publish-progress-remaining {
+  min-width: 0;
+}
+
+.publish-progress-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 5px;
+}
+
+.publish-progress-main b,
+.publish-progress-main em {
+  overflow: hidden;
+  font-size: clamp(25px, 2.6vw, 36px);
+  font-style: normal;
+  letter-spacing: -1px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publish-progress-main i {
+  color: var(--muted);
+  font-size: 19px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.publish-progress-main small,
+.publish-progress-remaining small {
+  display: block;
+  flex-basis: 100%;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.publish-progress-remaining {
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+}
+
+.publish-progress-remaining b {
+  display: block;
+  overflow: hidden;
+  font-size: clamp(20px, 2vw, 29px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publish-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.publish-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.publish-progress-summary.post .publish-progress-track i {
+  background: var(--dashboard-warning);
+}
+
+.publish-progress-summary.budget .publish-progress-track i {
+  background: var(--dashboard-success);
+}
+
+.publish-progress-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.publish-progress-foot b {
+  color: var(--text);
+}
+
+.publish-progress-foot .good,
+.legacy-pace-good {
+  color: var(--dashboard-success);
+}
+
+.publish-progress-foot .bad,
+.legacy-pace-bad {
+  color: var(--dashboard-danger);
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table {
+  table-layout: fixed;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table-wrap {
+  margin: 0 18px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table th,
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table td {
+  padding: 11px 8px;
+  text-align: right;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table th:first-child,
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table td:first-child {
+  text-align: left;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table th:first-child {
+  width: 30%;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table .legacy-publish-name-col {
+  width: 30%;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table .legacy-publish-value-col {
+  width: 12%;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table .legacy-publish-pace-col {
+  width: 11%;
+}
+
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table .legacy-pace-good,
+.target-dashboard .legacy-publishing-progress-panel .legacy-publish-table .legacy-pace-bad {
+  font-weight: 700;
+}
+
 .target-dashboard .post-plan-summary-card strong {
   margin-top: 5px;
   font-size: 21px;

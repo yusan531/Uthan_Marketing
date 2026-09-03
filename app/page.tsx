@@ -2747,13 +2747,15 @@ function TargetDashboard({
     ] as const : [["brand", "品牌", "Brand"]] as const),
   ] as const;
   const currentPostPlanDimensionLabel = tabs.find(([key]) => key === postPlanTab)?.[language === "zh" ? 1 : 2] || "Product";
-  const selectedProductNames = new Set(selectedPlanEntries.map((entry) => postPlanDimensionValue(entry, "product")));
-  const paymentPivotDrilldown = postPlanTab === "product" && selectedProductNames.size === 1;
+  const selectedPostPlanDimensionNames = new Set(selectedPlanEntries.map((entry) => postPlanDimensionValue(entry, postPlanTab)));
+  const paymentPivotDrilldown = selectedPlanEntries.length > 0 && selectedPostPlanDimensionNames.size === 1;
+  const paymentPivotDimension: DashboardDimension = paymentPivotDrilldown ? (postPlanTab === "product" ? "tier" : "product") : postPlanTab;
   const paymentPivotEntries = paymentPivotDrilldown
-    ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier))
+    ? paymentPivotDimension === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries
     : postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries;
-  const paymentPivotDimension: DashboardDimension = paymentPivotDrilldown ? "tier" : postPlanTab;
-  const paymentPivotDimensionLabel = paymentPivotDrilldown ? label("达人等级", "Creator Tier", language) : currentPostPlanDimensionLabel;
+  const paymentPivotDimensionLabel = paymentPivotDrilldown
+    ? paymentPivotDimension === "tier" ? label("达人等级", "Creator Tier", language) : label("产品", "Product", language)
+    : currentPostPlanDimensionLabel;
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },

@@ -2212,8 +2212,11 @@ function PostPlanCalendar({
     const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
     const statusMeta = postPlanCalendarStatusMeta[status];
     const creatorName = String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language));
-    return <button type="button" className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={creatorName} title={creatorName} onClick={() => onNavigate("review31b")}>
+    const tier = String(entry.tier || entry.rate || entry.rateTier || "").trim();
+    const entryLabel = tier ? `${creatorName} · ${label("费用等级", "Tier", language)} ${tier}` : creatorName;
+    return <button type="button" className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={entryLabel} title={entryLabel} onClick={() => onNavigate("review31b")}>
       <b>{creatorName}</b>
+      {tier && <small>{label("费用等级", "Tier", language)} {tier}</small>}
       {status === "overdue-completed" && <i className="post-plan-calendar-late-dot" aria-label={label("延期完成", "Published late", language)} />}
     </button>;
   };
@@ -2237,9 +2240,9 @@ type PostPlanScheduleStatus = "completed" | "planned" | "overdue" | "overdue-com
 
 const postPlanScheduleStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string; className: string }> = {
   completed: { zh: "已发布", en: "Posted", className: "completed" },
-  planned: { zh: "待发布", en: "Pending", className: "planned" },
-  overdue: { zh: "逾期", en: "Overdue", className: "overdue" },
-  "overdue-completed": { zh: "逾期发布", en: "Posted Late", className: "overdue-completed" },
+  planned: { zh: "计划", en: "Planned", className: "planned" },
+  overdue: { zh: "延迟", en: "Delayed", className: "overdue" },
+  "overdue-completed": { zh: "延迟发布", en: "Posted Late", className: "overdue-completed" },
 };
 
 const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string; className: string }> = {
@@ -2298,6 +2301,7 @@ function PostPlanScheduleChart({
   visibleStatuses?: PostPlanScheduleStatus[];
   metric?: PostPlanScheduleMetric;
   stackBy?: "status" | "dimension";
+  showDimensionBreakdown?: boolean;
 }) {
   const anchor = dashboardLocalDate(today);
   const statusOrder = visibleStatuses;
@@ -2388,7 +2392,7 @@ function PostPlanScheduleChart({
       <div><strong>{heading || metricLabel}</strong><small>{label("按", "By", language)} {dimensionLabel} · {period === "month" ? "7" : "16"} {period === "month" ? label("个月", "months", language) : label("周", "weeks", language)}</small></div>
       <div className="post-plan-schedule-legend">{series.map((item) => <span key={item.key} className={`schedule-legend-item ${item.status ? postPlanScheduleStatusMeta[item.status].className : "dimension"}`} title={item.label}><i style={{ background: item.color }} />{item.label}</span>)}</div>
     </div>
-    {stackBy === "status" && dimensionCounts.length > 0 && <div className="post-plan-schedule-dimensions" aria-label={`${dimensionLabel} breakdown`}>
+    {showDimensionBreakdown !== false && stackBy === "status" && dimensionCounts.length > 0 && <div className="post-plan-schedule-dimensions" aria-label={`${dimensionLabel} breakdown`}>
       {dimensionCounts.slice(0, 8).map(([name, value]) => <span key={name}><b>{name}</b><small>{formatScheduleValue(value)}</small></span>)}
       {dimensionCounts.length > 8 && <small className="post-plan-schedule-more">+{dimensionCounts.length - 8}</small>}
     </div>}
@@ -2756,6 +2760,23 @@ function TargetDashboard({
   const paymentPivotDimensionLabel = paymentPivotDrilldown
     ? paymentPivotDimension === "tier" ? label("达人等级", "Creator Tier", language) : label("产品", "Product", language)
     : currentPostPlanDimensionLabel;
+  const calendarEntries = postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries;
+  const calendarSummary = calendarEntries.reduce((summary, entry) => {
+    const date = postPlanScheduleDate(entry);
+    const status = postPlanScheduleStatus(entry, today, publishedPlanKeys);
+    const posted = status === "completed" || status === "overdue-completed";
+    const delayed = status === "overdue";
+    if (date < today) {
+      if (posted) summary.beforePosted += 1;
+      if (delayed) summary.beforeDelayed += 1;
+    } else if (date === today) {
+      if (posted) summary.todayPosted += 1;
+      if (!posted) summary.todayPlanned += 1;
+    } else if (!posted) {
+      summary.afterPlanned += 1;
+    }
+    return summary;
+  }, { beforePosted: 0, beforeDelayed: 0, todayPosted: 0, todayPlanned: 0, afterPlanned: 0 });
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -2923,13 +2944,13 @@ function TargetDashboard({
             </table>
           </div>
           <div className="post-plan-calendar-module">
-            <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-tabs">{([[
-              "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div>
+            <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-header-actions"><div className="post-plan-calendar-summary" aria-label={label("排期汇总", "Schedule summary", language)}><span><em>{label("今天前", "Before today", language)}</em><b>{calendarSummary.beforePosted}</b>{label("发布", "Posted", language)}<b>{calendarSummary.beforeDelayed}</b>{label("延迟", "Delay", language)}</span><span><em>{label("今天", "Today", language)}</em><b>{calendarSummary.todayPosted}</b>{label("发布", "Posted", language)}<b>{calendarSummary.todayPlanned}</b>{label("计划", "Planned", language)}</span><span><em>{label("今天后", "After today", language)}</em><b>{calendarSummary.afterPlanned}</b>{label("计划", "Planned", language)}</span></div><div className="post-plan-calendar-tabs">{([[
+              "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onNavigate={onNavigate} />
+              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onNavigate={onNavigate} />
               : <div className="post-plan-schedule-views">
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} /></div>
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={paymentPivotEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={paymentPivotDimension} dimensionLabel={paymentPivotDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Payment Pivot" metric="quantity" stackBy="dimension" /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Plan Pivot" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} /></div>
               </div>}
           </div>
         </section>

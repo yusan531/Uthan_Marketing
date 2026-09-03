@@ -535,6 +535,16 @@ for (let globalIndex = 0; globalIndex < dashboard31SeptemberTotalPlans; globalIn
     : dashboard31SeptemberProducts[1 + (dashboard31SeptemberNonToneIndex++ % (dashboard31SeptemberProducts.length - 1))]);
 }
 const dashboard31SeptemberProductAt = (globalIndex: number) => dashboard31SeptemberProductByIndex.get(globalIndex) || dashboard31SeptemberProducts[0];
+const dashboard31SeptemberTierSequence = ["S", "A", "B"];
+const dashboard31SeptemberTierByIndex = new Map<number, string>();
+const dashboard31SeptemberProductOccurrences = new Map<string, number>();
+for (let globalIndex = 0; globalIndex < dashboard31SeptemberTotalPlans; globalIndex += 1) {
+  const productName = dashboard31SeptemberProductAt(globalIndex);
+  const occurrence = dashboard31SeptemberProductOccurrences.get(productName) || 0;
+  dashboard31SeptemberTierByIndex.set(globalIndex, dashboard31SeptemberTierSequence[occurrence % dashboard31SeptemberTierSequence.length]);
+  dashboard31SeptemberProductOccurrences.set(productName, occurrence + 1);
+}
+const dashboard31SeptemberTierAt = (globalIndex: number) => dashboard31SeptemberTierByIndex.get(globalIndex) || dashboard31SeptemberTierSequence[0];
 
 export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((qty, index) => {
   const paymentNo = `PID20260901${String(index + 1).padStart(6, "0")}`;
@@ -547,6 +557,7 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
   const owner = owners[index % owners.length];
   const plans = Array.from({ length: qty }, (_, planIndex) => {
     const planOffset = dashboard31SeptemberOffsets[index] + planIndex;
+    const productName = dashboard31SeptemberProductAt(planOffset);
     const planningPostDate = planOffset === 1
       ? "2026-09-01"
       : planOffset === 2
@@ -563,8 +574,8 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
       contentAngle: ["Review", "Tutorial", "Lifestyle", "Before & After"][planIndex % 4],
       planningPostDate,
       eachPrice: String(unitPrice),
-      rate: tiers[planOffset % tiers.length],
-      product: dashboard31SeptemberProductAt(planOffset),
+      rate: dashboard31SeptemberTierAt(planOffset),
+      product: productName,
       yellowCart: planIndex % 3 === 0 ? "Yes" : "No",
       boostCode: "",
       owning: "",
@@ -574,6 +585,7 @@ export const dashboard31SeptemberPayments = dashboard31SeptemberQuantities.map((
   return {
     id: 3201 + index,
     dashboardSeptemberDemoVersion: 1,
+    dashboardTierDemoVersion: 1,
     paymentNo,
     dashboardToneUpDemoVersion: 3,
     targetMonth: "2026-09",

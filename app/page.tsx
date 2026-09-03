@@ -2215,10 +2215,9 @@ function PostPlanCalendar({
     const statusMeta = postPlanCalendarStatusMeta[status];
     const creatorName = String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language));
     const tier = String(entry.tier || entry.rate || entry.rateTier || "").trim();
-    const entryLabel = tier ? `${creatorName} · ${label("费用等级", "Tier", language)} ${tier}` : creatorName;
+    const entryLabel = tier ? `${creatorName} · ${tier}` : creatorName;
     return <button type="button" className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={entryLabel} title={entryLabel} onClick={() => onOpenReview(entry)}>
-      <b>{creatorName}</b>
-      {tier && <small>{label("费用等级", "Tier", language)} {tier}</small>}
+      <b>{entryLabel}</b>
       {status === "overdue-completed" && <i className="post-plan-calendar-late-dot" aria-label={label("延期完成", "Published late", language)} />}
     </button>;
   };
@@ -3340,6 +3339,7 @@ export default function MarketingSystem() {
       const toneUpDemoTargetMap = new Map(dashboard31SeptemberTargets.map((target) => [String(target.targetNo || ""), target]));
       const needsToneUpDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardToneUpDemoVersion) < 3)
         || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && String(target.product || "") === "Tone Up Sunscreen" && numeric(target.dashboardToneUpDemoVersion) < 3);
+      const needsTierDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardTierDemoVersion) < 1);
       const migratedTargets = nextTargets.map((target) => {
         const canonicalTarget = needsToneUpDemoMigration ? toneUpDemoTargetMap.get(String(target.targetNo || "")) : undefined;
         return canonicalTarget
@@ -3397,6 +3397,9 @@ export default function MarketingSystem() {
         const canonicalSeptemberPayment = needsToneUpDemoMigration && String(payment.paymentNo || "").startsWith("PID20260901")
           ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
           : undefined;
+        const canonicalTierDemoPayment = needsTierDemoMigration && String(payment.paymentNo || "").startsWith("PID20260901")
+          ? toneUpDemoPaymentMap.get(String(payment.paymentNo || ""))
+          : undefined;
         return {
           ...(canonicalSeptemberPayment || {}),
           ...payment,
@@ -3449,6 +3452,14 @@ export default function MarketingSystem() {
             postPlans: canonicalSeptemberPayment.postPlans,
             dashboardToneUpDemoVersion: 3,
           } : {}),
+          ...(canonicalTierDemoPayment ? {
+            id: payment.id,
+            qty: canonicalTierDemoPayment.qty,
+            totalPrice: canonicalTierDemoPayment.totalPrice,
+            reviewQty: canonicalTierDemoPayment.reviewQty,
+            postPlans: canonicalTierDemoPayment.postPlans,
+            dashboardTierDemoVersion: 1,
+          } : {}),
         };
       });
       const changed = nextPayments.length !== storedPayments.length || nextPayments.some((payment, index) => !storedPayments[index] || Object.keys(payment).some((key) => payment[key] !== storedPayments[index][key]));
@@ -3457,7 +3468,7 @@ export default function MarketingSystem() {
       const reviews = needsSeptemberDemoMigration
         ? [...storedReviews, ...dashboard31SeptemberReviews.filter((review) => !storedReviewKeys.has(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`)).map((review) => ({ ...review, id: Number(review.id) + 1000 }))]
         : storedReviews;
-      const migratedReviews = needsToneUpDemoMigration
+      const migratedReviews = needsToneUpDemoMigration || needsTierDemoMigration
         ? reviews.map((review) => {
             const canonicalReview = toneUpDemoReviewMap.get(`${String(review.paymentNo || "")}|${String(review.postNo || "")}`);
             return canonicalReview

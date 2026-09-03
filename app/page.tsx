@@ -2608,9 +2608,14 @@ function TargetDashboard({
   };
   const paidPlanRows = paidRowsByDimension[postPlanTab];
   const allPostPlanEntryKeys = paidPlanEntries.map(planEntryKey);
+  const postPlanSelectionSignature = allPostPlanEntryKeys.join("\u001f");
+  useEffect(() => {
+    setExcludedPostPlanRows(new Set());
+  }, [postPlanSelectionSignature]);
   const effectiveExcludedPostPlanRows = excludedPostPlanRows;
   const postPlanSelectionState = (entryKeys: string[]) => {
     const selectedCount = entryKeys.filter((key) => !effectiveExcludedPostPlanRows.has(key)).length;
+    if (effectiveExcludedPostPlanRows.size === 0) return { checked: true, indeterminate: false };
     return {
       checked: entryKeys.length === 0 || selectedCount === entryKeys.length,
       indeterminate: entryKeys.length > 0 && selectedCount > 0 && selectedCount < entryKeys.length,

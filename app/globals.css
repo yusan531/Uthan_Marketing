@@ -3391,9 +3391,17 @@ thead .operation-column {
   border-bottom: 1px solid var(--line-strong);
 }
 
-.post-plan-schedule-bar {
+.post-plan-schedule-bar-wrap {
   position: relative;
   width: min(48px, 80%);
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.post-plan-schedule-bar {
+  width: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -3405,6 +3413,7 @@ thead .operation-column {
   position: absolute;
   top: -15px;
   left: 50%;
+  z-index: 3;
   color: var(--text);
   font-size: 9px;
   font-weight: 800;

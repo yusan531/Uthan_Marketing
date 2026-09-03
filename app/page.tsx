@@ -2388,10 +2388,12 @@ function PostPlanScheduleChart({
       <div className="post-plan-schedule-columns">
         {periodSegments.map((item) => <div className={`post-plan-schedule-column${item.marker ? " current" : ""}`} key={item.key}>
           <div className="post-plan-schedule-bar-area">
-            <div className="post-plan-schedule-bar" style={{ height: `${item.total ? Math.max((item.total / maxCount) * 100, 5) : 0}%` }} title={item.total ? `${item.label}: ${formatScheduleValue(item.total)}` : item.label}>
-              {item.total > 0 && <strong className="post-plan-schedule-total">{formatScheduleValue(item.total)}</strong>}
-              {item.segments.map((segment) => segment.value > 0 && <i key={segment.key} className={`schedule-segment ${segment.status ? postPlanScheduleStatusMeta[segment.status].className : "dimension"}`} style={{ height: `${(segment.value / Math.max(item.total, 1)) * 100}%`, "--schedule-segment-color": segment.color } as CSSProperties} title={`${segment.label}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{segment.label} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
-            </div>
+            {item.total > 0 && <div className="post-plan-schedule-bar-wrap" style={{ height: `${Math.max((item.total / maxCount) * 100, 5)}%` }}>
+              <strong className="post-plan-schedule-total">{formatScheduleValue(item.total)}</strong>
+              <div className="post-plan-schedule-bar" title={`${item.label}: ${formatScheduleValue(item.total)}`}>
+                {item.segments.map((segment) => segment.value > 0 && <i key={segment.key} className={`schedule-segment ${segment.status ? postPlanScheduleStatusMeta[segment.status].className : "dimension"}`} style={{ height: `${(segment.value / Math.max(item.total, 1)) * 100}%`, "--schedule-segment-color": segment.color } as CSSProperties} title={`${segment.label}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{segment.label} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
+              </div>
+            </div>}
           </div>
           <strong className="post-plan-schedule-label">{item.label}</strong>
           {item.marker && <small className="post-plan-schedule-marker">{item.marker}</small>}

@@ -2188,7 +2188,12 @@ function PostPlanCalendar({
       date: String(entry.planningPostDate || entry.expectedPostDate || "").slice(0, 10),
     }))
     .filter((item) => item.date)
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => {
+      const dateOrder = a.date.localeCompare(b.date);
+      if (dateOrder !== 0) return dateOrder;
+      const statusOrder = { overdue: 0, planned: 1, "overdue-completed": 2, completed: 3 } as const;
+      return statusOrder[postPlanScheduleStatus(a.entry, today, publishedPlanKeys)] - statusOrder[postPlanScheduleStatus(b.entry, today, publishedPlanKeys)];
+    });
   const entriesByDate = new Map<string, typeof monthEntries>();
   monthEntries.forEach((item) => entriesByDate.set(item.date, [...(entriesByDate.get(item.date) || []), item]));
   const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();

@@ -2247,6 +2247,7 @@ function PostPlanCalendar({
   period,
   dimension,
   grouping,
+  onGroupingChange,
   language,
   today,
   publishedPlanKeys,
@@ -2257,6 +2258,7 @@ function PostPlanCalendar({
   period: PostPlanCalendarPeriod;
   dimension: DashboardDimension;
   grouping: PostPlanCalendarGrouping;
+  onGroupingChange: (grouping: PostPlanCalendarGrouping) => void;
   language: Language;
   today: string;
   publishedPlanKeys: Set<string>;
@@ -2384,16 +2386,19 @@ function PostPlanCalendar({
     };
     const allExpanded = expandedDates.has(date);
     const hasExpandedContent = allExpanded || dimensionGroups.some(([name]) => isGroupExpanded(name));
+    const visibleDimensionGroups = allExpanded ? dimensionGroups : dimensionGroups.slice(0, 3);
     const outsideMonth = !date.startsWith(month);
     const dayLabel = <strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong>;
-    return <div className={`post-plan-calendar-cell${outsideMonth ? " outside-month" : ""}`} key={date || `empty-${index}`}>
-      <>{grouping === "creator" ? <div className="post-plan-calendar-day-label">{dayLabel}</div> : <button type="button" className={`post-plan-calendar-day-toggle${allExpanded ? " is-expanded" : ""}`} onClick={toggleAllDetails} aria-expanded={allExpanded} aria-label={label(`${date} 展开或收起全部排期`, `Expand or collapse all schedules for ${date}`, language)}>{dayLabel}</button>}{grouping === "creator" ? <div className="post-plan-calendar-entries creator-mode">{dayEntries.map(renderEntry)}</div> : <div className={`post-plan-calendar-entries${dimensionGroups.length > 3 ? " is-scrollable" : ""}${hasExpandedContent ? " is-expanded" : ""}`}>{dimensionGroups.map(([name, group]) => <div className="post-plan-calendar-group" key={name}><button type="button" className={`post-plan-calendar-dimension-entry${isGroupExpanded(name) ? " is-expanded" : ""}`} onClick={(event) => toggleDetails(event, name)} aria-expanded={isGroupExpanded(name)} title={label("展开当前维度详情", "Expand this dimension's details", language)}><b>{name}</b>{group.length > 1 && <small>×{group.length}</small>}</button>{isGroupExpanded(name) && <div className="post-plan-calendar-inline-details" aria-label={label(`${name} 详情`, `${name} details`, language)}>{group.map(renderEntry)}</div>}</div>)}</div>}<div className="post-plan-calendar-day-summary">{summaryItems.map(([key, count, itemLabel]) => <span key={key} className={key}><b>{count}</b>{itemLabel}</span>)}</div></>
+    return <div className={`post-plan-calendar-cell${outsideMonth ? " outside-month" : ""}${date === today ? " today" : ""}`} key={date || `empty-${index}`}>
+      <>{grouping === "creator" ? <div className="post-plan-calendar-day-label">{dayLabel}</div> : <button type="button" className={`post-plan-calendar-day-toggle${allExpanded ? " is-expanded" : ""}`} onClick={toggleAllDetails} aria-expanded={allExpanded} aria-label={label(`${date} 展开或收起全部排期`, `Expand or collapse all schedules for ${date}`, language)}>{dayLabel}</button>}{grouping === "creator" ? <div className="post-plan-calendar-entries creator-mode">{dayEntries.map(renderEntry)}</div> : <div className={`post-plan-calendar-entries${dimensionGroups.length > 3 ? " is-scrollable" : ""}${hasExpandedContent ? " is-expanded" : ""}`}>{visibleDimensionGroups.map(([name, group]) => <div className="post-plan-calendar-group" key={name}><button type="button" className={`post-plan-calendar-dimension-entry${isGroupExpanded(name) ? " is-expanded" : ""}`} onClick={(event) => toggleDetails(event, name)} aria-expanded={isGroupExpanded(name)} title={label("展开当前维度详情", "Expand this dimension's details", language)}><b>{name}</b>{group.length > 1 && <small>×{group.length}</small>}</button>{isGroupExpanded(name) && <div className="post-plan-calendar-inline-details" aria-label={label(`${name} 详情`, `${name} details`, language)}>{group.map(renderEntry)}</div>}</div>)}</div>}<div className="post-plan-calendar-day-summary">{summaryItems.map(([key, count, itemLabel]) => <span key={key} className={key}><b>{count}</b>{itemLabel}</span>)}</div></>
     </div>;
   };
   const dates = period === "week" ? weekDates : monthDates;
   return <>
     <div className="post-plan-calendar-legend">
-      {(Object.keys(postPlanCalendarStatusMeta) as PostPlanScheduleStatus[]).map((status) => <span key={status} className={`post-plan-calendar-legend-item ${status}`}><i />{label(postPlanCalendarStatusMeta[status].zh, postPlanCalendarStatusMeta[status].en, language)}</span>)}
+      <div className="post-plan-calendar-legend-items">{(Object.keys(postPlanCalendarStatusMeta) as PostPlanScheduleStatus[]).map((status) => <span key={status} className={`post-plan-calendar-legend-item ${status}`}><i />{label(postPlanCalendarStatusMeta[status].zh, postPlanCalendarStatusMeta[status].en, language)}</span>)}</div>
+      <div className="post-plan-calendar-mode-tabs" role="group" aria-label={label("日历分组方式", "Calendar grouping", language)}>{([[
+        "category", "按分类", "By Category"], ["creator", "按达人", "By Creator"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={grouping === key ? "active" : ""} onClick={() => onGroupingChange(key)}>{label(zh, en, language)}</button>)}</div>
     </div>
     <div className={`post-plan-calendar-grid ${period}`}><div className="post-plan-calendar-weekdays">{weekdayLabels.map((weekday) => <span key={weekday}>{weekday}</span>)}</div><div className="post-plan-calendar-days">{dates.map((date, index) => renderCell(date, index))}</div></div>
   </>;
@@ -3178,10 +3183,9 @@ function TargetDashboard({
           </div>
           <div className="post-plan-calendar-module">
             <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-header-actions"><div className="post-plan-calendar-tabs">{([[
-              "month", "月", "Month"], ["week", "周", "Week"], ["day", "日历", "Calendar"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div>{postPlanCalendarPeriod === "day" && <div className="post-plan-calendar-mode-tabs" role="group" aria-label={label("日历分组方式", "Calendar grouping", language)}>{([[
-              "category", "按分类", "By Category"], ["creator", "按达人", "By Creator"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarGrouping === key ? "active" : ""} onClick={() => setPostPlanCalendarGrouping(key)}>{label(zh, en, language)}</button>)}</div>}</div></div>
+              "month", "月", "Month"], ["week", "周", "Week"], ["day", "日历", "Calendar"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" dimension={paymentPivotDimension} grouping={postPlanCalendarGrouping} language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
+              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" dimension={paymentPivotDimension} grouping={postPlanCalendarGrouping} onGroupingChange={setPostPlanCalendarGrouping} language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
               : <div className="post-plan-schedule-views">
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} onSegmentClick={(segment) => onOpenReviewList?.({ entryKeys: segment.entryKeys, periodStart: segment.periodStart, periodEnd: segment.periodEnd, count: segment.count })} /></div>
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={paymentPivotEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={paymentPivotDimension} dimensionLabel={paymentPivotDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Plan Pivot" metric="quantity" stackBy="dimension" /></div>

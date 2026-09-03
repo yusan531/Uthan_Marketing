@@ -2918,10 +2918,9 @@ thead .operation-column {
 
 .post-plan-calendar-header-actions {
   display: flex;
-  align-items: flex-end;
-  flex-direction: column;
+  align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -2954,21 +2953,22 @@ thead .operation-column {
 
 .post-plan-calendar-mode-tabs {
   display: flex;
-  gap: 3px;
-  padding: 3px;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 2px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 6px;
   background: var(--surface-3);
 }
 
 .post-plan-calendar-mode-tabs button {
-  min-height: 28px;
-  padding: 0 8px;
+  min-height: 22px;
+  padding: 0 6px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 4px;
   color: var(--muted);
   background: transparent;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
 }
 
@@ -3036,6 +3036,10 @@ thead .operation-column {
 
 .post-plan-calendar-cell.outside-month .post-plan-calendar-entry {
   opacity: 0.58;
+}
+
+.post-plan-calendar-cell.today {
+  background: color-mix(in srgb, var(--dashboard-warning-soft) 58%, var(--surface));
 }
 
 .post-plan-calendar-cell > strong {
@@ -3386,9 +3390,18 @@ thead .operation-column {
 .post-plan-calendar-legend {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px 12px;
   margin-bottom: 10px;
+}
+
+.post-plan-calendar-legend-items {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-width: 0;
 }
 
 .post-plan-calendar-legend-item {
@@ -3596,8 +3609,8 @@ thead .operation-column {
 }
 
 .post-plan-schedule-column.current {
-  border-color: transparent;
-  background: transparent;
+  border-color: color-mix(in srgb, var(--dashboard-warning) 35%, var(--line));
+  background: color-mix(in srgb, var(--dashboard-warning-soft) 58%, var(--surface));
 }
 
 .post-plan-schedule-bar-area {

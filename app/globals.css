@@ -4221,6 +4221,7 @@ thead .operation-column {
 .v31-plan-table .plan-binary-cell { width: 48px; min-width: 48px; }
 .v31-plan-table .plan-binary-cell { padding: 0 1px; }
 .v31-plan-table .plan-binary-cell > div { justify-content: center; }
+.v31-plan-table .plan-binary-cell > span { min-width: 0; padding: 7px 0; text-align: center; }
 .plan-binary-control { width: fit-content; display: grid; grid-template-columns: repeat(2, 20px); gap: 1px; margin: 0 auto; }
 .plan-binary-control button { min-width: 0; height: 18px; padding: 0; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); background: var(--surface-3); font-size: 7px; font-weight: 700; }
 .plan-binary-control button.active { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }

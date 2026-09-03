@@ -595,6 +595,16 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
   const [reviewPlanModule, setReviewPlanModule] = useState<"payment" | "post" | "ads">("payment");
   const reviewEditPostNo = !isPayment && Boolean(row) && !readOnly ? Number(row?.postNo || 0) : 0;
   const selected = plans.find(item => item.postNo === selectedPlan) || plans[0] || emptyReviewPlan31();
+  useEffect(() => {
+    if (isPayment || readOnly || !reviewEditPostNo) return;
+    const frame = window.requestAnimationFrame(() => {
+      const wrap = document.querySelector<HTMLElement>(".v31-modal .review-grouped-plan-table")?.closest<HTMLElement>(".v31-plan-wrap");
+      const targetRow = wrap?.querySelector<HTMLElement>(`tr[data-post-no="${reviewEditPostNo}"]`);
+      if (!wrap || !targetRow) return;
+      targetRow.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isPayment, readOnly, reviewEditPostNo, plans.length]);
   const [form, setForm] = useState<Record<string, unknown>>(() => ({
     paymentNo: row?.paymentNo || (isPayment ? "PID20260826000031" : ""), reviewNo: row?.reviewNo || "", country: row?.country || "ID", creatorName: row?.creatorName || (isPayment ? "alkkna" : ""), brand: row?.brand || (isPayment ? "Glowsicha" : ""), owner: row?.owner || (isPayment ? "Ajeng Salma Nadhifa Fitriani" : ""), kolSpecialist: row?.kolSpecialist || (isPayment ? "Nafa Augustina" : String(relatedPayment?.kolSpecialist || "")), supervisor: row?.supervisor || "Desy Chintya", submitter: row?.submitter || "Uthan", department: row?.department || (isPayment ? "Marketing ID" : ""), unitPrice: row?.unitPrice || (isPayment ? "350000" : String(relatedPayment?.unitPrice || "")), notes: row?.notes || "",
     reviewPlatform: row?.platform || selected.platform, reviewContentType: row?.contentType || selected.contentType, reviewContentAngle: row?.contentAngle || selected.contentAngle, reviewProduct: row?.product || selected.product, reviewPlanningPost: row?.planningPostDate || selected.planningPostDate, reviewEachPrice: row?.unitPrice || selected.eachPrice, reviewRate: row?.rate || selected.rate, reviewYellowCart: row?.yellowCart || selected.yellowCart, reviewOwning: row?.owning || selected.owning, reviewSparkStatus: row?.sparkStatus || selected.sparkStatus, reviewBoostCode: row?.boostCode || selected.boostCode,
@@ -810,13 +820,11 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
   const stackedReviewInfoCell = (item: PostPlan31, index: number, keys: readonly ("postId" | "postDate" | "postLink" | "boostCodeValue" | "expiredDate" | "postStatus" | "sparkAdsStatus")[], className = "") => <td className={`plan-stacked-cell ${className}`}>{keys.map(key => <div key={key}>{reviewInlineControl(item, index, key)}</div>)}</td>;
   const showReviewModules = !isPayment || readOnly;
   const hasReviewPlanSelector = !isPayment && scheme === "C";
-  const planPaymentInfoColSpan = hasReviewPlanSelector ? 13 : 12;
   const planPaymentFields = (["reviewId", "strategist", "platform", "planningPostDate"] as const);
   const planTable = (
     <div className="plan-table-wrap v31-plan-wrap">
       <table className={"plan-table v31-plan-table" + (showReviewModules ? " review-grouped-plan-table" : "")}>
         <thead>
-          {showReviewModules && <tr className="plan-module-head"><th className="plan-module-payment" colSpan={planPaymentInfoColSpan} aria-hidden="true" /><th className="plan-module-post" colSpan={2}>Post Info</th><th className="plan-module-ads" colSpan={2}>Ads Info</th></tr>}
           <tr>
             <th className="plan-check-cell"><input type="checkbox" disabled={readOnly} aria-label={label("全选发布计划", "Select all post plans", language)} checked={plans.length > 0 && selectedPlanRows.size === plans.length} onChange={toggleAllPlanRows} /></th>
             {hasReviewPlanSelector && <th className="plan-payment-info-field plan-select-field" />}
@@ -834,7 +842,7 @@ function Version31Modal({ config, row, language, relatedRows, reviewRows, onSave
             {showReviewModules && <><th className="plan-post-info-field plan-module-start plan-stacked-header">Post ID<br />Boost Code Value</th><th className="plan-post-info-field plan-stacked-header">Post Date<br />Expired Date</th><th className="plan-ads-info-field plan-module-start plan-stacked-header">Review Status<br />Spark Ads Status</th><th className="plan-ads-info-field plan-stacked-header">Ad Date<br />Ads PIC</th></>}
           </tr>
         </thead>
-        <tbody>{plans.map((item, index) => <tr key={item.postNo} className={`${selectedPlan === item.postNo ? "selected-plan" : ""}${reviewEditPostNo === item.postNo ? " review-edit-highlight" : ""}`}>
+        <tbody>{plans.map((item, index) => <tr data-post-no={item.postNo} key={item.postNo} className={`${selectedPlan === item.postNo ? "selected-plan" : ""}${reviewEditPostNo === item.postNo ? " review-edit-highlight" : ""}`}>
           <td className="plan-check-cell"><input type="checkbox" disabled={readOnly} aria-label={label("选择", "Select", language) + " Post No. " + item.postNo} checked={selectedPlanRows.has(item.postNo)} onChange={() => togglePlanRow(item.postNo)} /></td>
           {hasReviewPlanSelector && <td className="plan-payment-info-cell plan-select-field"><input type="radio" disabled={readOnly || !reviewValue} checked={selectedPlan === item.postNo} onChange={() => setSelectedPlan(item.postNo)} /></td>}
           <td className="plan-payment-info-cell"><b>{item.postNo}</b></td>

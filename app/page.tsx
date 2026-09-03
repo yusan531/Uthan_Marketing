@@ -2596,7 +2596,7 @@ function TargetDashboard({
     if (dimension !== "specialist" && dimension !== "submitter") {
       sourceRows.forEach((target) => {
         const name = postPlanDimensionValue(target, dimension);
-        const current = getGroup(name, dimension === "product" ? `${String(target.brand || "")} · ${String(target.owner || "")}` : label("Target 页面", "Target page", language));
+      const current = getGroup(name, dimension === "product" ? "" : label("Target 页面", "Target page", language));
         current.postTarget += numeric(target.qtyTarget || target.qty);
         current.budgetTarget += numeric(target.budgetTarget);
         groups.set(name, current);
@@ -2604,14 +2604,14 @@ function TargetDashboard({
     }
     planMtdEntries.forEach((plan) => {
       const name = postPlanDimensionValue(plan, dimension);
-      const current = getGroup(name, dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("Post Plan", "Post Plan", language));
+      const current = getGroup(name, dimension === "product" ? "" : label("Post Plan", "Post Plan", language));
       current.planMtd = (current.planMtd || 0) + 1;
       current.planAmountMtd = (current.planAmountMtd || 0) + numeric(plan.eachPrice);
       groups.set(name, current);
     });
     postMtdEntries.forEach((plan) => {
       const name = postPlanDimensionValue(plan, dimension);
-      const current = getGroup(name, dimension === "product" ? `${String(plan.brand)} · ${String(plan.owner)}` : label("已发布 Post", "Published Post", language));
+      const current = getGroup(name, dimension === "product" ? "" : label("已发布 Post", "Published Post", language));
       current.postMtd += 1;
       current.postAmountMtd = (current.postAmountMtd || 0) + numeric(plan.eachPrice);
       groups.set(name, current);
@@ -2967,7 +2967,7 @@ function TargetDashboard({
                 const children = paidPlanChildrenFor(postPlanTab, row);
                 const parentEntryKeys = paidPlanEntries.filter((entry) => postPlanDimensionValue(entry, postPlanTab) === row.name).map(planEntryKey);
                 return <Fragment key={rowKey}>
-                  <tr className="dashboard-parent-row"><td className="dashboard-select-cell"><LinkedSelectionCheckbox {...postPlanSelectionState(parentEntryKeys)} ariaLabel={`${label("选择", "Select", language)} ${row.name}`} onChange={(checked) => updatePostPlanSelection(parentEntryKeys, checked)} /></td><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><PostPlanMetricCells row={row} /></tr>
+                  <tr className="dashboard-parent-row"><td className="dashboard-select-cell"><LinkedSelectionCheckbox {...postPlanSelectionState(parentEntryKeys)} ariaLabel={`${label("选择", "Select", language)} ${row.name}`} onChange={(checked) => updatePostPlanSelection(parentEntryKeys, checked)} /></td><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong>{row.sub && <small>{row.sub}</small>}</span></button></td><PostPlanMetricCells row={row} /></tr>
                   {isOpen && children.map((child) => {
                     return <tr className="nested-breakdown" key={`${rowKey}-${child.row.name}`}><td className="dashboard-select-cell"><LinkedSelectionCheckbox {...postPlanSelectionState(child.entryKeys)} ariaLabel={`${label("选择", "Select", language)} ${row.name} / ${child.row.name}`} onChange={(checked) => updatePostPlanSelection(child.entryKeys, checked)} /></td><td><strong>{child.row.name}</strong></td><PostPlanMetricCells row={child.row} /></tr>;
                   })}

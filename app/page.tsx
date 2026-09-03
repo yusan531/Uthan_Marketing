@@ -3358,8 +3358,8 @@ export default function MarketingSystem() {
       const toneUpDemoPaymentMap = new Map(dashboard31SeptemberPayments.map((payment) => [String(payment.paymentNo || ""), payment]));
       const toneUpDemoReviewMap = new Map(dashboard31SeptemberReviews.map((review) => [`${String(review.paymentNo || "")}|${String(review.postNo || "")}`, review]));
       const toneUpDemoTargetMap = new Map(dashboard31SeptemberTargets.map((target) => [String(target.targetNo || ""), target]));
-      const needsToneUpDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardToneUpDemoVersion) < 1)
-        || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && String(target.product || "") === "Tone Up Sunscreen" && numeric(target.dashboardToneUpDemoVersion) < 1);
+      const needsToneUpDemoMigration = storedPayments.some((payment) => String(payment.paymentNo || "").startsWith("PID20260901") && numeric(payment.dashboardToneUpDemoVersion) < 3)
+        || storedTargets.some((target) => String(target.targetMonth || "") === "2026-09" && String(target.product || "") === "Tone Up Sunscreen" && numeric(target.dashboardToneUpDemoVersion) < 3);
       const migratedTargets = nextTargets.map((target) => {
         const canonicalTarget = needsToneUpDemoMigration ? toneUpDemoTargetMap.get(String(target.targetNo || "")) : undefined;
         return canonicalTarget
@@ -3467,7 +3467,7 @@ export default function MarketingSystem() {
             totalPrice: canonicalSeptemberPayment.totalPrice,
             reviewQty: canonicalSeptemberPayment.reviewQty,
             postPlans: canonicalSeptemberPayment.postPlans,
-            dashboardToneUpDemoVersion: 1,
+            dashboardToneUpDemoVersion: 3,
           } : {}),
         };
       });

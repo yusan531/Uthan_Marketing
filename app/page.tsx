@@ -2227,17 +2227,17 @@ function PostPlanCalendar({
 type PostPlanScheduleStatus = "completed" | "planned" | "overdue" | "overdue-completed";
 
 const postPlanScheduleStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string; className: string }> = {
-  completed: { zh: "已完成", en: "Completed", className: "completed" },
-  planned: { zh: "计划内未完成", en: "Planned", className: "planned" },
-  overdue: { zh: "计划内延期", en: "Overdue", className: "overdue" },
-  "overdue-completed": { zh: "延期完成", en: "Completed late", className: "overdue-completed" },
+  completed: { zh: "已发布", en: "Posted", className: "completed" },
+  planned: { zh: "待发布", en: "Pending", className: "planned" },
+  overdue: { zh: "逾期", en: "Overdue", className: "overdue" },
+  "overdue-completed": { zh: "逾期发布", en: "Posted Late", className: "overdue-completed" },
 };
 
 const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string; className: string }> = {
-  completed: { zh: "已发布", en: "Published", className: "completed" },
+  completed: { zh: "已发布", en: "Posted", className: "completed" },
   planned: { zh: "待发布", en: "Pending", className: "planned" },
-  overdue: { zh: "已延期", en: "Overdue", className: "overdue" },
-  "overdue-completed": { zh: "已延期发布", en: "Published late", className: "overdue-completed" },
+  overdue: { zh: "逾期", en: "Overdue", className: "overdue" },
+  "overdue-completed": { zh: "逾期发布", en: "Posted Late", className: "overdue-completed" },
 };
 
 function postPlanScheduleDate(entry: Record<string, unknown>) {

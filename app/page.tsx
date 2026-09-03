@@ -2220,7 +2220,7 @@ function PostPlanCalendar({
   publishedPlanKeys: Set<string>;
   onOpenReview: (entry: Record<string, unknown>) => void;
 }) {
-  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<{ date: string; name: string } | null>(null);
   const monthStart = dashboardLocalDate(`${month}-01`);
   const monthEntries = entries
     .map((entry) => ({
@@ -2299,10 +2299,12 @@ function PostPlanCalendar({
       : date === today
         ? [["posted", dayCounts.posted, label("Posted", "Posted", language)], ["planned", dayCounts.planned, label("Planned", "Planned", language)]] as const
         : [["planned", dayCounts.planned, label("Planned", "Planned", language)]] as const;
-    const toggleDetails = () => setExpandedDate((current) => current === date ? null : date);
+    const toggleDetails = (name: string) => setExpandedGroup((current) => current?.date === date && current.name === name ? null : { date, name });
+    const selectedGroup = expandedGroup?.date === date ? expandedGroup.name : null;
+    const expandedEntries = selectedGroup ? dayEntries.filter((item) => calendarDimensionValue(item.entry) === selectedGroup) : [];
     const outsideMonth = !date.startsWith(month);
     return <div className={`post-plan-calendar-cell${outsideMonth ? " outside-month" : ""}`} key={date || `empty-${index}`}>
-      <><strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className={`post-plan-calendar-entries${dimensionGroups.length > 3 ? " is-scrollable" : ""}`}>{dimensionGroups.map(([name, group]) => <button type="button" className="post-plan-calendar-dimension-entry" key={name} onClick={toggleDetails} aria-expanded={expandedDate === date} title={label("展开 Tier + Creator 详情", "Expand Tier + Creator details", language)}><b>{name}</b>{group.length > 1 && <small>×{group.length}</small>}</button>)}</div>{expandedDate === date && <div className="post-plan-calendar-popover" role="dialog" aria-label={label("当天全部排期", "All entries for this day", language)}><div className="post-plan-calendar-popover-head"><strong>{date}</strong><button type="button" aria-label={label("关闭", "Close", language)} onClick={() => setExpandedDate(null)}><X size={12} /></button></div><div className="post-plan-calendar-popover-list">{dayEntries.map(renderEntry)}</div></div>}<div className="post-plan-calendar-day-summary">{summaryItems.map(([key, count, itemLabel]) => <span key={key} className={key}><b>{count}</b>{itemLabel}</span>)}</div></>
+      <><strong>{Number(date.slice(-2))}{Number(date.slice(-2)) === 1 && <span className="post-plan-calendar-month-label">{date.slice(0, 7)}</span>}{date === today && <em className="post-plan-calendar-today">{label("今天", "Today", language)}</em>}</strong><div className={`post-plan-calendar-entries${dimensionGroups.length > 3 ? " is-scrollable" : ""}`}>{dimensionGroups.map(([name, group]) => <button type="button" className="post-plan-calendar-dimension-entry" key={name} onClick={() => toggleDetails(name)} aria-expanded={selectedGroup === name} title={label("展开当前维度详情", "Expand this dimension's details", language)}><b>{name}</b>{group.length > 1 && <small>×{group.length}</small>}</button>)}</div>{selectedGroup && <div className="post-plan-calendar-popover" role="dialog" aria-label={label(`${selectedGroup} 排期`, `${selectedGroup} schedule`, language)}><div className="post-plan-calendar-popover-head"><strong>{date} · {selectedGroup}</strong><button type="button" aria-label={label("关闭", "Close", language)} onClick={() => setExpandedGroup(null)}><X size={12} /></button></div><div className="post-plan-calendar-popover-list">{expandedEntries.map(renderEntry)}</div></div>}<div className="post-plan-calendar-day-summary">{summaryItems.map(([key, count, itemLabel]) => <span key={key} className={key}><b>{count}</b>{itemLabel}</span>)}</div></>
     </div>;
   };
   const dates = period === "week" ? weekDates : monthDates;

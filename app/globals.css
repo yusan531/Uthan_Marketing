@@ -2918,9 +2918,10 @@ thead .operation-column {
 
 .post-plan-calendar-header-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  flex-direction: column;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -3028,7 +3029,8 @@ thead .operation-column {
 }
 
 .post-plan-calendar-cell.outside-month > strong,
-.post-plan-calendar-cell.outside-month .post-plan-calendar-day-toggle strong {
+.post-plan-calendar-cell.outside-month .post-plan-calendar-day-toggle strong,
+.post-plan-calendar-cell.outside-month .post-plan-calendar-day-label strong {
   color: var(--muted);
 }
 
@@ -3061,6 +3063,16 @@ thead .operation-column {
 }
 
 .post-plan-calendar-day-toggle strong {
+  display: block;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.post-plan-calendar-day-label {
+  min-height: 16px;
+}
+
+.post-plan-calendar-day-label strong {
   display: block;
   color: var(--text);
   font-size: 11px;

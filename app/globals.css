@@ -3039,7 +3039,7 @@ thead .operation-column {
 }
 
 .post-plan-calendar-cell.today {
-  background: color-mix(in srgb, var(--dashboard-warning-soft) 58%, var(--surface));
+  background: color-mix(in srgb, var(--dashboard-warning-soft) 78%, var(--surface));
 }
 
 .post-plan-calendar-cell > strong {
@@ -3119,6 +3119,10 @@ thead .operation-column {
 .post-plan-calendar-entries.is-expanded {
   max-height: none;
   overflow-y: auto;
+}
+
+.post-plan-calendar-entries.creator-mode {
+  grid-template-rows: repeat(3, minmax(0, 1fr));
 }
 
 .post-plan-calendar-group {
@@ -3610,7 +3614,7 @@ thead .operation-column {
 
 .post-plan-schedule-column.current {
   border-color: transparent;
-  background: color-mix(in srgb, var(--dashboard-warning-soft) 58%, var(--surface));
+  background: color-mix(in srgb, var(--dashboard-warning-soft) 78%, var(--surface));
 }
 
 .post-plan-schedule-bar-area {

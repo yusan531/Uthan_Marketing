@@ -2735,6 +2735,13 @@ function TargetDashboard({
     ] as const : [["brand", "品牌", "Brand"]] as const),
   ] as const;
   const currentPostPlanDimensionLabel = tabs.find(([key]) => key === postPlanTab)?.[language === "zh" ? 1 : 2] || "Product";
+  const selectedProductNames = new Set(selectedPlanEntries.map((entry) => postPlanDimensionValue(entry, "product")));
+  const paymentPivotDrilldown = postPlanTab === "product" && selectedProductNames.size === 1;
+  const paymentPivotEntries = paymentPivotDrilldown
+    ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier))
+    : postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries;
+  const paymentPivotDimension: DashboardDimension = paymentPivotDrilldown ? "tier" : postPlanTab;
+  const paymentPivotDimensionLabel = paymentPivotDrilldown ? label("达人等级", "Creator Tier", language) : currentPostPlanDimensionLabel;
   const summaryMetrics = [
     { name: "Post", value: String(postMtd), target: String(postTarget), rate: percent(postMtd, postTarget), trend: "+10%" },
     { name: "Budget", value: `IDR ${compactNumber(budgetMtd)}`, target: `IDR ${compactNumber(budgetTarget)}`, rate: percent(budgetMtd, budgetTarget), trend: "-26%" },
@@ -2907,7 +2914,7 @@ function TargetDashboard({
               ? <PostPlanCalendar entries={postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onNavigate={onNavigate} />
               : <div className="post-plan-schedule-views">
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} /></div>
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={postPlanTab === "tier" ? selectedPlanEntries.filter((entry) => isAllowedCreatorTier(entry.tier)) : selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={postPlanTab} dimensionLabel={currentPostPlanDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Payment Pivot" metric="quantity" stackBy="dimension" /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={paymentPivotEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={paymentPivotDimension} dimensionLabel={paymentPivotDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Payment Pivot" metric="quantity" stackBy="dimension" /></div>
               </div>}
           </div>
         </section>

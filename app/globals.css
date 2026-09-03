@@ -794,6 +794,35 @@ input[type="checkbox"] {
   padding: 10px 12px;
 }
 
+.review-navigation-filter {
+  min-height: 32px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--green) 35%, var(--line));
+  border-radius: 6px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green-soft) 48%, var(--surface));
+  font-size: 9px;
+}
+
+.review-navigation-filter > span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-navigation-filter .text-button {
+  flex: 0 0 auto;
+  color: var(--green);
+}
+
 .filter-grid {
   display: flex;
   align-items: flex-end;
@@ -3528,11 +3557,25 @@ thead .operation-column {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
   border-radius: 4px 4px 2px 2px;
   color: #ffffff;
+  background: transparent;
+  font: inherit;
   font-style: normal;
   overflow: visible;
   transition: filter 120ms ease, transform 120ms ease;
+}
+
+.schedule-segment:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.schedule-segment.is-clickable {
+  cursor: pointer;
 }
 
 .schedule-segment:hover {

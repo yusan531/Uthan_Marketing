@@ -89,6 +89,12 @@ type Row = Record<string, unknown> & { id: number | string };
 type RowStore = Partial<Record<PageKey, Row[]>>;
 type Language = "zh" | "en";
 type Theme = "dark" | "light";
+type ReviewNavigationFilter = {
+  entryKeys: string[];
+  periodStart: string;
+  periodEnd: string;
+  count: number;
+};
 
 const groupIcons: Record<string, LucideIcon> = {
   home: Home,
@@ -1225,6 +1231,8 @@ function TablePage({
   approvalPermissions = { supervisor: true, ceo: true },
   relatedRows = [],
   relatedReviewRows = [],
+  reviewNavigationFilter = null,
+  onClearReviewNavigationFilter,
   notify,
 }: {
   config: PageConfig;
@@ -1236,6 +1244,8 @@ function TablePage({
   approvalPermissions?: { supervisor: boolean; ceo: boolean };
   relatedRows?: Row[];
   relatedReviewRows?: Row[];
+  reviewNavigationFilter?: ReviewNavigationFilter | null;
+  onClearReviewNavigationFilter?: () => void;
   notify: (message: string) => void;
 }) {
   const isPayment31 = config.key === "payment31";
@@ -1275,8 +1285,19 @@ function TablePage({
     const date = String(row.actualPostDate || "");
     return date > latest ? date : latest;
   }, "");
+  const navigationEntryKeys = new Set(reviewNavigationFilter?.entryKeys || []);
   const filteredRows = useMemo(
     () => rows.filter((row) => {
+      if (isReview31 && reviewNavigationFilter) {
+        const rowKey = `${String(row.paymentNo || "")}|${String(row.postNo || "")}`;
+        if (navigationEntryKeys.size > 0) {
+          if (!navigationEntryKeys.has(rowKey)) return false;
+        } else {
+          const actualDate = String(row.actualPostDate || row.postDate || "").slice(0, 10);
+          if (reviewNavigationFilter.periodStart && (!actualDate || actualDate < reviewNavigationFilter.periodStart)) return false;
+          if (reviewNavigationFilter.periodEnd && (!actualDate || actualDate > reviewNavigationFilter.periodEnd)) return false;
+        }
+      }
       const matchesFilters = Object.entries(appliedFilters).every(([key, expected]) => {
         if (key.endsWith("From")) {
           const sourceKey = key.slice(0, -4);
@@ -1315,7 +1336,7 @@ function TablePage({
       }
       return true;
     }),
-    [rows, appliedFilters, isPayment31, isReview31, paymentQuickFilter, reviewQuickFilter, reviewAnchorDate],
+    [rows, appliedFilters, isPayment31, isReview31, paymentQuickFilter, reviewQuickFilter, reviewAnchorDate, reviewNavigationFilter, navigationEntryKeys],
   );
   const pageSize = isOwnMediaReview ? 50 : 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
@@ -1553,6 +1574,7 @@ function TablePage({
                   setAppliedFilters(initialFilterState);
                   setPaymentQuickFilter("all");
                   setReviewQuickFilter("all");
+                  onClearReviewNavigationFilter?.();
                   setPage(1);
                 }}
               >
@@ -1562,6 +1584,13 @@ function TablePage({
             </div>
           </div>
         </section>
+      )}
+
+      {isReview31 && reviewNavigationFilter && (
+        <div className="review-navigation-filter" role="status">
+          <span><CheckCircle2 size={14} />{label("来自排期：已发布", "From schedule: Posted", language)} · {reviewNavigationFilter.periodStart} – {reviewNavigationFilter.periodEnd} · {reviewNavigationFilter.count} {label("条", "items", language)}</span>
+          <button type="button" className="text-button" onClick={onClearReviewNavigationFilter}>{label("清除关联筛选", "Clear linked filter", language)}</button>
+        </div>
       )}
 
       {isPayment31 && (
@@ -2390,6 +2419,7 @@ function PostPlanScheduleChart({
   metric = "quantity",
   stackBy = "status",
   showDimensionBreakdown = true,
+  onSegmentClick,
 }: {
   entries: Record<string, unknown>[];
   period: Exclude<PostPlanCalendarPeriod, "day">;
@@ -2403,6 +2433,7 @@ function PostPlanScheduleChart({
   metric?: PostPlanScheduleMetric;
   stackBy?: "status" | "dimension";
   showDimensionBreakdown?: boolean;
+  onSegmentClick?: (payload: { status: PostPlanScheduleStatus; periodStart: string; periodEnd: string; entryKeys: string[]; count: number }) => void;
 }) {
   const anchor = dashboardLocalDate(today);
   const statusOrder = visibleStatuses;
@@ -2469,6 +2500,7 @@ function PostPlanScheduleChart({
     };
   });
   const periods = period === "month" ? monthPeriods : weekPeriods;
+  const scheduleEntryKey = (entry: Record<string, unknown>) => `${String(entry.paymentNo || "")}|${String(entry.postNo || "")}`;
   const periodEntries = (item: (typeof periods)[number]) => scheduleEntries.filter(({ date }) => period === "month"
     ? date.startsWith(item.key)
     : date >= item.startKey && date <= item.endKey);
@@ -2477,12 +2509,14 @@ function PostPlanScheduleChart({
     return {
       ...item,
       total: matching.reduce((sum, entry) => sum + entry.value, 0),
-      segments: series.map((segment) => ({
-        ...segment,
-        value: matching
-          .filter((entry) => stackBy === "dimension" ? entry.dimensionName === segment.key : entry.status === segment.status)
-          .reduce((sum, entry) => sum + entry.value, 0),
-      })),
+      segments: series.map((segment) => {
+        const segmentEntries = matching.filter((entry) => stackBy === "dimension" ? entry.dimensionName === segment.key : entry.status === segment.status);
+        return {
+          ...segment,
+          value: segmentEntries.reduce((sum, entry) => sum + entry.value, 0),
+          entryKeys: segmentEntries.map(({ entry }) => scheduleEntryKey(entry)),
+        };
+      }),
     };
   });
   const maxCount = Math.max(...periodSegments.map((item) => item.total), 1);
@@ -2505,7 +2539,13 @@ function PostPlanScheduleChart({
             {item.total > 0 && <div className="post-plan-schedule-bar-wrap" style={{ height: `${Math.max((item.total / maxCount) * 100, 5)}%` }}>
               <strong className="post-plan-schedule-total">{formatScheduleValue(item.total)}</strong>
               <div className="post-plan-schedule-bar" title={`${item.label}: ${formatScheduleValue(item.total)}`}>
-                {item.segments.map((segment) => segment.value > 0 && <i key={segment.key} className={`schedule-segment ${segment.status ? postPlanScheduleStatusMeta[segment.status].className : "dimension"}`} style={{ height: `${(segment.value / Math.max(item.total, 1)) * 100}%`, "--schedule-segment-color": segment.color } as CSSProperties} title={`${segment.label}: ${formatScheduleValue(segment.value)}`}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{segment.label} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</i>)}
+                {item.segments.map((segment) => {
+                  if (segment.value <= 0) return null;
+                  const clickable = Boolean(onSegmentClick && segment.status && ["completed", "overdue-completed"].includes(segment.status) && segment.entryKeys.length);
+                  return <button type="button" key={segment.key} className={`schedule-segment ${segment.status ? postPlanScheduleStatusMeta[segment.status].className : "dimension"}${clickable ? " is-clickable" : ""}`} disabled={!clickable} style={{ height: `${(segment.value / Math.max(item.total, 1)) * 100}%`, "--schedule-segment-color": segment.color } as CSSProperties} title={`${segment.label}: ${formatScheduleValue(segment.value)}`} aria-label={`${segment.label}: ${formatScheduleValue(segment.value)}`} onClick={() => {
+                    if (clickable && segment.status) onSegmentClick?.({ status: segment.status, periodStart: item.startKey, periodEnd: item.endKey, entryKeys: segment.entryKeys, count: segment.value });
+                  }}><b>{formatScheduleValue(segment.value)}</b><em className="schedule-segment-tooltip">{segment.label} · {formatScheduleValue(segment.value)}</em>{segment.status === "overdue-completed" && <em className="schedule-overdue-dot" />}</button>;
+                })}
               </div>
             </div>}
           </div>
@@ -2526,6 +2566,7 @@ function TargetDashboard({
   notify,
   onNavigate,
   onOpenReview,
+  onOpenReviewList,
   version31 = false,
 }: {
   language: Language;
@@ -2535,6 +2576,7 @@ function TargetDashboard({
   notify: (message: string) => void;
   onNavigate: (page: PageKey) => void;
   onOpenReview: (entry: Record<string, unknown>) => void;
+  onOpenReviewList?: (filter: ReviewNavigationFilter) => void;
   version31?: boolean;
 }) {
   const [tab, setTab] = useState<DashboardDimension>("product");
@@ -3093,7 +3135,7 @@ function TargetDashboard({
             {postPlanCalendarPeriod === "day"
               ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" dimension={paymentPivotDimension} language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
               : <div className="post-plan-schedule-views">
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} onSegmentClick={(segment) => onOpenReviewList?.({ entryKeys: segment.entryKeys, periodStart: segment.periodStart, periodEnd: segment.periodEnd, count: segment.count })} /></div>
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={paymentPivotEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={paymentPivotDimension} dimensionLabel={paymentPivotDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Plan Pivot" metric="quantity" stackBy="dimension" /></div>
               </div>}
           </div>
@@ -3440,6 +3482,7 @@ export default function MarketingSystem() {
   const [utilityPanel, setUtilityPanel] = useState<"notice" | "help" | null>(null);
   const [toast, setToast] = useState("");
   const [calendarReviewRow, setCalendarReviewRow] = useState<Row | null>(null);
+  const [reviewNavigationFilter, setReviewNavigationFilter] = useState<ReviewNavigationFilter | null>(null);
 
   const roleConfig = roles.find((item) => item.key === role) || roles[roles.length - 1];
   const allowedGroups = menuGroups.filter((group) => roleConfig.groups.includes(group.key));
@@ -3734,6 +3777,7 @@ export default function MarketingSystem() {
 
   function navigate(page: PageKey) {
     if (page !== "review31b") setCalendarReviewRow(null);
+    if (page !== "review31b") setReviewNavigationFilter(null);
     setActivePage(page);
     setSidebarOpen(false);
     setExpanded((current) => new Set([...current, pageGroup(page)]));
@@ -3851,6 +3895,12 @@ export default function MarketingSystem() {
     setCalendarReviewRow(matchedReview || fallback);
   }
 
+  function openReviewListFromSchedule(filter: ReviewNavigationFilter) {
+    setCalendarReviewRow(null);
+    setReviewNavigationFilter(filter);
+    navigate("review31b");
+  }
+
   function saveCalendarReview(nextRow: Row) {
     setRows((current) => {
       const currentReviews = current.review31b || [];
@@ -3870,7 +3920,7 @@ export default function MarketingSystem() {
   if (activePage === "home") {
     pageContent = <HomePage language={language} onNavigate={navigate} />;
   } else if (activePage === "targetDashboard" || activePage === "dashboard31") {
-    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={navigate} onOpenReview={openReviewEditorFromCalendar} version31={activePage === "dashboard31"} />;
+    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={navigate} onOpenReview={openReviewEditorFromCalendar} onOpenReviewList={openReviewListFromSchedule} version31={activePage === "dashboard31"} />;
   } else if (activePage === "creator") {
     pageContent = <CreatorManagementPage language={language} rows={rows.creator || []} setRows={(next) => savePageRows("creator", next)} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} canEdit={canEdit} notify={notify} onNavigate={navigate} />;
   } else if (["mobilePayment31", "mobileReview31", "mobileDashboard31"].includes(activePage)) {
@@ -3890,6 +3940,8 @@ export default function MarketingSystem() {
         approvalPermissions={approvalPermissions}
         relatedRows={rows.payment31 || []}
         relatedReviewRows={rows.review31b || []}
+        reviewNavigationFilter={activePage === "review31b" ? reviewNavigationFilter : null}
+        onClearReviewNavigationFilter={() => setReviewNavigationFilter(null)}
         notify={notify}
       />
     );

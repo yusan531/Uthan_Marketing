@@ -2612,8 +2612,8 @@ function TargetDashboard({
   const postPlanSelectionState = (entryKeys: string[]) => {
     const selectedCount = entryKeys.filter((key) => !effectiveExcludedPostPlanRows.has(key)).length;
     return {
-      checked: entryKeys.length > 0 && selectedCount === entryKeys.length,
-      indeterminate: selectedCount > 0 && selectedCount < entryKeys.length,
+      checked: entryKeys.length === 0 || selectedCount === entryKeys.length,
+      indeterminate: entryKeys.length > 0 && selectedCount > 0 && selectedCount < entryKeys.length,
     };
   };
   const updatePostPlanSelection = (entryKeys: string[], checked: boolean) => {
@@ -2939,7 +2939,7 @@ function TargetDashboard({
                 const rowKey = `paid-${postPlanTab}-${row.name}`;
                 const isOpen = expandedPostPlans.has(rowKey);
                 const children = paidPlanChildrenFor(postPlanTab, row);
-                const parentEntryKeys = children.flatMap((child) => child.entryKeys);
+                const parentEntryKeys = paidPlanEntries.filter((entry) => postPlanDimensionValue(entry, postPlanTab) === row.name).map(planEntryKey);
                 return <Fragment key={rowKey}>
                   <tr className="dashboard-parent-row"><td className="dashboard-select-cell"><LinkedSelectionCheckbox {...postPlanSelectionState(parentEntryKeys)} ariaLabel={`${label("选择", "Select", language)} ${row.name}`} onChange={(checked) => updatePostPlanSelection(parentEntryKeys, checked)} /></td><td><button className="expand-row-button" onClick={() => setExpandedPostPlans((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong><small>{row.sub}</small></span></button></td><PostPlanMetricCells row={row} /></tr>
                   {isOpen && children.map((child) => {

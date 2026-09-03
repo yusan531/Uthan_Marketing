@@ -1981,7 +1981,9 @@ function DualProgressMeter({
 }) {
   const planTargetRate = dashboardRatioPercent(plan, target);
   const postTargetRate = dashboardRatioPercent(post, target);
-  const paceRate = Math.max(0, 100 - postTargetRate);
+  const paceRate = compact
+    ? Math.round((postTargetRate - planTargetRate) / 10) * 10
+    : Math.max(0, 100 - postTargetRate);
   const postProgressColor = postTargetRate < 60 ? "var(--dashboard-danger)" : postTargetRate < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
   const planProgressColor = planTargetRate < 60 ? "var(--dashboard-danger)" : planTargetRate < 100 ? "var(--dashboard-warning)" : "var(--dashboard-success)";
   const planProgressSoftColor = `color-mix(in srgb, ${planProgressColor} 42%, var(--surface))`;
@@ -2168,7 +2170,7 @@ function PostPlanCalendar({
   language,
   today,
   publishedPlanKeys,
-  onNavigate,
+  onOpenReview,
 }: {
   entries: Record<string, unknown>[];
   month: string;
@@ -2176,7 +2178,7 @@ function PostPlanCalendar({
   language: Language;
   today: string;
   publishedPlanKeys: Set<string>;
-  onNavigate: (page: PageKey) => void;
+  onOpenReview: (entry: Record<string, unknown>) => void;
 }) {
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const monthStart = dashboardLocalDate(`${month}-01`);
@@ -2214,7 +2216,7 @@ function PostPlanCalendar({
     const creatorName = String(entry.owner || entry.creatorName || label("未分配达人", "Unassigned creator", language));
     const tier = String(entry.tier || entry.rate || entry.rateTier || "").trim();
     const entryLabel = tier ? `${creatorName} · ${label("费用等级", "Tier", language)} ${tier}` : creatorName;
-    return <button type="button" className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={entryLabel} title={entryLabel} onClick={() => onNavigate("review31b")}>
+    return <button type="button" className={`post-plan-calendar-entry ${statusMeta.className}`} key={`${String(entry.paymentNo || "payment")}-${String(entry.postNo || "post")}-${String(entry.product || "product")}`} aria-label={entryLabel} title={entryLabel} onClick={() => onOpenReview(entry)}>
       <b>{creatorName}</b>
       {tier && <small>{label("费用等级", "Tier", language)} {tier}</small>}
       {status === "overdue-completed" && <i className="post-plan-calendar-late-dot" aria-label={label("延期完成", "Published late", language)} />}
@@ -2240,9 +2242,9 @@ type PostPlanScheduleStatus = "completed" | "planned" | "overdue" | "overdue-com
 
 const postPlanScheduleStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string; className: string }> = {
   completed: { zh: "已发布", en: "Posted", className: "completed" },
-  planned: { zh: "计划", en: "Planned", className: "planned" },
-  overdue: { zh: "延迟", en: "Delayed", className: "overdue" },
-  "overdue-completed": { zh: "延迟发布", en: "Posted Late", className: "overdue-completed" },
+  planned: { zh: "待发布", en: "Pending", className: "planned" },
+  overdue: { zh: "逾期", en: "Overdue", className: "overdue" },
+  "overdue-completed": { zh: "逾期发布", en: "Posted Late", className: "overdue-completed" },
 };
 
 const postPlanCalendarStatusMeta: Record<PostPlanScheduleStatus, { zh: string; en: string; className: string }> = {
@@ -2425,6 +2427,7 @@ function TargetDashboard({
   reviewRows,
   notify,
   onNavigate,
+  onOpenReview,
   version31 = false,
 }: {
   language: Language;
@@ -2433,12 +2436,13 @@ function TargetDashboard({
   reviewRows: Row[];
   notify: (message: string) => void;
   onNavigate: (page: PageKey) => void;
+  onOpenReview: (entry: Record<string, unknown>) => void;
   version31?: boolean;
 }) {
   const [tab, setTab] = useState<DashboardDimension>("product");
   const [postPlanTab, setPostPlanTab] = useState<DashboardDimension>("product");
   const [postPlanCalendarPeriod, setPostPlanCalendarPeriod] = useState<PostPlanCalendarPeriod>("month");
-  const [excludedPostPlanRows, setExcludedPostPlanRows] = useState<Set<string>>(new Set());
+  const [excludedPostPlanRows, setExcludedPostPlanRows] = useState<Set<string> | null>(null);
   const [resultTab, setResultTab] = useState<DashboardDimension>("product");
   const [filters, setFilters] = useState({ country: "ID", month: "2026-09", brand: "", owner: "" });
   const [expandedProgress, setExpandedProgress] = useState<Set<string>>(new Set());
@@ -2604,8 +2608,9 @@ function TargetDashboard({
   };
   const paidPlanRows = paidRowsByDimension[postPlanTab];
   const allPostPlanEntryKeys = paidPlanEntries.map(planEntryKey);
+  const effectiveExcludedPostPlanRows = excludedPostPlanRows ?? new Set(allPostPlanEntryKeys);
   const postPlanSelectionState = (entryKeys: string[]) => {
-    const selectedCount = entryKeys.filter((key) => !excludedPostPlanRows.has(key)).length;
+    const selectedCount = entryKeys.filter((key) => !effectiveExcludedPostPlanRows.has(key)).length;
     return {
       checked: entryKeys.length > 0 && selectedCount === entryKeys.length,
       indeterminate: selectedCount > 0 && selectedCount < entryKeys.length,
@@ -2613,18 +2618,18 @@ function TargetDashboard({
   };
   const updatePostPlanSelection = (entryKeys: string[], checked: boolean) => {
     setExcludedPostPlanRows((current) => {
-      const next = new Set(current);
+      const next = new Set(current ?? allPostPlanEntryKeys);
       entryKeys.forEach((key) => checked ? next.delete(key) : next.add(key));
       return next;
     });
   };
-  const selectedPlanEntries = paidPlanEntries.filter((plan) => !excludedPostPlanRows.has(planEntryKey(plan)));
-  const selectedPostMtdEntries = postMtdEntries.filter((entry) => !excludedPostPlanRows.has(planEntryKey(entry)));
-  const selectedPlanMtdEntries = planMtdEntries.filter((entry) => !excludedPostPlanRows.has(planEntryKey(entry)));
+  const selectedPlanEntries = paidPlanEntries.filter((plan) => !effectiveExcludedPostPlanRows.has(planEntryKey(plan)));
+  const selectedPostMtdEntries = postMtdEntries.filter((entry) => !effectiveExcludedPostPlanRows.has(planEntryKey(entry)));
+  const selectedPlanMtdEntries = planMtdEntries.filter((entry) => !effectiveExcludedPostPlanRows.has(planEntryKey(entry)));
   const selectedTargetMetrics = sourceRows.reduce((summary, target) => {
     const productName = postPlanDimensionValue(target, "product");
     const productPlanEntries = paidPlanEntries.filter((plan) => postPlanDimensionValue(plan, "product") === productName);
-    const selectedProductPlanCount = productPlanEntries.filter((plan) => !excludedPostPlanRows.has(planEntryKey(plan))).length;
+    const selectedProductPlanCount = productPlanEntries.filter((plan) => !effectiveExcludedPostPlanRows.has(planEntryKey(plan))).length;
     const share = productPlanEntries.length > 0 ? selectedProductPlanCount / productPlanEntries.length : 0;
     summary.count += numeric(target.qtyTarget || target.qty) * share;
     summary.amount += numeric(target.budgetTarget) * share;
@@ -2948,113 +2953,58 @@ function TargetDashboard({
             <div className="post-plan-calendar-header"><strong>{postPlanCalendarPeriod === "day" ? label("日历", "Calendar", language) : label("排期", "Schedule", language)}</strong><div className="post-plan-calendar-header-actions"><div className="post-plan-calendar-summary" aria-label={label("排期汇总", "Schedule summary", language)}><span><em>{label("今天前", "Before today", language)}</em><b>{calendarSummary.beforePosted}</b>{label("发布", "Posted", language)}<b>{calendarSummary.beforeDelayed}</b>{label("延迟", "Delay", language)}</span><span><em>{label("今天", "Today", language)}</em><b>{calendarSummary.todayPosted}</b>{label("发布", "Posted", language)}<b>{calendarSummary.todayPlanned}</b>{label("计划", "Planned", language)}</span><span><em>{label("今天后", "After today", language)}</em><b>{calendarSummary.afterPlanned}</b>{label("计划", "Planned", language)}</span></div><div className="post-plan-calendar-tabs">{([[
               "month", "月", "Month"], ["week", "周", "Week"], ["day", "日", "Day"]] as const).map(([key, zh, en]) => <button key={key} type="button" className={postPlanCalendarPeriod === key ? "active" : ""} onClick={() => setPostPlanCalendarPeriod(key)}>{label(zh, en, language)}</button>)}</div></div></div>
             {postPlanCalendarPeriod === "day"
-              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onNavigate={onNavigate} />
+              ? <PostPlanCalendar entries={calendarEntries} month={filters.month} period="day" language={language} today={today} publishedPlanKeys={publishedPlanKeys} onOpenReview={onOpenReview} />
               : <div className="post-plan-schedule-views">
                 <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Post Status" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} /></div>
-                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={selectedPlanEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension="status" dimensionLabel={label("Post Status", "Post Status", language)} publishedPlanKeys={publishedPlanKeys} heading="Plan Pivot" metric="quantity" visibleStatuses={["planned", "overdue", "completed"]} showDimensionBreakdown={false} /></div>
+                <div className="post-plan-schedule-view"><PostPlanScheduleChart entries={paymentPivotEntries} period={postPlanCalendarPeriod} language={language} today={today} dimension={paymentPivotDimension} dimensionLabel={paymentPivotDimensionLabel} publishedPlanKeys={publishedPlanKeys} heading="Plan Pivot" metric="quantity" stackBy="dimension" /></div>
               </div>}
           </div>
         </section>
       </div>}
 
       <div className="dashboard-section-row reference-dashboard-grid single-dashboard-column">
-        <section className={`panel progress-panel${version31 ? "" : " legacy-publishing-progress-panel"}`}>
+        <section className="panel progress-panel legacy-publishing-progress-panel">
           <div className="section-caption"><span />{version31 ? "Publish Plan" : label("发布进度", "Publish Progress", language)}</div>
           <div className="progress-pair">
-            {version31 ? <>
-              <LegacyProgressSummary title={label("发布数量", "Post", language)} post={postMtd} payment={postPlanSummary.paidCount} target={postTarget} tone="green" showPayment={false} />
-              <LegacyProgressSummary title="Price" post={budgetMtd} payment={postPlanSummary.paidAmount} target={budgetTarget} suffix="IDR " tone="amber" showPayment={false} />
-            </> : <>
-              <PublishProgressSummary title="Post" actual={postMtd} target={postTarget} tone="post" />
-              <PublishProgressSummary title="Budget" actual={budgetMtd} target={budgetTarget} formatValue={formatPublishBudget} tone="budget" />
-            </>}
+            <PublishProgressSummary title="Post" actual={postMtd} target={postTarget} tone="post" />
+            <PublishProgressSummary title="Budget" actual={budgetMtd} target={budgetTarget} formatValue={formatPublishBudget} tone="budget" />
           </div>
           <div className="dashboard-tabs">
             {tabs.map(([key, zh, en]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label(zh, en, language)}</button>)}
           </div>
-          <div className={`data-table-wrap dashboard-table-wrap${version31 ? "" : " legacy-publish-table-wrap"}`}>
-            <table className={`data-table dashboard-table${version31 ? "" : " legacy-publish-table"}`}>
-              <colgroup>{version31 ? <>
-                <col className="breakdown-col" />
-                <col className="post-target-col" />
-                <col className="post-remaining-col" />
-                <col className="post-pace-col" />
-                <col className="budget-target-col" />
-                <col className="budget-remaining-col" />
-                <col className="budget-pace-col" />
-              </> : <>
-                <col className="legacy-publish-name-col" />
-                <col className="legacy-publish-value-col" />
-                <col className="legacy-publish-value-col" />
-                <col className="legacy-publish-pace-col" />
-                <col className="legacy-publish-value-col" />
-                <col className="legacy-publish-value-col" />
-                <col className="legacy-publish-pace-col" />
-              </>}</colgroup>
+          <div className="data-table-wrap dashboard-table-wrap legacy-publish-table-wrap">
+            <table className="data-table dashboard-table legacy-publish-table">
+              <colgroup><col className="legacy-publish-name-col" /><col className="legacy-publish-value-col" /><col className="legacy-publish-value-col" /><col className="legacy-publish-pace-col" /><col className="legacy-publish-value-col" /><col className="legacy-publish-value-col" /><col className="legacy-publish-pace-col" /></colgroup>
               <thead>
-                {version31 ? <>
-                  <tr><th rowSpan={2}>{label("拆分维度", "Breakdown", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
-                  <tr><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th><th>MTD / Target</th><th>{label("剩余", "Remaining", language)}</th><th>MTD / Pace</th></tr>
-                </> : <>
-                  <tr><th rowSpan={2}>{label("产品 / 达人等级", "Product / Tier", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
-                  <tr><th>Target</th><th>MTD</th><th>Pace</th><th>Target</th><th>MTD</th><th>Pace</th></tr>
-                </>}
+                <tr><th rowSpan={2}>{label("产品 / 达人等级", "Product / Tier", language)}</th><th colSpan={3}>Post</th><th colSpan={3}>Budget</th></tr>
+                <tr><th>Target</th><th>MTD</th><th>Pace</th><th>Target</th><th>MTD</th><th>Pace</th></tr>
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  const postRate = percent(row.postMtd, row.postTarget);
-                  const budgetRate = percent(row.budgetMtd, row.budgetTarget);
-                  const postPace = postRate - 57;
-                  const budgetPace = budgetRate - 57;
                   const rowKey = `${tab}-${row.name}`;
                   const isOpen = expandedProgress.has(rowKey);
                   const children = childrenFor(tab, row);
                   return <Fragment key={rowKey}>
                     <tr className="dashboard-parent-row">
                       <td><button className="expand-row-button" onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey); return next; })}><ChevronRight size={15} className={isOpen ? "rotate-90" : ""} /><span><strong>{row.name}</strong></span></button></td>
-                      {version31 ? <>
-                        <td><b>{row.postMtd}/{row.postTarget}</b></td>
-                        <td>{Math.max(row.postTarget - row.postMtd, 0)}</td>
-                        <td><div className="dashboard-rate"><span>MTD <b>{postRate}%</b></span><em className={postPace >= -5 ? "good" : "bad"}>PACE {postPace > 0 ? "+" : ""}{postPace}%</em></div><div className="micro-progress"><i style={{ width: `${Math.min(postRate, 100)}%` }} /></div></td>
-                        <td><b>IDR {compactNumber(row.budgetMtd)}/{compactNumber(row.budgetTarget)}</b></td>
-                        <td>IDR {compactNumber(Math.max(row.budgetTarget - row.budgetMtd, 0))}</td>
-                        <td><div className="dashboard-rate"><span>MTD <b>{budgetRate}%</b></span><em className={budgetPace >= -5 ? "good" : "warn"}>PACE {budgetPace > 0 ? "+" : ""}{budgetPace}%</em></div><div className="micro-progress amber"><i style={{ width: `${Math.min(budgetRate, 100)}%` }} /></div></td>
-                      </> : renderLegacyProgressCells(row)}
+                      {renderLegacyProgressCells(row)}
                     </tr>
                     {isOpen && children.map((child) => {
-                      const childPostRate = percent(child.postMtd, child.postTarget);
-                      const childBudgetRate = percent(child.budgetMtd, child.budgetTarget);
                       const childKey = `${rowKey}-${child.name}`;
                       const childOpen = expandedProgress.has(childKey);
                       const grandChildren = tab === "brand" ? childrenFor("product", child) : [];
                       return <tr className="nested-breakdown" key={`${rowKey}-${child.name}`}>
                         <td><button className="expand-row-button nested" disabled={!grandChildren.length} onClick={() => setExpandedProgress((current) => { const next = new Set(current); next.has(childKey) ? next.delete(childKey) : next.add(childKey); return next; })}><ChevronRight size={13} className={childOpen ? "rotate-90" : ""} /><strong>{child.name}</strong></button></td>
-                        {version31 ? <>
-                          <td><b>{child.postMtd}/{child.postTarget}</b></td>
-                          <td>{Math.max(child.postTarget - child.postMtd, 0)}</td>
-                          <td><div className="dashboard-rate"><span>MTD <b>{childPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(childPostRate, 100)}%` }} /></div></td>
-                          <td><b>IDR {compactNumber(child.budgetMtd)}/{compactNumber(child.budgetTarget)}</b></td>
-                          <td>IDR {compactNumber(Math.max(child.budgetTarget - child.budgetMtd, 0))}</td>
-                          <td><div className="dashboard-rate"><span>MTD <b>{childBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(childBudgetRate, 100)}%` }} /></div></td>
-                        </> : renderLegacyProgressCells(child)}
+                        {renderLegacyProgressCells(child)}
                       </tr>;
                     })}
                     {isOpen && tab === "brand" && children.flatMap((child) => {
                       const childKey = `${rowKey}-${child.name}`;
                       if (!expandedProgress.has(childKey)) return [];
                       return childrenFor("product", child).map((grandChild) => {
-                        const grandPostRate = percent(grandChild.postMtd, grandChild.postTarget);
-                        const grandBudgetRate = percent(grandChild.budgetMtd, grandChild.budgetTarget);
                         return <tr className="nested-breakdown depth-2" key={`${childKey}-${grandChild.name}`}>
                           <td><strong>{grandChild.name}</strong></td>
-                          {version31 ? <>
-                            <td><b>{grandChild.postMtd}/{grandChild.postTarget}</b></td>
-                            <td>{Math.max(grandChild.postTarget - grandChild.postMtd, 0)}</td>
-                            <td><div className="dashboard-rate"><span>MTD <b>{grandPostRate}%</b></span></div><div className="micro-progress"><i style={{ width: `${Math.min(grandPostRate, 100)}%` }} /></div></td>
-                            <td><b>IDR {compactNumber(grandChild.budgetMtd)}/{compactNumber(grandChild.budgetTarget)}</b></td>
-                            <td>IDR {compactNumber(Math.max(grandChild.budgetTarget - grandChild.budgetMtd, 0))}</td>
-                            <td><div className="dashboard-rate"><span>MTD <b>{grandBudgetRate}%</b></span></div><div className="micro-progress amber"><i style={{ width: `${Math.min(grandBudgetRate, 100)}%` }} /></div></td>
-                          </> : renderLegacyProgressCells(grandChild)}
+                          {renderLegacyProgressCells(grandChild)}
                         </tr>;
                       });
                     })}
@@ -3287,6 +3237,7 @@ function Mobile31Workspace({
   approvalPermissions,
   notify,
   onNavigate,
+  onOpenReview,
 }: {
   activePage: Mobile31PageKey;
   language: Language;
@@ -3297,11 +3248,12 @@ function Mobile31Workspace({
   approvalPermissions: { supervisor: boolean; ceo: boolean };
   notify: (message: string) => void;
   onNavigate: (page: PageKey) => void;
+  onOpenReview: (entry: Record<string, unknown>) => void;
 }) {
   const basePage = mobile31BasePage[activePage];
   const baseConfig = pageConfigs[basePage];
   const content = activePage === "mobileDashboard31" ? (
-    <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={onNavigate} version31 />
+    <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={onNavigate} onOpenReview={onOpenReview} version31 />
   ) : baseConfig ? (
     <TablePage
       key={activePage}
@@ -3349,6 +3301,7 @@ export default function MarketingSystem() {
   const [quickSearch, setQuickSearch] = useState("");
   const [utilityPanel, setUtilityPanel] = useState<"notice" | "help" | null>(null);
   const [toast, setToast] = useState("");
+  const [calendarReviewRow, setCalendarReviewRow] = useState<Row | null>(null);
 
   const roleConfig = roles.find((item) => item.key === role) || roles[roles.length - 1];
   const allowedGroups = menuGroups.filter((group) => roleConfig.groups.includes(group.key));
@@ -3608,6 +3561,7 @@ export default function MarketingSystem() {
   }
 
   function navigate(page: PageKey) {
+    if (page !== "review31b") setCalendarReviewRow(null);
     setActivePage(page);
     setSidebarOpen(false);
     setExpanded((current) => new Set([...current, pageGroup(page)]));
@@ -3687,15 +3641,68 @@ export default function MarketingSystem() {
     });
   }
 
+  function openReviewEditorFromCalendar(entry: Record<string, unknown>) {
+    const paymentNo = String(entry.paymentNo || "");
+    const postNo = String(entry.postNo || "");
+    const matchedReview = (rows.review31b || []).find((review) => String(review.paymentNo || "") === paymentNo && String(review.postNo || "") === postNo);
+    const fallback: Row = {
+      id: `calendar-review-${paymentNo}-${postNo}`,
+      reviewNo: String(entry.reviewId || `RID${paymentNo}${postNo}`),
+      paymentNo,
+      postNo,
+      creatorName: String(entry.creatorName || entry.owner || ""),
+      country: String(entry.country || "ID"),
+      brand: String(entry.brand || ""),
+      owner: String(entry.owner || entry.strategist || ""),
+      kolSpecialist: String(entry.kolSpecialist || entry.specialist || ""),
+      submitter: String(entry.submitter || "Uthan"),
+      department: String(entry.department || ""),
+      platform: String(entry.platform || ""),
+      contentType: String(entry.contentType || ""),
+      contentAngle: String(entry.contentAngle || ""),
+      product: String(entry.product || ""),
+      planningPostDate: String(entry.planningPostDate || ""),
+      eachPrice: entry.eachPrice ?? "",
+      rate: String(entry.rate || entry.tier || ""),
+      yellowCart: String(entry.yellowCart || "No"),
+      owning: String(entry.owning || "No"),
+      sparkStatus: String(entry.sparkStatus || "None"),
+      boostCode: String(entry.boostCode || "Yes"),
+      postId: String(entry.postId || ""),
+      postLink: String(entry.postLink || ""),
+      actualPostDate: String(entry.actualPostDate || ""),
+      postStatus: String(entry.postStatus || "Normal"),
+      sparkAdsStatus: String(entry.sparkAdsStatus || "None"),
+      postPlans: [entry],
+    };
+    setCalendarReviewRow(matchedReview || fallback);
+    navigate("review31b");
+  }
+
+  function saveCalendarReview(nextRow: Row) {
+    setRows((current) => {
+      const currentReviews = current.review31b || [];
+      const exists = currentReviews.some((review) => String(review.id) === String(nextRow.id));
+      return {
+        ...current,
+        review31b: exists
+          ? currentReviews.map((review) => String(review.id) === String(nextRow.id) ? nextRow : review)
+          : [nextRow, ...currentReviews],
+      };
+    });
+    setCalendarReviewRow(null);
+    notify(label("Review 已更新", "Review updated", language));
+  }
+
   let pageContent: ReactNode;
   if (activePage === "home") {
     pageContent = <HomePage language={language} onNavigate={navigate} />;
   } else if (activePage === "targetDashboard" || activePage === "dashboard31") {
-    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={navigate} version31={activePage === "dashboard31"} />;
+    pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={navigate} onOpenReview={openReviewEditorFromCalendar} version31={activePage === "dashboard31"} />;
   } else if (activePage === "creator") {
     pageContent = <CreatorManagementPage language={language} rows={rows.creator || []} setRows={(next) => savePageRows("creator", next)} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} canEdit={canEdit} notify={notify} onNavigate={navigate} />;
   } else if (["mobilePayment31", "mobileReview31", "mobileDashboard31"].includes(activePage)) {
-    pageContent = <Mobile31Workspace activePage={activePage as Mobile31PageKey} language={language} rows={rows} savePageRows={savePageRows} canEdit={canEdit} canApprove={canApprove} approvalPermissions={approvalPermissions} notify={notify} onNavigate={navigate} />;
+    pageContent = <Mobile31Workspace activePage={activePage as Mobile31PageKey} language={language} rows={rows} savePageRows={savePageRows} canEdit={canEdit} canApprove={canApprove} approvalPermissions={approvalPermissions} notify={notify} onNavigate={navigate} onOpenReview={openReviewEditorFromCalendar} />;
   } else if (activePage === "budgetRule") {
     pageContent = <BudgetRulePage language={language} store={budgetRules} setStore={setBudgetRules} canEdit={canEdit} notify={notify} />;
   } else if (activeConfig) {
@@ -3804,7 +3811,10 @@ export default function MarketingSystem() {
         {activePage !== "home" && <button className="active"><ActivePageIcon size={13} />{label(activeItem.zh, activeItem.en, language)}<X size={12} onClick={(event) => { event.stopPropagation(); navigate("home"); }} /></button>}
       </div>
 
-      <main className="main-content">{pageContent}</main>
+      <main className="main-content">
+        {pageContent}
+        {calendarReviewRow && pageConfigs.review31b && <RecordModal config={pageConfigs.review31b} row={calendarReviewRow} language={language} relatedRows={rows.payment31 || []} reviewRows={rows.review31b || []} onSave={saveCalendarReview} onClose={() => setCalendarReviewRow(null)} />}
+      </main>
       {toast && <div className="toast"><CheckCircle2 size={16} />{toast}</div>}
     </div>
   );

@@ -713,7 +713,7 @@ export const dashboard31SeptemberReviews = dashboard31SeptemberPayments.flatMap(
   };
 }));
 
-const augustReview31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string }[]).map((plan, planIndex) => {
+const augustReview31Seed = payment31Seed.flatMap((payment, paymentIndex) => (payment.postPlans as { postNo: number; reviewId: string; platform: string; contentType: string; contentAngle: string; product: string; planningPostDate: string; eachPrice: string; rate: string; sparkStatus: string }[]).map((plan, planIndex) => {
   const published = paymentIndex % 3 === 0 && planIndex < 3;
   const postId = published ? `76774464559797${String(24040 + paymentIndex * 10 + planIndex)}` : "";
   return {

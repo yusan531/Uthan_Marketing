@@ -2,7 +2,7 @@ export type RoleKey = "country" | "brand" | "kolPic" | "ads" | "finance" | "anal
 
 export type PageKey =
   | "home" | "targetDashboard" | "dashboard31" | "mobilePayment31" | "mobileReview31" | "mobileDashboard31" | "target1" | "productTarget" | "ownTarget"
-  | "creator" | "campaign" | "sample"
+  | "creator" | "creatorRoadmap" | "campaign" | "sample"
   | "reviews" | "reviews11" | "review31a" | "review31b" | "review31c" | "lsaReviews" | "lsaKocReviews" | "ownMediaReview" | "inhouseContent"
   | "payment" | "payment11" | "payment31" | "paymentPriceChange"
   | "paymentAnalytics" | "paymentReview" | "yellowBasket" | "topRankVideo"
@@ -809,7 +809,7 @@ export const menuGroups: { key: string; zh: string; en: string; pages: { key: Pa
   { key: "home", zh: "Home", en: "Home", pages: [{ key: "home", zh: "Home", en: "Home" }] },
   { key: "versions", zh: "Marketing 3.1", en: "Marketing 3.1", pages: [{ key: "payment31", zh: "Payment3.1", en: "Payment3.1" }, { key: "review31b", zh: "Review3.1", en: "Review3.1" }, { key: "dashboard31", zh: "Dashboard3.1", en: "Dashboard3.1" }] },
   { key: "target", zh: "Target", en: "Target", pages: [{ key: "targetDashboard", zh: "Dashboard", en: "Dashboard" }, { key: "productTarget", zh: "Target", en: "Target" }, { key: "ownTarget", zh: "Own Target", en: "Own Target" }] },
-  { key: "creator", zh: "Creator", en: "Creator", pages: [{ key: "creator", zh: "Creator", en: "Creator" }] },
+  { key: "creator", zh: "Creator", en: "Creator", pages: [{ key: "creator", zh: "达人管理", en: "Creator" }, { key: "creatorRoadmap", zh: "达人库规划", en: "Creator Library Plan" }] },
   { key: "content", zh: "Content", en: "Content", pages: [{ key: "reviews", zh: "Reviews", en: "Reviews" }, { key: "reviews11", zh: "Reviews1.1", en: "Reviews1.1" }, { key: "ownMediaReview", zh: "Own Media Review", en: "Own Media Review" }] },
   { key: "finance", zh: "Finance", en: "Finance", pages: [{ key: "payment", zh: "Payment", en: "Payment" }, { key: "payment11", zh: "Payment1.1", en: "Payment1.1" }, { key: "paymentPriceChange", zh: "Payment Change Price", en: "Payment Change Price" }] },
   { key: "analysis", zh: "Analysis", en: "Analysis", pages: [{ key: "paymentAnalytics", zh: "Payment Analytics", en: "Payment Analytics" }, { key: "paymentReview", zh: "Payment and Review Post", en: "Payment and Review Post" }, { key: "yellowBasket", zh: "Yellow Basket Analytics", en: "Yellow Basket Analytics" }, { key: "topRankVideo", zh: "Top Rank Video", en: "Top Rank Video" }, { key: "targetAnalytics", zh: "Target Analytics", en: "Target Analytics" }, { key: "productAnalytics", zh: "Product Analytics", en: "Product Analytics" }, { key: "reviewLevelAnalytics", zh: "Review Level Analytics", en: "Review Level Analytics" }, { key: "videoAnalytics", zh: "Video Analytics", en: "Video Analytics" }, { key: "kolTargetReport", zh: "KOL Target Analytics", en: "KOL Target Analytics" }, { key: "missingPid", zh: "Missing PID", en: "Missing PID" }] },

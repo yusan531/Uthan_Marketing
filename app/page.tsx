@@ -86,6 +86,7 @@ import {
   type PageKey,
   type RoleKey,
 } from "./marketing-config";
+import CreatorRoadmap from "./creator-roadmap";
 
 type Row = Record<string, unknown> & { id: number | string };
 type RowStore = Partial<Record<PageKey, Row[]>>;
@@ -3969,6 +3970,8 @@ export default function MarketingSystem() {
     pageContent = <HomePage language={language} onNavigate={navigate} />;
   } else if (activePage === "targetDashboard" || activePage === "dashboard31") {
     pageContent = <TargetDashboard language={language} targetRows={rows.target1 || []} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} notify={notify} onNavigate={navigate} onOpenReview={openReviewEditorFromCalendar} onOpenReviewList={openReviewListFromSchedule} version31={activePage === "dashboard31"} />;
+  } else if (activePage === "creatorRoadmap") {
+    pageContent = <CreatorRoadmap language={language} creators={rows.creator || []} onNavigate={navigate} />;
   } else if (activePage === "creator") {
     pageContent = <CreatorManagementPage language={language} rows={rows.creator || []} setRows={(next) => savePageRows("creator", next)} paymentRows={rows.payment31 || []} reviewRows={rows.review31b || []} canEdit={canEdit} notify={notify} onNavigate={navigate} />;
   } else if (["mobilePayment31", "mobileReview31", "mobileDashboard31"].includes(activePage)) {
